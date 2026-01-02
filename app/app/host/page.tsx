@@ -96,6 +96,7 @@ export default async function HostPage({
     : [{ aptId: me.aptId, name: `Apt ${me.aptId} — Principale` }];
 
   const clientLabel = client ? getClientName(client) : "Organizzazione";
+  const orgLabel = "Global Properties";
 
   const healthAll = apartments.map((a) => computeHealth(a.aptId, a.name));
   const healthFiltered = q
@@ -116,7 +117,7 @@ export default async function HostPage({
     const aptId = formData.get("aptId")?.toString() ?? "";
     if (!aptId) return;
     createPin(role, aptId, ttl);
-    redirect(`/app/host?apt=${encodeURIComponent(aptId)}`);
+    redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
   }
 
   async function delPin(formData: FormData) {
@@ -125,7 +126,13 @@ export default async function HostPage({
     const aptId = formData.get("aptId")?.toString() ?? "";
     if (!pin) return;
     revokePin(pin);
-    redirect(aptId ? `/app/host?apt=${encodeURIComponent(aptId)}` : "/app/host");
+    redirect(
+      aptId
+        ? `/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`
+        : clientId
+          ? `/app/host?client=${encodeURIComponent(clientId)}`
+          : "/app/host"
+    );
   }
 
   // Dettaglio appartamento (sempre nello stesso file, MVP)
@@ -144,15 +151,18 @@ export default async function HostPage({
               <h1 className="text-lg font-semibold">{apt?.name ?? (aptSelected ? `Apt ${aptSelected}` : "Apt")}</h1>
             </div>
 
-            <div className="flex items-center gap-3">
-              <Link className="text-sm opacity-70 hover:opacity-100" href="/app/host">
-                ← Dashboard
-              </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              className="text-sm opacity-70 hover:opacity-100"
+              href={clientId ? `/app/host?client=${encodeURIComponent(clientId)}` : "/app/host"}
+            >
+              ← Dashboard
+            </Link>
 
-              <form action="/api/auth/logout" method="post">
-                <button className="text-sm opacity-70 hover:opacity-100">Esci</button>
-              </form>
-            </div>
+            <form action="/api/auth/logout" method="post">
+              <button className="text-sm opacity-70 hover:opacity-100">Esci</button>
+            </form>
+          </div>
           </div>
 
           <section className="rounded-2xl bg-white/5 border border-white/10 p-4">
@@ -269,11 +279,15 @@ export default async function HostPage({
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <div className="text-xs opacity-60">Host • Dashboard</div>
-            <h1 className="text-xl font-semibold">{clientLabel}</h1>
+            <h1 className="text-xl font-semibold">{orgLabel}</h1>
+            <div className="mt-1 text-sm opacity-70">
+              <span className="opacity-80">{apartments.length} appartamenti</span>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
             <form action="/app/host" method="get" className="flex items-center gap-2">
+              <input type="hidden" name="client" value={clientId} />
               <input
                 name="q"
                 defaultValue={q}
@@ -292,17 +306,7 @@ export default async function HostPage({
             </form>
           </div>
         </div>
-        <div className="text-sm opacity-70">
-          {client ? (
-            <div>
-              <span className="font-semibold">{clientLabel}</span>
-              <span className="opacity-50"> • </span>
-              <span className="opacity-80">{apartments.length} appartamenti</span>
-            </div>
-          ) : (
-            <div className="opacity-60">Nessun client configurato (fallback su apt host).</div>
-          )}
-        </div>
+
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
@@ -336,7 +340,7 @@ export default async function HostPage({
               {criticalFirst.map((a) => (
                 <Link
                   key={a.aptId}
-                  href={`/app/host?apt=${encodeURIComponent(a.aptId)}`}
+                  href={`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(a.aptId)}`}
                   className="block rounded-xl bg-black/30 border border-white/10 p-3 hover:border-white/20"
                 >
                   <div className="flex items-center justify-between">
@@ -352,6 +356,50 @@ export default async function HostPage({
 
         <section className="rounded-2xl bg-white/5 border border-white/10 p-4">
           <div className="flex items-center justify-between gap-3">
+            <div className="text-sm opacity-70">Operazioni del giorno</div>
+            <div className="text-xs opacity-50">Mock (MVP)</div>
+          </div>
+
+          {(() => {
+            const toClean = healthAll.filter((a) => a.readiness === "Da pulire").length;
+            const cleaningNow = healthAll.filter((a) => a.readiness === "Pulizia in corso").length;
+            const incidentsOpen = healthAll.filter((a) => a.status === "crit").length;
+            const checkinToday = 0;
+            const checkoutToday = 0;
+
+            return (
+              <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="rounded-2xl bg-black/30 border border-white/10 p-4">
+                  <div className="text-xs opacity-60">Check-in oggi</div>
+                  <div className="mt-1 text-2xl font-semibold">{checkinToday}</div>
+                </div>
+                <div className="rounded-2xl bg-black/30 border border-white/10 p-4">
+                  <div className="text-xs opacity-60">Checkout oggi</div>
+                  <div className="mt-1 text-2xl font-semibold">{checkoutToday}</div>
+                </div>
+                <div className="rounded-2xl bg-black/30 border border-white/10 p-4">
+                  <div className="text-xs opacity-60">Pulizie in corso</div>
+                  <div className="mt-1 text-2xl font-semibold">{cleaningNow}</div>
+                </div>
+                <div className="rounded-2xl bg-black/30 border border-white/10 p-4">
+                  <div className="text-xs opacity-60">Da pulire</div>
+                  <div className="mt-1 text-2xl font-semibold">{toClean}</div>
+                </div>
+
+                <div className="col-span-2 md:col-span-4 rounded-2xl bg-black/20 border border-white/10 p-4">
+                  <div className="text-xs opacity-60">Incidenti aperti</div>
+                  <div className="mt-1 text-2xl font-semibold">{incidentsOpen}</div>
+                  <div className="mt-2 text-xs opacity-60">
+                    Nota: check-in/checkout verranno popolati quando introduciamo le entità Stay / calendario.
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </section>
+
+        <section className="rounded-2xl bg-white/5 border border-white/10 p-4">
+          <div className="flex items-center justify-between gap-3">
             <div className="text-sm opacity-70">Appartamenti</div>
             <div className="text-xs opacity-50">Vista compatta</div>
           </div>
@@ -360,7 +408,7 @@ export default async function HostPage({
             {healthFiltered.map((a) => (
               <Link
                 key={a.aptId}
-                href={`/app/host?apt=${encodeURIComponent(a.aptId)}`}
+                href={`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(a.aptId)}`}
                 className="block rounded-xl bg-black/30 border border-white/10 p-4 hover:border-white/20"
               >
                 <div className="flex items-center justify-between gap-3">
@@ -384,6 +432,38 @@ export default async function HostPage({
 
             {healthFiltered.length === 0 && (
               <div className="text-sm opacity-60">Nessun appartamento trovato.</div>
+            )}
+          </div>
+        </section>
+
+        <section className="rounded-2xl bg-white/5 border border-white/10 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-sm opacity-70">Notifiche</div>
+            <div className="text-xs opacity-50">Timeline operativa (mock)</div>
+          </div>
+
+          <div className="mt-3 space-y-2">
+            {healthAll.slice(0, 8).map((a) => (
+              <Link
+                key={`notif-${a.aptId}`}
+                href={`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(a.aptId)}`}
+                className="block rounded-xl bg-black/30 border border-white/10 p-3 hover:border-white/20"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="font-semibold">{a.name}</div>
+                  <div className="text-xs opacity-70">
+                    {a.status === "ok" && "🟢"}
+                    {a.status === "warn" && "🟡"}
+                    {a.status === "crit" && "🔴"}
+                    <span className="ml-2">{a.readiness}</span>
+                  </div>
+                </div>
+                <div className="mt-1 text-sm opacity-70">{a.lastEvent}</div>
+              </Link>
+            ))}
+
+            {healthAll.length === 0 && (
+              <div className="text-sm opacity-60">Nessuna notifica.</div>
             )}
           </div>
         </section>

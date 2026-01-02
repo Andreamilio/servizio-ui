@@ -15,6 +15,14 @@ export type Client = {
   apartments: Apartment[];
 };
 
+export type ClientStats = {
+  clients: number;
+  apartments: number;
+  ok: number;
+  warn: number;
+  crit: number;
+};
+
 /**
  * STORE IN-MEMORY
  * In futuro verrà sostituito da DB / API senza cambiare l'interfaccia
@@ -61,6 +69,30 @@ export function listApartmentsByClient(clientId: string): Apartment[] {
   return store.get(clientId)?.apartments ?? [];
 }
 
+export function getClientStats(): ClientStats {
+  const clients = store.size;
+
+  let apartments = 0;
+  let ok = 0;
+  let warn = 0;
+  let crit = 0;
+
+  for (const c of store.values()) {
+    apartments += c.apartments.length;
+    for (const a of c.apartments) {
+      if (a.status === "ok") ok++;
+      else if (a.status === "warn") warn++;
+      else crit++;
+    }
+  }
+
+  return { clients, apartments, ok, warn, crit };
+}
+
+export function getClientLabel(clientId: string): string {
+  return store.get(clientId)?.name ?? clientId;
+}
+
 /* ----------------------------------------
  * WRITE (mock)
  * ------------------------------------- */
@@ -104,6 +136,30 @@ if (process.env.NODE_ENV !== "production" && store.size === 0) {
         name: "Lakeside Tower — Apt 019",
         clientId: "global-properties",
         status: "crit",
+      },
+    ],
+  });
+  store.set("lakeside-hospitality", {
+    clientId: "lakeside-hospitality",
+    name: "Lakeside Hospitality",
+    apartments: [
+      {
+        aptId: "101",
+        name: "City View — Apt 101",
+        clientId: "lakeside-hospitality",
+        status: "ok",
+      },
+      {
+        aptId: "102",
+        name: "City View — Apt 102",
+        clientId: "lakeside-hospitality",
+        status: "warn",
+      },
+      {
+        aptId: "103",
+        name: "City View — Apt 103",
+        clientId: "lakeside-hospitality",
+        status: "ok",
       },
     ],
   });

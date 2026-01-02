@@ -11,6 +11,7 @@ function roleHome(role: string) {
     case "guest":
       return "/app/guest";
     case "host":
+      return "/app/host";
     default:
       return "/app";
   }

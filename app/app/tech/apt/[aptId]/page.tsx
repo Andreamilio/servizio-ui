@@ -7,13 +7,24 @@ import {
   closeDoor,
   getAccessLogByApt,
   getApt,
+  getSensorsByApt,
   openDoor,
   revokeAccess,
+  toggleSensor,
   toggleVpn,
   toggleWan,
 } from "@/app/lib/techstore";
 
 export const dynamic = "force-dynamic";
+
+function Chip({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-black/20 border border-white/10 px-3 py-2">
+      <div className="text-[10px] uppercase tracking-wider opacity-60">{label}</div>
+      <div className="text-sm font-semibold">{value}</div>
+    </div>
+  );
+}
 
 export default async function TechAptPage({
   params,
@@ -47,6 +58,10 @@ export default async function TechAptPage({
   }
   const apt = getApt(aptId);
   const aptLog = getAccessLogByApt(aptId, 20);
+
+  const sensors = getSensorsByApt(aptId);
+  const controllable = sensors.filter((s) => s.controllable);
+  const onlineCount = sensors.filter((s) => s.status === "online").length;
 
   if (!apt) {
     return (
@@ -100,17 +115,88 @@ export default async function TechAptPage({
     redirect(`/app/tech/apt/${aptId}?r=${Date.now()}`);
   }
 
+  async function actToggleSensor(formData: FormData) {
+    "use server";
+    const sensorId = String(formData.get("sensorId") || "");
+    if (!sensorId) return;
+    toggleSensor(aptId, sensorId);
+    revalidatePath("/app/tech");
+    revalidatePath(`/app/tech/apt/${aptId}`);
+    redirect(`/app/tech/apt/${aptId}?r=${Date.now()}`);
+  }
+
   return (
     <main className="min-h-screen bg-[#0a0d12] text-white p-4 lg:p-6">
       <div className="max-w-3xl mx-auto space-y-4">
-        <div className="lg:hidden flex items-center justify-between rounded-2xl bg-white/5 border border-white/10 px-4 py-3">
-          <div>
-            <div className="text-xs opacity-60">TECH</div>
-            <div className="text-sm font-semibold truncate max-w-[220px]">{apt.aptName}</div>
+        <div className="lg:hidden rounded-2xl bg-white/5 border border-white/10 p-4 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-xs opacity-60">TECH</div>
+              <div className="text-sm font-semibold truncate">{apt.aptName}</div>
+              <div className="text-xs opacity-60 truncate">{apt.group}</div>
+            </div>
+            <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
+              ← Back
+            </Link>
           </div>
-          <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
-            ← Back
-          </Link>
+
+          <div className="grid grid-cols-2 gap-2">
+            <Chip label="WAN" value={apt.network === "main" ? "MAIN WAN" : "BACKUP WAN"} />
+            <Chip label="VPN" value={apt.vpn.toUpperCase()} />
+            <Chip label="DOOR" value={apt.door.toUpperCase()} />
+            <details className="group">
+              <summary className="list-none">
+                <div className="cursor-pointer">
+                  <Chip label="SENSORS" value={`${onlineCount}/${sensors.length} online`} />
+                </div>
+              </summary>
+
+              <div className="mt-2 rounded-2xl bg-white/5 border border-white/10 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs uppercase tracking-wider opacity-60">Dettaglio sensori</div>
+                  <div className="text-xs opacity-60">
+                    {controllable.length} controllabili
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {sensors.map((s) => (
+                    <div
+                      key={s.id}
+                      className="flex items-center justify-between gap-3 rounded-xl bg-black/20 border border-white/10 px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold truncate">{s.name}</div>
+                        <div className="text-[11px] opacity-60 truncate">
+                          {s.kind.toUpperCase()} • {s.status.toUpperCase()}
+                        </div>
+                      </div>
+
+                      {s.controllable ? (
+                        <form action={actToggleSensor}>
+                          <input type="hidden" name="sensorId" value={s.id} />
+                          <button className="rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 text-xs font-semibold">
+                            {s.state === "on" ? "Spegni" : "Accendi"}
+                          </button>
+                        </form>
+                      ) : (
+                        <div
+                          className={`h-2 w-2 rounded-full ${
+                            s.status === "online" ? "bg-emerald-400" : "bg-red-400"
+                          }`}
+                          aria-label={s.status}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="text-[11px] opacity-60">
+                  Tip: su desktop trovi lo stesso pannello nella card “SENSORS”.
+                </div>
+              </div>
+            </details>
+          </div>
         </div>
         <Link className="hidden lg:inline-block text-sm opacity-70 hover:opacity-100" href="/app/tech">
           ← Torna a Tech
@@ -144,12 +230,61 @@ export default async function TechAptPage({
               <div className="opacity-60 text-xs">DOOR</div>
               <div className="font-semibold">{apt.door.toUpperCase()}</div>
             </div>
-            <div className="rounded-xl bg-black/20 border border-white/10 p-3">
-              <div className="opacity-60 text-xs">SENSORS</div>
-              <div className="font-semibold">
-                {apt.sensorsOnline}/{apt.sensorsTotal} online
+            <details className="rounded-xl bg-black/20 border border-white/10 p-3 group">
+              <summary className="list-none cursor-pointer">
+                <div className="opacity-60 text-xs">SENSORS</div>
+                <div className="font-semibold">
+                  {onlineCount}/{sensors.length} online
+                </div>
+                <div className="text-[11px] opacity-60 mt-1">Click per dettaglio</div>
+              </summary>
+
+              <div className="mt-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs uppercase tracking-wider opacity-60">Dettaglio sensori</div>
+                  <div className="text-xs opacity-60">{controllable.length} controllabili</div>
+                </div>
+
+                <div className="space-y-2">
+                  {sensors.map((s) => (
+                    <div
+                      key={s.id}
+                      className="flex items-center justify-between gap-3 rounded-xl bg-black/30 border border-white/10 px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold truncate">{s.name}</div>
+                        <div className="text-[11px] opacity-60 truncate">
+                          {s.kind.toUpperCase()} • {s.status.toUpperCase()}
+                        </div>
+                      </div>
+
+                      {s.controllable ? (
+                        <form action={actToggleSensor}>
+                          <input type="hidden" name="sensorId" value={s.id} />
+                          <button className="rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 text-xs font-semibold">
+                            {s.state === "on" ? "Spegni" : "Accendi"}
+                          </button>
+                        </form>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`h-2 w-2 rounded-full ${
+                              s.status === "online" ? "bg-emerald-400" : "bg-red-400"
+                            }`}
+                            aria-label={s.status}
+                          />
+                          <div className="text-xs opacity-70">{s.status}</div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="text-[11px] opacity-60">
+                  I toggle sono mock in-memory: vedrai l’effetto al refresh automatico.
+                </div>
               </div>
-            </div>
+            </details>
           </div>
         </div>
 
@@ -157,17 +292,34 @@ export default async function TechAptPage({
           <div className="text-sm opacity-70 mb-3">Azioni rapide</div>
 
           <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
-            <form action={actOpenDoor}>
-              <button className="w-full sm:w-auto rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 px-4 py-2 font-semibold">
-                Apri porta
-              </button>
-            </form>
-
-            <form action={actCloseDoor}>
-              <button className="w-full sm:w-auto rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 font-semibold">
-                Chiudi porta
-              </button>
-            </form>
+            {/* Primary CTA depends on door state */}
+            {apt.door === "unlocked" ? (
+              <>
+                <form action={actCloseDoor} className="flex-1">
+                  <button className="w-full sm:w-auto rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 font-semibold">
+                    Chiudi porta
+                  </button>
+                </form>
+                <form action={actOpenDoor} className="flex-1">
+                  <button className="w-full sm:w-auto rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-400/20 px-4 py-2 font-semibold">
+                    Apri porta
+                  </button>
+                </form>
+              </>
+            ) : (
+              <>
+                <form action={actOpenDoor} className="flex-1">
+                  <button className="w-full sm:w-auto rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 px-4 py-2 font-semibold">
+                    Apri porta
+                  </button>
+                </form>
+                <form action={actCloseDoor} className="flex-1">
+                  <button className="w-full sm:w-auto rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 font-semibold">
+                    Chiudi porta
+                  </button>
+                </form>
+              </>
+            )}
 
             <form action={actRevoke}>
               <button className="w-full sm:w-auto rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 px-4 py-2 font-semibold">
@@ -203,9 +355,12 @@ export default async function TechAptPage({
                   key={e.id}
                   className="rounded-xl bg-black/20 border border-white/10 p-3"
                 >
-                  <div className="text-xs opacity-60">{e.tsLabel}</div>
-                  <div className="mt-1 text-sm font-semibold">{e.title}</div>
-                  <div className="mt-1 text-xs opacity-70">{e.detail}</div>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="text-xs opacity-60">{e.tsLabel}</div>
+                    <div className="text-[10px] opacity-50">Apt {aptId}</div>
+                  </div>
+                  <div className="mt-1 text-sm font-semibold leading-snug">{e.title}</div>
+                  <div className="mt-1 text-xs opacity-70 leading-snug">{e.detail}</div>
                 </div>
               ))
             )}

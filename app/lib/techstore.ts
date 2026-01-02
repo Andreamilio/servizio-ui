@@ -3,6 +3,21 @@ export type OnlineStatus = "online" | "offline";
 export type DoorStatus = "locked" | "unlocked" | "unknown";
 export type VpnStatus = "up" | "down";
 
+export type SensorKind = "smoke" | "light" | "door" | "window" | "noise";
+
+export type SensorStatus = "online" | "offline";
+
+export type Sensor = {
+  id: string;
+  aptId: string;
+  name: string;
+  kind: SensorKind;
+  status: SensorStatus;
+  online: boolean;
+  controllable?: boolean;
+  state?: "on" | "off";
+};
+
 export type AptHealth = {
   aptId: string;          // "101"
   aptName: string;        // "Apt 101"
@@ -46,6 +61,14 @@ declare global {
     | undefined;
 }
 
+declare global {
+  // eslint-disable-next-line no-var
+  var __techSensors: Map<string, Sensor[]> | undefined;
+}
+
+export const techSensors: Map<string, Sensor[]> = global.__techSensors ?? new Map();
+global.__techSensors = techSensors;
+
 export const techStore =
   global.__techStore ??
   (() => {
@@ -62,6 +85,63 @@ export const techStore =
     ];
 
     seed.forEach((a) => apts.set(a.aptId, a));
+
+    // Demo sensors (per popup/"details")
+    if (techSensors.size === 0) {
+      techSensors.set("101", [
+        { id: "s_smoke", aptId: "101", name: "Sensore fumo", kind: "smoke", online: true, status: "online" },
+        { id: "l_entry", aptId: "101", name: "Luce ingresso", kind: "light", online: true, controllable: true, state: "off", status: "online" },
+        { id: "d_main", aptId: "101", name: "Allarme porta", kind: "door", online: true, status: "online" },
+        { id: "w_living", aptId: "101", name: "Allarme finestra sala", kind: "window", online: false, status: "offline" },
+        { id: "w_kitchen", aptId: "101", name: "Allarme finestra cucina", kind: "window", online: true, status: "online" },
+        { id: "w_bath", aptId: "101", name: "Allarme bagno", kind: "window", online: true, status: "online" },
+        { id: "n_noise", aptId: "101", name: "Sensore suono", kind: "noise", online: true, status: "online" },
+      ]);
+
+      techSensors.set("102", [
+        { id: "s_smoke", aptId: "102", name: "Sensore fumo", kind: "smoke", online: false, status: "offline" },
+        { id: "l_entry", aptId: "102", name: "Luce ingresso", kind: "light", online: true, controllable: true, state: "on", status: "online" },
+        { id: "d_main", aptId: "102", name: "Allarme porta", kind: "door", online: false, status: "offline" },
+        { id: "w_living", aptId: "102", name: "Allarme finestra sala", kind: "window", online: false, status: "offline" },
+        { id: "n_noise", aptId: "102", name: "Sensore suono", kind: "noise", online: true, status: "online" },
+      ]);
+
+      // Seed minimal sensors for other demo apartments so UI doesn't show 0/0
+      techSensors.set("103", [
+        { id: "s_smoke", aptId: "103", name: "Sensore fumo", kind: "smoke", online: true, status: "online" },
+        { id: "l_entry", aptId: "103", name: "Luce ingresso", kind: "light", online: true, controllable: true, state: "off", status: "online" },
+        { id: "d_main", aptId: "103", name: "Allarme porta", kind: "door", online: true, status: "online" },
+        { id: "w_living", aptId: "103", name: "Allarme finestra sala", kind: "window", online: true, status: "online" },
+        { id: "w_kitchen", aptId: "103", name: "Allarme finestra cucina", kind: "window", online: true, status: "online" },
+      ]);
+
+      techSensors.set("104", [
+        { id: "s_smoke", aptId: "104", name: "Sensore fumo", kind: "smoke", online: true, status: "online" },
+        { id: "l_entry", aptId: "104", name: "Luce ingresso", kind: "light", online: true, controllable: true, state: "on", status: "online" },
+        { id: "d_main", aptId: "104", name: "Allarme porta", kind: "door", online: true, status: "online" },
+        { id: "w_living", aptId: "104", name: "Allarme finestra sala", kind: "window", online: true, status: "online" },
+        { id: "w_kitchen", aptId: "104", name: "Allarme finestra cucina", kind: "window", online: true, status: "online" },
+        { id: "w_bath", aptId: "104", name: "Allarme bagno", kind: "window", online: true, status: "online" },
+        { id: "n_noise", aptId: "104", name: "Sensore suono", kind: "noise", online: true, status: "online" },
+      ]);
+
+      techSensors.set("105", [
+        { id: "s_smoke", aptId: "105", name: "Sensore fumo", kind: "smoke", online: true, status: "online" },
+        { id: "l_entry", aptId: "105", name: "Luce ingresso", kind: "light", online: true, controllable: true, state: "off", status: "online" },
+        { id: "d_main", aptId: "105", name: "Allarme porta", kind: "door", online: false, status: "offline" },
+        { id: "w_living", aptId: "105", name: "Allarme finestra sala", kind: "window", online: false, status: "offline" },
+        { id: "w_kitchen", aptId: "105", name: "Allarme finestra cucina", kind: "window", online: true, status: "online" },
+        { id: "w_bath", aptId: "105", name: "Allarme bagno", kind: "window", online: false, status: "offline" },
+        { id: "n_noise", aptId: "105", name: "Sensore suono", kind: "noise", online: true, status: "online" },
+      ]);
+
+      techSensors.set("106", [
+        { id: "s_smoke", aptId: "106", name: "Sensore fumo", kind: "smoke", online: true, status: "online" },
+        { id: "l_entry", aptId: "106", name: "Luce ingresso", kind: "light", online: true, controllable: true, state: "off", status: "online" },
+        { id: "d_main", aptId: "106", name: "Allarme porta", kind: "door", online: true, status: "online" },
+        { id: "n_noise", aptId: "106", name: "Sensore suono", kind: "noise", online: true, status: "online" },
+      ]);
+    }
 
     const accessLog: AccessLogItem[] = [
       { id: "l1", tsLabel: "11:32 AM", aptId: "101", title: "Door Unlocked", detail: "Keycard: D. Smith", level: "ok" },
@@ -109,9 +189,47 @@ export function getIncidents(limit = 6) {
   return techStore.incidents.slice(0, limit);
 }
 
+export function getSensorsByApt(aptId: string): Sensor[] {
+  const list = techSensors.get(aptId) ?? [];
+  return list.map((s) => ({
+    ...s,
+    status: s.status ?? (s.online ? "online" : "offline"),
+  }));
+}
+
+export function toggleSensor(aptId: string, sensorId: string) {
+  const list = techSensors.get(aptId) ?? [];
+  const s = list.find((x) => x.id === sensorId);
+  if (!s) return null;
+  if (!s.controllable) return s;
+  s.state = s.state === "on" ? "off" : "on";
+
+  // log (mock)
+  pushLog({
+    tsLabel: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    aptId,
+    title: "Sensor Toggled",
+    detail: `${s.name}: ${s.state?.toUpperCase()}`,
+    level: "ok",
+  });
+
+  return s;
+}
+
 // ---- mutations (server-side)
 export function getApt(aptId: string) {
-  return techStore.apts.get(aptId) ?? null;
+  const a = techStore.apts.get(aptId);
+  if (!a) return null;
+
+  const sensors = getSensorsByApt(aptId);
+  if (!sensors.length) return a;
+
+  // override counters from sensors list
+  return {
+    ...a,
+    sensorsTotal: sensors.length,
+    sensorsOnline: sensors.filter((s) => s.online).length,
+  };
 }
 
 function pushLog(item: Omit<AccessLogItem, "id">) {

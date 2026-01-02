@@ -1,3 +1,13 @@
+// app/lib/store.ts
+// PIN + AccessLog + Readiness (mock in-memory).
+// IMPORTANT: the apartments list (names, client grouping, etc.) comes from clientStore.
+
+import crypto from "crypto";
+import {
+  listApartments as listClientApartments,
+  getApartment as getClientApartment,
+} from "./clientStore";
+
 type Role = "host" | "tech" | "guest" | "cleaner";
 
 export type Readiness =
@@ -7,7 +17,7 @@ export type Readiness =
   | "to_clean"
   | "cleaning_in_progress";
 
-export type Apartment = {
+export type AptReadiness = {
   aptId: string;
   name: string;
   readiness: Readiness;
@@ -43,27 +53,26 @@ export type AccessEvent = {
 declare global {
   // eslint-disable-next-line no-var
   var __pinStore: Map<string, PinRecord> | undefined;
-}
-
-declare global {
   // eslint-disable-next-line no-var
   var __accessLog: AccessEvent[] | undefined;
-}
-
-declare global {
   // eslint-disable-next-line no-var
-  var __aptStore: Map<string, Apartment> | undefined;
+  var __readinessStore: Map<string, Readiness> | undefined;
 }
 
 export const pinStore: Map<string, PinRecord> = global.__pinStore ?? new Map();
 global.__pinStore = pinStore;
 
-export const aptStore: Map<string, Apartment> =
-  global.__aptStore ?? new Map();
-global.__aptStore = aptStore;
-
 export const accessLog: AccessEvent[] = global.__accessLog ?? [];
 global.__accessLog = accessLog;
+
+// readiness keyed by aptId (source-of-truth for apt names is clientStore)
+export const readinessStore: Map<string, Readiness> =
+  global.__readinessStore ?? new Map();
+global.__readinessStore = readinessStore;
+
+/* ----------------------------------------
+ * PINS
+ * ------------------------------------- */
 
 export function createPin(role: Role, aptId: string, ttlMinutes: number) {
   const pin = String(Math.floor(100000 + Math.random() * 900000)); // 6 cifre
@@ -120,31 +129,74 @@ export function revokePin(pin: string) {
   return true;
 }
 
-export function listApartments() {
-  return Array.from(aptStore.values());
+export function revokePinsByApt(aptId: string) {
+  const toDelete: string[] = [];
+  for (const rec of pinStore.values()) {
+    if (rec.aptId === aptId) toDelete.push(rec.pin);
+  }
+  for (const p of toDelete) {
+    pinStore.delete(p);
+  }
+
+  accessLog.unshift({
+    id: crypto.randomUUID(),
+    aptId,
+    type: "pin_revoked",
+    label: `Revocati ${toDelete.length} PIN attivi`,
+    ts: Date.now(),
+  });
+
+  return toDelete.length;
 }
 
-export function getApartment(aptId: string) {
-  return aptStore.get(aptId) ?? null;
+/* ----------------------------------------
+ * READINESS (joined with clientStore)
+ * ------------------------------------- */
+
+function fallbackName(aptId: string) {
+  return `Apt ${aptId}`;
+}
+
+export function listApartments(): AptReadiness[] {
+  const apts = listClientApartments();
+  return apts.map((a) => ({
+    aptId: a.aptId,
+    name: a.name ?? fallbackName(a.aptId),
+    readiness: readinessStore.get(a.aptId) ?? "ready",
+  }));
+}
+
+export function getApartment(aptId: string): AptReadiness | null {
+  const a = getClientApartment(aptId);
+  if (!a) return null;
+  return {
+    aptId: a.aptId,
+    name: a.name ?? fallbackName(a.aptId),
+    readiness: readinessStore.get(a.aptId) ?? "ready",
+  };
 }
 
 export function setReadiness(aptId: string, readiness: Readiness) {
-  const apt = aptStore.get(aptId);
-  if (!apt) return null;
-  apt.readiness = readiness;
-  aptStore.set(aptId, apt);
-  return apt;
+  // Only allow if the apartment exists in clientStore
+  const a = getClientApartment(aptId);
+  if (!a) return null;
+  readinessStore.set(aptId, readiness);
+  return {
+    aptId,
+    name: a.name ?? fallbackName(aptId),
+    readiness,
+  } satisfies AptReadiness;
 }
+
+/* ----------------------------------------
+ * ACCESS LOG
+ * ------------------------------------- */
 
 export function listAccessLogByApt(aptId: string, limit = 10) {
   return accessLog.filter((e) => e.aptId === aptId).slice(0, limit);
 }
 
-export function logAccessEvent(
-  aptId: string,
-  type: AccessEventType,
-  label: string
-) {
+export function logAccessEvent(aptId: string, type: AccessEventType, label: string) {
   accessLog.unshift({
     id: crypto.randomUUID(),
     aptId,
@@ -154,13 +206,17 @@ export function logAccessEvent(
   });
 }
 
-// DEV SEED (solo per iniziare). In produzione rimuovere.
+/* ----------------------------------------
+ * DEV SEED
+ * ------------------------------------- */
+
+// NOTE: apartments are seeded in clientStore. Here we only seed readiness + demo PINs.
 if (process.env.NODE_ENV !== "production" && pinStore.size === 0) {
-  aptStore.set("017", {
-    aptId: "017",
-    name: "Apt 017 — Demo",
-    readiness: "ready",
-  });
+  // readiness seeds (if those apartments exist in clientStore)
+  if (getClientApartment("017")) readinessStore.set("017", "ready");
+  if (getClientApartment("018")) readinessStore.set("018", "to_clean");
+  if (getClientApartment("019")) readinessStore.set("019", "checkout_today");
+
   pinStore.set("111111", {
     pin: "111111",
     role: "host",
