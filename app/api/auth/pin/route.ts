@@ -38,12 +38,12 @@ export async function POST(req: Request) {
 
   const isDev = process.env.NODE_ENV !== "production";
 
-  // Demo pins (work also in production if set in Vercel env)
+  // Demo pins: override via Vercel Env Vars, otherwise fall back to defaults for the prototype.
   const demoPins = {
-    host: (process.env.DEMO_PIN_HOST || "").trim(),
-    tech: (process.env.DEMO_PIN_TECH || "").trim(),
-    cleaner: (process.env.DEMO_PIN_CLEANER || "").trim(),
-    guest: (process.env.DEMO_PIN_GUEST || "").trim(),
+    host: String(process.env.DEMO_PIN_HOST ?? "111111").trim(),
+    tech: String(process.env.DEMO_PIN_TECH ?? "222222").trim(),
+    cleaner: String(process.env.DEMO_PIN_CLEANER ?? "444444").trim(),
+    guest: String(process.env.DEMO_PIN_GUEST ?? "333333").trim(),
   };
 
   function matchDemoPin(p: string) {
@@ -54,20 +54,20 @@ export async function POST(req: Request) {
     return null;
   }
 
-  if (isDev) {
-    console.log("[auth/pin]", {
-      nodeEnv: process.env.NODE_ENV,
-      pinReceived: pin,
-      hasDemoPins: {
-        host: Boolean(demoPins.host),
-        tech: Boolean(demoPins.tech),
-        cleaner: Boolean(demoPins.cleaner),
-        guest: Boolean(demoPins.guest),
-      },
-      matchedRole: matchDemoPin(pin)?.role ?? null,
-      contentType: ct,
-    });
-  }
+  console.log("[auth/pin]", {
+    nodeEnv: process.env.NODE_ENV,
+    contentType: ct,
+    isJson,
+    pinLen: pin.length,
+    demoPinsPresent: {
+      host: Boolean(demoPins.host),
+      tech: Boolean(demoPins.tech),
+      cleaner: Boolean(demoPins.cleaner),
+      guest: Boolean(demoPins.guest),
+    },
+    matchedRole: matchDemoPin(pin)?.role ?? null,
+    nextProvided: Boolean(next),
+  });
 
   const rec = matchDemoPin(pin) ?? consumePin(pin);
 
@@ -98,6 +98,7 @@ export async function POST(req: Request) {
     res.cookies.set("sess", session, {
       httpOnly: true,
       sameSite: "lax",
+      secure: !isDev,
       path: "/",
     });
     return res;
@@ -106,6 +107,7 @@ export async function POST(req: Request) {
     res.cookies.set("sess", session, {
       httpOnly: true,
       sameSite: "lax",
+      secure: !isDev,
       path: "/",
     });
     return res;
