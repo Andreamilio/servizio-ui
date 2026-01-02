@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { readSession } from "@/app/lib/session";
 import { createPin, listPinsByApt, revokePin } from "@/app/lib/store";
 import { listJobsByApt } from "@/app/lib/cleaningstore";
+import { listClients, listApartmentsByClient } from "@/app/lib/clientStore";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -72,13 +73,29 @@ export default async function HostPage({
     return <div className="p-6 text-white">Non autorizzato</div>;
   }
 
-  // MVP: simuliamo più appartamenti (in V2 arriva da DB/API).
-  const apartments = [
-    { aptId: me.aptId, name: `Apt ${me.aptId} — Principale` },
-    { aptId: "018", name: "Apt 018 — Demo" },
-    { aptId: "019", name: "Apt 019 — Demo" },
-    { aptId: "020", name: "Apt 020 — Demo" },
-  ];
+  // MVP: appartamenti reali dal clientStore (in V2 arriva da DB/API).
+  // Nota: il prototipo può avere naming diverso (id/clientId, aptName/name). Qui normalizziamo.
+  const clients = (listClients() as any[]) ?? [];
+
+  const getClientId = (c: any) => String(c?.id ?? c?.clientId ?? c?.clientID ?? c?.slug ?? "");
+  const getClientName = (c: any) => String(c?.name ?? c?.clientName ?? c?.title ?? "");
+
+  const wantedClientId = (pick(sp, "client") ?? getClientId(clients[0]) ?? "").trim();
+  const client =
+    clients.find((c) => getClientId(c) === wantedClientId) ??
+    (clients[0] ?? null);
+
+  const clientId = client ? getClientId(client) : "";
+
+  // se non c'è nessun client seedato, fallback su un solo apt dell'host
+  const apartments = clientId
+    ? (listApartmentsByClient(clientId) as any[]).map((a) => ({
+        aptId: String(a?.aptId ?? a?.id ?? a?.apt ?? ""),
+        name: String(a?.aptName ?? a?.name ?? a?.title ?? `Apt ${a?.aptId ?? a?.id ?? ""}`),
+      }))
+    : [{ aptId: me.aptId, name: `Apt ${me.aptId} — Principale` }];
+
+  const clientLabel = client ? getClientName(client) : "Organizzazione";
 
   const healthAll = apartments.map((a) => computeHealth(a.aptId, a.name));
   const healthFiltered = q
@@ -124,7 +141,7 @@ export default async function HostPage({
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-xs opacity-60">Host • Dettaglio appartamento</div>
-              <h1 className="text-lg font-semibold">{apt?.name ?? `Apt ${aptSelected}`}</h1>
+              <h1 className="text-lg font-semibold">{apt?.name ?? (aptSelected ? `Apt ${aptSelected}` : "Apt")}</h1>
             </div>
 
             <div className="flex items-center gap-3">
@@ -252,7 +269,7 @@ export default async function HostPage({
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <div className="text-xs opacity-60">Host • Dashboard</div>
-            <h1 className="text-xl font-semibold">Organizzazione (demo)</h1>
+            <h1 className="text-xl font-semibold">{clientLabel}</h1>
           </div>
 
           <div className="flex items-center gap-3">
@@ -274,6 +291,17 @@ export default async function HostPage({
               </button>
             </form>
           </div>
+        </div>
+        <div className="text-sm opacity-70">
+          {client ? (
+            <div>
+              <span className="font-semibold">{clientLabel}</span>
+              <span className="opacity-50"> • </span>
+              <span className="opacity-80">{apartments.length} appartamenti</span>
+            </div>
+          ) : (
+            <div className="opacity-60">Nessun client configurato (fallback su apt host).</div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

@@ -40,10 +40,22 @@ export function getJob(id: string) {
   return cleaningStore.get(id) ?? null;
 }
 
+export function canStartJob(j: CleaningJob) {
+  return j.status === "todo";
+}
+
+export function canCompleteJob(j: CleaningJob) {
+  return j.status === "in_progress";
+}
+
+export function canReportProblem(j: CleaningJob) {
+  return j.status !== "done";
+}
+
 export function startJob(id: string) {
   const j = cleaningStore.get(id);
   if (!j) return null;
-  if (j.status === "done") return j;
+  if (!canStartJob(j)) return j;
   j.status = "in_progress";
   j.startedAt = j.startedAt ?? Date.now();
   cleaningStore.set(id, j);
@@ -63,6 +75,7 @@ export function toggleChecklist(id: string, itemId: string) {
 export function completeJob(id: string) {
   const j = cleaningStore.get(id);
   if (!j) return null;
+  if (!canCompleteJob(j)) return j;
   j.status = "done";
   j.completedAt = Date.now();
   cleaningStore.set(id, j);
@@ -72,6 +85,7 @@ export function completeJob(id: string) {
 export function markProblem(id: string) {
   const j = cleaningStore.get(id);
   if (!j) return null;
+  if (!canReportProblem(j)) return j;
   j.status = "problem";
   cleaningStore.set(id, j);
   return j;
