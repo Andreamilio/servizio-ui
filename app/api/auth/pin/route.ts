@@ -36,23 +36,40 @@ export async function POST(req: Request) {
     next = String(fd?.get("next") ?? "").trim();
   }
 
-  const devMaster = process.env.DEV_MASTER_PIN || "999999";
   const isDev = process.env.NODE_ENV !== "production";
+
+  // Demo pins (work also in production if set in Vercel env)
+  const demoPins = {
+    host: (process.env.DEMO_PIN_HOST || "").trim(),
+    tech: (process.env.DEMO_PIN_TECH || "").trim(),
+    cleaner: (process.env.DEMO_PIN_CLEANER || "").trim(),
+    guest: (process.env.DEMO_PIN_GUEST || "").trim(),
+  };
+
+  function matchDemoPin(p: string) {
+    if (demoPins.host && p === demoPins.host) return { role: "host" as const, aptId: "017" as const };
+    if (demoPins.tech && p === demoPins.tech) return { role: "tech" as const, aptId: "017" as const };
+    if (demoPins.cleaner && p === demoPins.cleaner) return { role: "cleaner" as const, aptId: "017" as const };
+    if (demoPins.guest && p === demoPins.guest) return { role: "guest" as const, aptId: "017" as const };
+    return null;
+  }
 
   if (isDev) {
     console.log("[auth/pin]", {
       nodeEnv: process.env.NODE_ENV,
       pinReceived: pin,
-      devMaster,
-      masterMatch: pin === devMaster,
+      hasDemoPins: {
+        host: Boolean(demoPins.host),
+        tech: Boolean(demoPins.tech),
+        cleaner: Boolean(demoPins.cleaner),
+        guest: Boolean(demoPins.guest),
+      },
+      matchedRole: matchDemoPin(pin)?.role ?? null,
       contentType: ct,
     });
   }
 
-  const rec =
-    isDev && pin === devMaster
-      ? ({ role: "host", aptId: "017" } as const)
-      : consumePin(pin);
+  const rec = matchDemoPin(pin) ?? consumePin(pin);
 
   if (!rec) {
     if (isJson) {
