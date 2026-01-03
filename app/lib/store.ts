@@ -488,26 +488,35 @@ export function logAccessEvent(aptId: string, type: AccessEventType, label: stri
  * DEV SEED (optional)
  * ------------------------------------- */
 
-if (process.env.NODE_ENV !== "production" && pinStore.size === 0) {
-  // readiness seed
-  if (getClientApartment("017")) readinessStore.set("017", "ready");
-  if (getClientApartment("018")) readinessStore.set("018", "to_clean");
-  if (getClientApartment("019")) readinessStore.set("019", "checkout_today");
+if ((process.env.NODE_ENV !== "production" || process.env.DEMO_MODE === "1") && pinStore.size === 0) {
+  // readiness seed (aligned to clientstore demo apts 101–106)
+  if (getClientApartment("101")) readinessStore.set("101", "ready");
+  if (getClientApartment("102")) readinessStore.set("102", "to_clean");
+  if (getClientApartment("103")) readinessStore.set("103", "checkout_today");
+  if (getClientApartment("104")) readinessStore.set("104", "ready");
+  if (getClientApartment("105")) readinessStore.set("105", "to_clean");
+  if (getClientApartment("106")) readinessStore.set("106", "ready");
 
   // demo stay + demo pins ONLY once (uses staysStore V2)
   const now = Date.now();
   const st = createStayV2({
-    aptId: "017",
+    aptId: "101",
     checkInAt: now - 2 * 60 * 60_000,
     checkOutAt: now + 24 * 60 * 60_000,
     guests: [{ name: "Giulia" }, { name: "Marco" }, { name: "Sara" }],
     createdBy: "system",
   });
 
-  const mk = (pin: string, role: Role, guestId: string, guestName?: string, source: PinSource = "manual"): PinRecord => ({
+  const mk = (
+    pin: string,
+    role: Role,
+    guestId: string,
+    guestName?: string,
+    source: PinSource = "manual"
+  ): PinRecord => ({
     pin,
     role,
-    aptId: "017",
+    aptId: "101",
     validFrom: now - 60_000,
     validTo: now + 9999 * 60_000,
     expiresAt: now + 9999 * 60_000,
@@ -518,7 +527,16 @@ if (process.env.NODE_ENV !== "production" && pinStore.size === 0) {
     createdAt: now,
   });
 
-  pinStore.set("111111", mk("111111", "host", st.guests[0].guestId, st.guests[0].name, "manual"));
-  pinStore.set("222222", mk("222222", "tech", st.guests[0].guestId, st.guests[0].name, "manual"));
-  pinStore.set("333333", mk("333333", "guest", st.guests[1].guestId, st.guests[1].name, "auto"));
+  pinStore.set(
+    "111111",
+    mk("111111", "host", st.guests[0].guestId, st.guests[0].name, "manual")
+  );
+  pinStore.set(
+    "222222",
+    mk("222222", "tech", st.guests[0].guestId, st.guests[0].name, "manual")
+  );
+  pinStore.set(
+    "333333",
+    mk("333333", "guest", st.guests[1].guestId, st.guests[1].name, "auto")
+  );
 }

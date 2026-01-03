@@ -107,7 +107,12 @@ export function setApartmentStatus(aptId: string, status: ApartmentStatus) {
  * DEV SEED
  * ------------------------------------- */
 
-if (process.env.NODE_ENV !== "production" && store.size === 0) {
+// In produzione i seed DEV sono disattivati per default.
+// Per abilitare il dataset demo su Vercel/Prod usa: DEMO_MODE=1
+const SHOULD_SEED =
+  process.env.DEMO_MODE === "1" || process.env.NODE_ENV !== "production";
+
+if (SHOULD_SEED && store.size === 0) {
   // ✅ Single demo client + populated apartments (101–106)
   // Source of truth for Host / Tech / Guest views.
   store.set("global-properties", {
