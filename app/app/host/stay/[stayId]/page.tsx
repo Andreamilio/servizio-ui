@@ -848,16 +848,19 @@ export default async function StayDetailPage({
                 }
 
                 // Crea automaticamente un PIN per il nuovo ospite
-                Store.createPinForGuest({
-                  role: "guest",
-                  aptId: actualAptId,
-                  stayId,
-                  guestId: newGuest.guestId,
-                  guestName: newGuest.name,
-                  validFrom: stayObj.checkInAt,
-                  validTo: stayObj.checkOutAt,
-                  source: "auto",
-                });
+                const stay = stays_get(stayId);
+                if (stay) {
+                  Store.createPinForGuest({
+                    role: "guest",
+                    aptId: actualAptId,
+                    stayId,
+                    guestId: newGuest.guestId,
+                    guestName: newGuest.name,
+                    validFrom: stay.checkInAt,
+                    validTo: stay.checkOutAt,
+                    source: "auto",
+                  });
+                }
 
                 redirect(
                   `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
