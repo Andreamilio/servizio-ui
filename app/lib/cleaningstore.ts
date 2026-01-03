@@ -10,6 +10,8 @@ export type CleaningJob = {
   checklist: { id: string; label: string; done: boolean }[];
   startedAt?: number; // unix ms
   completedAt?: number; // unix ms
+  stayId?: string; // ID dello stay associato (se presente)
+  cleanerName?: string; // Nome del cleaner assegnato (se presente)
 };
 
 declare global {
@@ -38,6 +40,31 @@ export function listJobsByApt(aptId: string) {
 
 export function getJob(id: string) {
   return cleaningStore.get(id) ?? null;
+}
+
+export function updateJobsCleanerByStay(stayId: string, cleanerName: string | null) {
+  for (const job of cleaningStore.values()) {
+    if (job.stayId === stayId) {
+      cleaningStore.set(job.id, {
+        ...job,
+        cleanerName: cleanerName?.trim() || undefined,
+      });
+    }
+  }
+}
+
+export function listJobsByStay(stayId: string): CleaningJob[] {
+  const out: CleaningJob[] = [];
+  for (const j of cleaningStore.values()) {
+    if (j.stayId === stayId) out.push(j);
+  }
+  const rank: Record<CleaningStatus, number> = {
+    todo: 0,
+    in_progress: 1,
+    problem: 2,
+    done: 3,
+  };
+  return out.sort((a, b) => rank[a.status] - rank[b.status]);
 }
 
 export function canStartJob(j: CleaningJob) {
@@ -89,6 +116,53 @@ export function markProblem(id: string) {
   j.status = "problem";
   cleaningStore.set(id, j);
   return j;
+}
+
+export function createCleaningJob(params: {
+  aptId: string;
+  aptName: string;
+  windowFrom: number; // unix ms
+  windowTo: number; // unix ms
+  notesFromHost?: string;
+  checklist?: { id: string; label: string; done: boolean }[];
+  stayId?: string; // ID dello stay associato
+}): CleaningJob {
+  const { aptId, aptName, windowFrom, windowTo, notesFromHost, checklist, stayId } = params;
+
+  // Formatta windowLabel come "HH:mm–HH:mm"
+  const formatTime = (ts: number): string => {
+    const d = new Date(ts);
+    const h = String(d.getHours()).padStart(2, "0");
+    const m = String(d.getMinutes()).padStart(2, "0");
+    return `${h}:${m}`;
+  };
+
+  const windowLabel = `${formatTime(windowFrom)}–${formatTime(windowTo)}`;
+
+  // Checklist di default se non fornita
+  const defaultChecklist: { id: string; label: string; done: boolean }[] = [
+    { id: "c1", label: "Cucina (piani + lavello)", done: false },
+    { id: "c2", label: "Bagno (sanitari + doccia)", done: false },
+    { id: "c3", label: "Pavimenti (tutto)", done: false },
+    { id: "c4", label: "Letto rifatto + lenzuola", done: false },
+    { id: "c5", label: "Foto finali (opzionale)", done: false },
+  ];
+
+  const jobId = `job-${aptId}-${Date.now()}`;
+
+  const job: CleaningJob = {
+    id: jobId,
+    aptId,
+    aptName,
+    windowLabel,
+    status: "todo",
+    notesFromHost: notesFromHost || undefined,
+    checklist: checklist || defaultChecklist,
+    stayId: stayId || undefined,
+  };
+
+  cleaningStore.set(jobId, job);
+  return job;
 }
 
 // DEV SEED (per prototipo)

@@ -1,5 +1,6 @@
 // app/lib/domain/pinsDomain.ts
 import { stays_get, stays_create, stays_setGuestNames } from "@/app/lib/domain/staysDomain";
+import { createStay as createStayV2, getStay as getStayV2 } from "@/app/lib/staysStore";
 
 // Interfaccia MINIMA che il domain si aspetta: se non c’è, meglio che esploda in build
 export type StorePinsLike = {
@@ -24,7 +25,8 @@ export type StorePinsLike = {
     validFrom: number;
     validTo: number;
     source: "auto" | "manual";
-    guestNames: string[];
+    guestNames?: string[];
+    guestIds?: string[];
   }): any;
 
   createCleanerPinForStay(input: {
@@ -150,8 +152,70 @@ export function stays_createWithOptionalCleaner(
 ) {
   const { aptId, checkInAt, checkOutAt, guestsCount, cleanerName } = params;
 
-  const st = stays_create({ aptId, checkInAt, checkOutAt, guestsCount });
+  const st = stays_create({ aptId, checkInAt, checkOutAt, guestsCount, cleanerName: cleanerName?.trim() || undefined });
 
+  const cn = (cleanerName ?? "").trim();
+  if (cn) {
+    Store.createCleanerPinForStay({
+      aptId,
+      stayId: st.stayId,
+      cleanerName: cn,
+      source: "auto",
+    });
+  }
+
+  return st;
+}
+
+export function stays_createWithGuestsAndCleaner(
+  Store: StorePinsLike,
+  params: {
+    aptId: string;
+    checkInAt: number;
+    checkOutAt: number;
+    guests: Array<{
+      firstName: string;
+      lastName: string;
+      phone: string;
+      email?: string;
+    }>;
+    cleanerName: string;
+  }
+) {
+  const { aptId, checkInAt, checkOutAt, guests, cleanerName } = params;
+
+  // Crea lo stay con i dati completi degli ospiti e il cleaner assegnato
+  const st = createStayV2({
+    aptId,
+    checkInAt,
+    checkOutAt,
+    guests: guests.map((g) => ({
+      firstName: g.firstName.trim(),
+      lastName: g.lastName.trim(),
+      phone: g.phone.trim(),
+      email: g.email?.trim(),
+    })),
+    cleanerName: cleanerName.trim(),
+    createdBy: "host",
+  });
+
+  // Crea automaticamente i PIN per gli ospiti usando guestIds
+  try {
+    Store.createPinsForStayGuests({
+      aptId,
+      stayId: st.stayId,
+      role: "guest",
+      validFrom: checkInAt,
+      validTo: checkOutAt,
+      source: "auto",
+      guestIds: st.guests.map((g) => g.guestId),
+    });
+  } catch (error) {
+    // Se la creazione dei PIN fallisce, lo stay è comunque stato creato
+    console.error("Errore nella creazione dei PIN per gli ospiti:", error);
+  }
+
+  // Crea il PIN per il cleaner
   const cn = (cleanerName ?? "").trim();
   if (cn) {
     Store.createCleanerPinForStay({

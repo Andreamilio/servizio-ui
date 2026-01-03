@@ -20,6 +20,7 @@ import {
 } from "./staysStore";
 
 import { getCleanerCfg, normalizeCleanerName } from "./cleanerCfgStore";
+import { createCleaningJob } from "./cleaningstore";
 
 export type Role = "host" | "tech" | "guest" | "cleaner";
 export type PinSource = "auto" | "manual";
@@ -409,12 +410,68 @@ export function createCleanerPinForStay(input: {
       ? Math.max(15, Math.min(24 * 60, Math.round(Number(input.cleaningDurationMinutes))))
       : Math.max(15, Math.min(24 * 60, Math.round(cfg.durationMin ?? 60)));
 
-  const from = st.checkOutAt;
-  const to = st.checkOutAt + dur * 60_000;
+  // Calcola il primo slot disponibile nel range orario
+  const calculateCleaningSlot = (checkOutAt: number, ranges: Array<{ from: string; to: string }>, durationMin: number): { from: number; to: number } => {
+    if (!ranges || ranges.length === 0) {
+      // Nessun range configurato, usa il check-out come prima
+      return { from: checkOutAt, to: checkOutAt + durationMin * 60_000 };
+    }
+
+    const checkoutDate = new Date(checkOutAt);
+    const checkoutHour = checkoutDate.getHours();
+    const checkoutMin = checkoutDate.getMinutes();
+    const checkoutMinOfDay = checkoutHour * 60 + checkoutMin;
+
+    // Funzione helper per convertire HH:mm in minuti del giorno
+    const timeToMinutes = (timeStr: string): number => {
+      const [h, m] = timeStr.split(":").map(Number);
+      return h * 60 + m;
+    };
+
+    // Cerca il primo range disponibile (stesso giorno o giorno successivo)
+    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+      for (const range of ranges) {
+        const rangeFrom = timeToMinutes(range.from);
+        const rangeTo = timeToMinutes(range.to);
+        
+        // Calcola la data del range (checkout + dayOffset giorni)
+        const rangeDate = new Date(checkoutDate);
+        rangeDate.setDate(rangeDate.getDate() + dayOffset);
+        rangeDate.setHours(0, 0, 0, 0);
+        
+        const rangeStart = rangeDate.getTime() + rangeFrom * 60_000;
+        const rangeEnd = rangeDate.getTime() + rangeTo * 60_000;
+        
+        // Se siamo nel primo giorno, verifica se il checkout è già dentro il range
+        if (dayOffset === 0) {
+          if (checkoutMinOfDay >= rangeFrom && checkoutMinOfDay < rangeTo) {
+            // Checkout è dentro il range, inizia subito
+            const cleaningStart = checkOutAt;
+            const cleaningEnd = Math.min(cleaningStart + durationMin * 60_000, rangeEnd);
+            return { from: cleaningStart, to: cleaningEnd };
+          }
+        }
+        
+        // Se il range inizia dopo il checkout (o è un giorno successivo), usa l'inizio del range
+        if (rangeStart >= checkOutAt) {
+          const cleaningStart = rangeStart;
+          const cleaningEnd = Math.min(cleaningStart + durationMin * 60_000, rangeEnd);
+          return { from: cleaningStart, to: cleaningEnd };
+        }
+      }
+    }
+    
+    // Fallback: usa il check-out se nessun range è disponibile
+    return { from: checkOutAt, to: checkOutAt + durationMin * 60_000 };
+  };
+
+  const slot = calculateCleaningSlot(st.checkOutAt, cfg.cleaningTimeRanges ?? [], dur);
+  const from = slot.from;
+  const to = slot.to;
 
   const g0 = st.guests[0] ?? { guestId: `g-${crypto.randomUUID()}`, name: "Ospite 1" };
 
-  return createPinForGuest({
+  const pin = createPinForGuest({
     role: "cleaner",
     aptId: input.aptId,
     stayId: input.stayId,
@@ -424,6 +481,24 @@ export function createCleanerPinForStay(input: {
     validTo: to,
     source: input.source ?? "auto",
   });
+
+  // Crea automaticamente un job di pulizia con gli stessi orari del PIN (solo se source è "auto")
+  if (pin && (input.source === "auto" || !input.source)) {
+    // Recupera il nome dell'appartamento
+    const apt = getClientApartment(input.aptId);
+    const aptName = apt?.name ?? `Apt ${input.aptId}`;
+
+    createCleaningJob({
+      aptId: input.aptId,
+      aptName,
+      windowFrom: from,
+      windowTo: to,
+      notesFromHost: `Pulizia dopo check-out soggiorno ${input.stayId.slice(0, 8)}…`,
+      stayId: input.stayId,
+    });
+  }
+
+  return pin;
 }
 
 /* ----------------------------------------

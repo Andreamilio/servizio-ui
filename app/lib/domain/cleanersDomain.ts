@@ -5,7 +5,9 @@ import {
   addCleaner,
   removeCleaner,
   normalizeCleanerName,
+  setCleaningTimeRanges,
   type CleanerCfg,
+  type CleaningTimeRange,
 } from "@/app/lib/cleanerCfgStore";
 
 export function cleaners_getCfg(aptId: string): CleanerCfg {
@@ -29,4 +31,9 @@ export function cleaners_remove(aptId: string, name: string) {
 
 export function cleaners_normName(name: string) {
   return normalizeCleanerName(name);
+}
+
+export function cleaners_setTimeRanges(aptId: string, ranges: CleaningTimeRange[]) {
+  if (!aptId) return;
+  setCleaningTimeRanges(aptId, ranges);
 }

@@ -1,7 +1,13 @@
 // app/lib/cleanerCfgStore.ts
+export type CleaningTimeRange = {
+  from: string; // HH:mm format, es. "09:00"
+  to: string; // HH:mm format, es. "18:00"
+};
+
 export type CleanerCfg = {
   cleaners: string[];
   durationMin: number; // durata default pulizia
+  cleaningTimeRanges: CleaningTimeRange[]; // range orari disponibili per le pulizie
 };
 
 declare global {
@@ -17,7 +23,11 @@ function norm(v: string) {
 }
 
 export function getCleanerCfg(aptId: string): CleanerCfg {
-  return cfgStore.get(aptId) ?? { cleaners: [], durationMin: 60 };
+  return cfgStore.get(aptId) ?? { 
+    cleaners: [], 
+    durationMin: 60,
+    cleaningTimeRanges: [{ from: "09:00", to: "18:00" }] // default: 9:00-18:00
+  };
 }
 
 export function setCleanerDuration(aptId: string, durationMin: number) {
@@ -42,4 +52,25 @@ export function removeCleaner(aptId: string, name: string) {
 
 export function normalizeCleanerName(v: string) {
   return norm(v);
+}
+
+export function setCleaningTimeRanges(aptId: string, ranges: CleaningTimeRange[]) {
+  const prev = getCleanerCfg(aptId);
+  // Validazione: ogni range deve avere from < to in formato HH:mm
+  const validRanges = ranges.filter((r) => {
+    const fromParts = r.from.split(":");
+    const toParts = r.to.split(":");
+    if (fromParts.length !== 2 || toParts.length !== 2) return false;
+    const fromH = parseInt(fromParts[0], 10);
+    const fromM = parseInt(fromParts[1], 10);
+    const toH = parseInt(toParts[0], 10);
+    const toM = parseInt(toParts[1], 10);
+    if (isNaN(fromH) || isNaN(fromM) || isNaN(toH) || isNaN(toM)) return false;
+    if (fromH < 0 || fromH > 23 || fromM < 0 || fromM > 59) return false;
+    if (toH < 0 || toH > 23 || toM < 0 || toM > 59) return false;
+    const fromMin = fromH * 60 + fromM;
+    const toMin = toH * 60 + toM;
+    return fromMin < toMin;
+  });
+  cfgStore.set(aptId, { ...prev, cleaningTimeRanges: validRanges });
 }

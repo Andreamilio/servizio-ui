@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { readSession } from "@/app/lib/session";
-import { listJobsByApt } from "@/app/lib/cleaningstore";
+import { listJobsByApt, listJobsByStay } from "@/app/lib/cleaningstore";
+import { listStaysByApt } from "@/app/lib/staysStore";
+import { listPinsByApt } from "@/app/lib/store";
 
 export default async function CleanerHome() {
   const cookieStore = await cookies();
@@ -13,7 +15,40 @@ export default async function CleanerHome() {
     return <div className="p-6 text-white">Non autorizzato</div>;
   }
 
-  const jobs = listJobsByApt(me.aptId);
+  // Trova tutti i PIN del cleaner per questo aptId
+  const cleanerPins = listPinsByApt(me.aptId).filter((p) => p.role === "cleaner");
+  
+  // Trova tutti gli stay associati ai PIN del cleaner
+  const stayIds = new Set<string>();
+  for (const pin of cleanerPins) {
+    if (pin.stayId) {
+      stayIds.add(pin.stayId);
+    }
+  }
+
+  // Raccogli tutti i job associati agli stay del cleaner
+  const jobs: any[] = [];
+  for (const stayId of stayIds) {
+    const stayJobs = listJobsByStay(stayId);
+    jobs.push(...stayJobs);
+  }
+
+  // Aggiungi anche i job diretti per questo aptId (per retrocompatibilità)
+  const aptJobs = listJobsByApt(me.aptId);
+  for (const job of aptJobs) {
+    if (!jobs.find((j) => j.id === job.id)) {
+      jobs.push(job);
+    }
+  }
+
+  // Ordina per stato
+  const rank: Record<string, number> = {
+    todo: 0,
+    in_progress: 1,
+    problem: 2,
+    done: 3,
+  };
+  jobs.sort((a, b) => rank[a.status] - rank[b.status]);
 
   return (
     <main className="min-h-screen bg-[#0a0d12] text-white p-6">

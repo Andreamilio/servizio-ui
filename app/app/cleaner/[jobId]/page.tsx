@@ -10,6 +10,7 @@ import {
   completeJob,
   markProblem,
 } from "@/app/lib/cleaningstore";
+import { listPinsByApt } from "@/app/lib/store";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -87,8 +88,12 @@ export default async function CleanerJobPage({
     );
   }
 
-  // sicurezza: un cleaner vede solo i job del suo aptId
-  if (job.aptId !== me.aptId) {
+  // sicurezza: un cleaner vede solo i job associati ai suoi stay (tramite PIN)
+  // Verifica se il job è associato a uno stay per cui il cleaner ha un PIN valido
+  const cleanerPins = listPinsByApt(me.aptId).filter((p) => p.role === "cleaner");
+  const hasAccess = job.aptId === me.aptId || (job.stayId && cleanerPins.some((p) => p.stayId === job.stayId));
+  
+  if (!hasAccess) {
     return (
       <main className="min-h-screen bg-[#0a0d12] text-white p-6">
         <div className="max-w-2xl mx-auto space-y-3">
