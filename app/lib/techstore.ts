@@ -340,32 +340,16 @@ export function toggleVpn(aptId: string) {
 export function openDoor(aptId: string) {
   const a = techStore.apts.get(aptId);
   if (!a) return null;
-  a.door = "unlocked";
-  techStore.apts.set(aptId, a);
-
-  pushLog({
-    tsLabel: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    aptId,
-    title: "Door Unlocked",
-    detail: "Remote action: Tech",
-    level: "ok",
-  });
+  // Rimossa gestione stato porta locale: ora usiamo Store.accessLog come single source of truth
+  // events_log() viene chiamato dalla pagina tech/apt/[aptId]/page.tsx dopo questa funzione
   return a;
 }
 
 export function closeDoor(aptId: string) {
   const a = techStore.apts.get(aptId);
   if (!a) return null;
-  a.door = "locked";
-  techStore.apts.set(aptId, a);
-
-  pushLog({
-    tsLabel: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    aptId,
-    title: "Door Locked",
-    detail: "Remote action: Tech",
-    level: "ok",
-  });
+  // Rimossa gestione stato porta locale: ora usiamo Store.accessLog come single source of truth
+  // events_log() viene chiamato dalla pagina tech/apt/[aptId]/page.tsx dopo questa funzione
   return a;
 }
 

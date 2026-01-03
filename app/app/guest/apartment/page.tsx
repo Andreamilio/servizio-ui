@@ -10,7 +10,10 @@ export default async function GuestApartmentPage() {
 
   if (!me || me.role !== "guest") return <div className="p-6 text-white">Non autorizzato</div>;
 
-  const s = getGuestState(me.aptId || "017");
+  const aptId = me.aptId;
+  if (!aptId) return <div className="p-6 text-white">AptId non disponibile</div>;
+  
+  const s = getGuestState(aptId);
 
   return (
     <main className="min-h-screen bg-[#0a0d12] text-white">

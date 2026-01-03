@@ -174,64 +174,6 @@ export default async function TechAptPage({
               ← Back
             </Link>
           </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <Chip label="WAN" value={apt.network === "main" ? "MAIN WAN" : "BACKUP WAN"} />
-            <Chip label="VPN" value={apt.vpn.toUpperCase()} />
-            <Chip label="DOOR" value={apt.door.toUpperCase()} />
-            <details className="group">
-              <summary className="list-none">
-                <div className="cursor-pointer">
-                  <Chip label="SENSORS" value={`${onlineCount}/${sensors.length} online`} />
-                </div>
-              </summary>
-
-              <div className="mt-2 rounded-2xl bg-white/5 border border-white/10 p-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs uppercase tracking-wider opacity-60">
-                    Dettaglio sensori
-                  </div>
-                  <div className="text-xs opacity-60">{controllable.length} controllabili</div>
-                </div>
-
-                <div className="space-y-2">
-                  {sensors.map((s) => (
-                    <div
-                      key={s.id}
-                      className="flex items-center justify-between gap-3 rounded-xl bg-black/20 border border-white/10 px-3 py-2"
-                    >
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold truncate">{s.name}</div>
-                        <div className="text-[11px] opacity-60 truncate">
-                          {s.kind.toUpperCase()} • {s.status.toUpperCase()}
-                        </div>
-                      </div>
-
-                      {s.controllable ? (
-                        <form action={actToggleSensor}>
-                          <input type="hidden" name="sensorId" value={s.id} />
-                          <button className="rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 text-xs font-semibold">
-                            {s.state === "on" ? "Spegni" : "Accendi"}
-                          </button>
-                        </form>
-                      ) : (
-                        <div
-                          className={`h-2 w-2 rounded-full ${
-                            s.status === "online" ? "bg-emerald-400" : "bg-red-400"
-                          }`}
-                          aria-label={s.status}
-                        />
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="text-[11px] opacity-60">
-                  Tip: su desktop trovi lo stesso pannello nella card “SENSORS”.
-                </div>
-              </div>
-            </details>
-          </div>
         </div>
 
         <Link className="hidden lg:inline-block text-sm opacity-70 hover:opacity-100" href="/app/tech">

@@ -61,3 +61,18 @@ export function door_close(aptId: string): DoorOutcome {
   door_set(aptId, { state: ok ? "closed" : door_get(aptId).state, lastOutcome: outcome, lastTs: now });
   return outcome;
 }
+
+/**
+ * Legge lo stato della porta da Store.accessLog (single source of truth)
+ * Usato da tutte le viste per avere coerenza
+ */
+export function door_getStateFromLog(Store: any, aptId: string): "open" | "closed" | "unknown" {
+  if (!Store?.listAccessLogByApt) return "unknown";
+  
+  const log = Store.listAccessLogByApt(aptId, 50) ?? [];
+  const last = log.find((e: any) => e?.type === "door_opened" || e?.type === "door_closed");
+  
+  if (!last) return "unknown";
+  if (last.type === "door_opened") return "open";
+  return "closed";
+}

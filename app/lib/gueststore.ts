@@ -1,3 +1,5 @@
+import { getApartment } from "@/app/lib/clientStore";
+
 export type DoorOutcome = "ok" | "retrying" | "fail";
 
 export type DoorState = "closed" | "open";
@@ -46,10 +48,14 @@ export function getGuestState(aptId: string): GuestState {
   const existing = store.get(aptId);
   if (existing) return existing;
 
+  // Usa clientStore per ottenere le info corrette dell'appartamento
+  const aptInfo = getApartment(aptId);
+  const aptName = aptInfo?.name ?? `Apt ${aptId}`;
+
   const seeded: GuestState = {
     apt: {
       aptId,
-      aptName: aptId === "017" ? "Apt 017 — Ufficio (demo)" : `Apt ${aptId}`,
+      aptName,
       addressShort: "Via Demo 12, Milano",
       wifiSsid: "Lakeside-Guest",
       wifiPass: "Lakeside2026!",
@@ -59,7 +65,7 @@ export function getGuestState(aptId: string): GuestState {
         "No smoking",
         "Silenzio dopo le 22:30",
         "Raccogliere i rifiuti prima del checkout",
-        "Animali solo se autorizzati dall’host",
+        "Animali solo se autorizzati dall'host",
       ],
     },
     door: "closed",

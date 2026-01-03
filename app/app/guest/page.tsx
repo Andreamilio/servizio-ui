@@ -4,6 +4,7 @@ export const revalidate = 0;
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { readSession } from "@/app/lib/session";
 import { unstable_noStore as noStore } from "next/cache";
 import {
@@ -14,6 +15,7 @@ import {
 
 import * as Store from "@/app/lib/store";
 import { events_listByApt, events_log } from "@/app/lib/domain/eventsDomain";
+import { door_getStateFromLog } from "@/app/lib/domain/doorStore";
 
 function badge(outcome: "ok" | "retrying" | "fail" | null) {
   if (outcome === "ok") return { t: "Accesso disponibile", c: "bg-emerald-500/15 border-emerald-400/20 text-emerald-200" };
@@ -38,11 +40,23 @@ export default async function GuestPage({
 
   if (!me || me.role !== "guest") return <div className="p-6 text-white">Non autorizzato</div>;
 
-  const aptId = me.aptId || "017";
+  const aptId = me.aptId;
+  if (!aptId) return <div className="p-6 text-white">AptId non disponibile</div>;
+  
   const state = getGuestState(aptId);
   const events = events_listByApt(Store, aptId, 10);
   const b = badge(state.lastOutcome);
-  const doorIsOpen = state.door === "open";
+  // Leggi stato porta da Store.accessLog (single source of truth) invece che da gueststore locale
+  const doorState = door_getStateFromLog(Store, aptId);
+  const doorIsOpen = doorState === "open";
+
+  // Rimuovi toast dall'URL se non corrisponde allo stato attuale (evita toast fuorvianti dopo refresh)
+  if (toast && toast.startsWith("open_") && !doorIsOpen) {
+    redirect("/app/guest");
+  }
+  if (toast && toast.startsWith("close_") && doorIsOpen) {
+    redirect("/app/guest");
+  }
 
   async function actOpenDoor() {
     "use server";
@@ -53,7 +67,7 @@ export default async function GuestPage({
         aptId,
         type: "door_opened",
         actor: "guest",
-        label: "Porta aperta dall’ospite",
+        label: "Porta aperta dall'ospite",
       });
     } else {
       events_log(Store, {
@@ -64,7 +78,8 @@ export default async function GuestPage({
       });
     }
 
-    redirect(`/app/guest?toast=${outcome === "ok" ? "open_ok" : "open_fail"}`);
+    revalidatePath("/app/guest");
+    redirect(`/app/guest?toast=${outcome === "ok" ? "open_ok" : "open_fail"}&r=${Date.now()}`);
   }
 
   async function actCloseDoor() {
@@ -76,7 +91,7 @@ export default async function GuestPage({
         aptId,
         type: "door_closed",
         actor: "guest",
-        label: "Porta chiusa dall’ospite",
+        label: "Porta chiusa dall'ospite",
       });
     } else {
       events_log(Store, {
@@ -87,7 +102,8 @@ export default async function GuestPage({
       });
     }
 
-    redirect(`/app/guest?toast=${outcome === "ok" ? "close_ok" : "close_fail"}`);
+    revalidatePath("/app/guest");
+    redirect(`/app/guest?toast=${outcome === "ok" ? "close_ok" : "close_fail"}&r=${Date.now()}`);
   }
 
   return (

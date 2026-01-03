@@ -48,10 +48,11 @@ export async function POST(req: Request) {
   };
 
   function matchDemoPin(p: string) {
-    if (demoPins.host && p === demoPins.host) return { role: "host" as const, aptId: "017" as const };
-    if (demoPins.tech && p === demoPins.tech) return { role: "tech" as const, aptId: "017" as const };
-    if (demoPins.cleaner && p === demoPins.cleaner) return { role: "cleaner" as const, aptId: "017" as const };
-    if (demoPins.guest && p === demoPins.guest) return { role: "guest" as const, aptId: "017" as const };
+    // I PIN demo nello store hanno aptId "101" (vedi store.ts seed)
+    if (demoPins.host && p === demoPins.host) return { role: "host" as const, aptId: "101" as const };
+    if (demoPins.tech && p === demoPins.tech) return { role: "tech" as const, aptId: "101" as const };
+    if (demoPins.cleaner && p === demoPins.cleaner) return { role: "cleaner" as const, aptId: "101" as const };
+    if (demoPins.guest && p === demoPins.guest) return { role: "guest" as const, aptId: "101" as const };
     return null;
   }
 

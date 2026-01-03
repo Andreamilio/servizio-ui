@@ -62,8 +62,8 @@ export default async function TechPage({
 
           <div className="p-4">
             {/* Header cliente (NO dropdown) */}
-            <div className="rounded-xl bg-black/30 border border-white/10 px-3 py-3">
-              <div className="font-semibold">{techStore.clientName}</div>
+            <div className="px-3 py-2">
+              <div className="text-sm font-semibold">{techStore.clientName}</div>
               <div className="text-xs opacity-60 mt-0.5">
                 1 cliente • {apts.length} appartamenti
               </div>
