@@ -127,12 +127,12 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
       ? clients.filter((c) => getClientId(c) === hostUserClientId)
       : clients;
     
-    // Se l'host ha un clientId, usa quello di default, altrimenti usa quello dall'URL (o undefined se non specificato)
+    // Se l'host ha un clientId, usa quello di default, altrimenti usa quello dall'URL (o stringa vuota se non specificato)
     const urlClientId = pick(sp, 'client')?.trim();
     const wantedClientId = hostUserClientId || urlClientId || undefined;
     const client = wantedClientId ? availableClients.find((c) => getClientId(c) === wantedClientId) ?? null : null;
 
-    const clientId = client ? getClientId(client) : (hostUserClientId || urlClientId || undefined);
+    const clientId = client ? getClientId(client) : (hostUserClientId || urlClientId || '');
     
     // Se clientId è specificato, mostra solo gli appartamenti di quel client, altrimenti mostra tutti
     const apartments = clientId

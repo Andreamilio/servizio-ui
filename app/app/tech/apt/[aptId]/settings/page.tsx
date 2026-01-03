@@ -349,10 +349,10 @@ export default async function TechSettingsPage({
                   // Filtra i risultati dei test in base ai tab disponibili
                   const filteredResults = Object.entries(settings.diagnostics.testResults).filter(([testName]) => {
                     // Mostra solo i test per i tab che sono presenti
-                    if (testName === "smart_lock") return requiredTabs.includes("smart_lock");
+                    // Nota: "smart_lock" non è più un tab valido, quindi i suoi test vengono sempre mostrati
                     if (testName === "home_assistant") return requiredTabs.includes("home_assistant");
                     if (testName === "network") return requiredTabs.includes("network");
-                    return true; // Altri test (es. generici) vengono mostrati sempre
+                    return true; // Altri test (es. generici, smart_lock) vengono mostrati sempre
                   });
 
                   return filteredResults.length === 0 ? (

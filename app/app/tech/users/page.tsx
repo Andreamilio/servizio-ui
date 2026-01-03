@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
 export default async function TechUsersPage({
   searchParams,
 }: {
-  searchParams?: { action?: string; userId?: string } | Promise<{ action?: string; userId?: string }>;
+  searchParams?: { action?: string; userId?: string; err?: string } | Promise<{ action?: string; userId?: string; err?: string }>;
 }) {
   const cookieStore = await cookies();
   const sess = cookieStore.get("sess")?.value;
