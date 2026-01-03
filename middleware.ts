@@ -9,12 +9,21 @@ import type { NextRequest } from "next/server";
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  const sess = req.cookies.get("sess")?.value;
-  if (!sess) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/";
-    url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
+  // Permetti accesso a pagine pubbliche
+  if (pathname === "/" || pathname === "/loginhost-tech" || pathname.startsWith("/api/auth/")) {
+    return NextResponse.next();
+  }
+
+  // Per /app/* richiede sessione
+  if (pathname.startsWith("/app/")) {
+    const sess = req.cookies.get("sess")?.value;
+    if (!sess) {
+      const url = req.nextUrl.clone();
+      // Redirect a login appropriato basato sul path (per ora sempre /)
+      url.pathname = "/";
+      url.searchParams.set("next", pathname);
+      return NextResponse.redirect(url);
+    }
   }
 
   return NextResponse.next();

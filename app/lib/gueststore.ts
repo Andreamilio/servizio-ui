@@ -1,4 +1,5 @@
 import { getApartment } from "@/app/lib/clientStore";
+import { gate_open, gate_close } from "@/app/lib/domain/gateStore";
 
 export type DoorOutcome = "ok" | "retrying" | "fail";
 
@@ -52,16 +53,17 @@ export function getGuestState(aptId: string): GuestState {
   const aptInfo = getApartment(aptId);
   const aptName = aptInfo?.name ?? `Apt ${aptId}`;
 
+  // Usa i dati da clientStore se disponibili, altrimenti fallback a valori hardcoded
   const seeded: GuestState = {
     apt: {
       aptId,
       aptName,
-      addressShort: "Via Demo 12, Milano",
-      wifiSsid: "Lakeside-Guest",
-      wifiPass: "Lakeside2026!",
-      checkIn: "15:00",
-      checkOut: "11:00",
-      rules: [
+      addressShort: aptInfo?.addressShort ?? "Via Demo 12, Milano",
+      wifiSsid: aptInfo?.wifiSsid ?? "Lakeside-Guest",
+      wifiPass: aptInfo?.wifiPass ?? "Lakeside2026!",
+      checkIn: aptInfo?.checkIn ?? "15:00",
+      checkOut: aptInfo?.checkOut ?? "11:00",
+      rules: aptInfo?.rules ?? [
         "No smoking",
         "Silenzio dopo le 22:30",
         "Raccogliere i rifiuti prima del checkout",
@@ -179,6 +181,114 @@ export function guestCloseDoor(aptId: string): DoorOutcome {
       outcome: "ok",
       title: "Porta chiusa ✅",
       detail: "Serratura chiusa correttamente.",
+    });
+  } else {
+    outcome = "fail";
+    s.events.unshift({
+      id: id(),
+      aptId,
+      ts: now + 900,
+      outcome: "fail",
+      title: "Chiusura non riuscita",
+      detail: "Non riesco a chiudere. Riprova tra poco o contatta supporto.",
+    });
+  }
+
+  s.lastOutcome = outcome;
+  s.lastTs = now;
+  store.set(aptId, s);
+
+  return outcome;
+}
+
+/**
+ * Simula "Apri portone".
+ * - 80% ok
+ * - 20% fail
+ * In caso di fail, registra un tentativo "retrying" e poi "fail".
+ */
+export function guestOpenGate(aptId: string): DoorOutcome {
+  const s = getGuestState(aptId);
+
+  const r = Math.random();
+  const now = Date.now();
+
+  // Primo evento: "invio comando"
+  s.events.unshift({
+    id: id(),
+    aptId,
+    ts: now,
+    outcome: "retrying",
+    title: "Invio comando",
+    detail: "Sto contattando il portone…",
+  });
+
+  let outcome: DoorOutcome = "ok";
+
+  if (r < 0.8) {
+    outcome = "ok";
+    s.events.unshift({
+      id: id(),
+      aptId,
+      ts: now + 600,
+      outcome: "ok",
+      title: "Portone sbloccato ✅",
+      detail: "Comando eseguito correttamente.",
+    });
+    // Usa gateStore per la logica
+    gate_open(aptId);
+  } else {
+    outcome = "fail";
+    s.events.unshift({
+      id: id(),
+      aptId,
+      ts: now + 900,
+      outcome: "fail",
+      title: "Accesso non riuscito",
+      detail: "Non riesco ad aprire. Contatta supporto o riprova tra poco.",
+    });
+  }
+
+  s.lastOutcome = outcome;
+  s.lastTs = now;
+  store.set(aptId, s);
+
+  return outcome;
+}
+
+/**
+ * Simula "Chiudi portone".
+ * - 90% ok
+ * - 10% fail
+ */
+export function guestCloseGate(aptId: string): DoorOutcome {
+  const s = getGuestState(aptId);
+
+  const r = Math.random();
+  const now = Date.now();
+
+  s.events.unshift({
+    id: id(),
+    aptId,
+    ts: now,
+    outcome: "retrying",
+    title: "Invio comando",
+    detail: "Sto chiudendo il portone…",
+  });
+
+  let outcome: DoorOutcome = "ok";
+
+  if (r < 0.9) {
+    outcome = "ok";
+    // Usa gateStore per la logica
+    gate_close(aptId);
+    s.events.unshift({
+      id: id(),
+      aptId,
+      ts: now + 600,
+      outcome: "ok",
+      title: "Portone chiuso ✅",
+      detail: "Portone chiuso correttamente.",
     });
   } else {
     outcome = "fail";

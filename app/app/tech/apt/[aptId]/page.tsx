@@ -2,21 +2,23 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { readSession } from "@/app/lib/session";
+import { readSession, validateSessionUser } from "@/app/lib/session";
 
 import {
   closeDoor,
   getApt,
-  getSensorsByApt,
   openDoor,
+  openGate,
+  closeGate,
   revokeAccess,
-  toggleSensor,
   toggleVpn,
   toggleWan,
+  computeGateFromSharedLog,
 } from "@/app/lib/techstore";
 
 import * as Store from "@/app/lib/store";
 import { events_listByApt, events_log } from "@/app/lib/domain/eventsDomain";
+import { getAllEnabledDevices, getDeviceState } from "@/app/lib/devicePackageStore";
 
 export const dynamic = "force-dynamic";
 
@@ -36,9 +38,14 @@ export default async function TechAptPage({
 }) {
   const cookieStore = await cookies();
   const sess = cookieStore.get("sess")?.value;
-  const me = readSession(sess);
+  const session = readSession(sess);
+  const me = validateSessionUser(session);
 
   if (!me || me.role !== "tech") {
+    // Se la sessione era valida ma l'utente è disabilitato, fai logout
+    if (session && session.userId && session.role === "tech") {
+      redirect("/api/auth/logout");
+    }
     return <div className="p-6 text-white">Non autorizzato</div>;
   }
 
@@ -64,10 +71,13 @@ export default async function TechAptPage({
 
   // ✅ LOG: single source of truth (store.ts via eventsDomain)
   const aptLog = events_listByApt(Store, aptId, 20);
+  
+  // Stato portone dal log condiviso
+  const gateStatus = computeGateFromSharedLog(aptId);
 
-  const sensors = getSensorsByApt(aptId);
-  const controllable = sensors.filter((s) => s.controllable);
-  const onlineCount = sensors.filter((s) => s.status === "online").length;
+  // Device Package stats
+  const enabledDevices = getAllEnabledDevices(aptId);
+  const deviceOnlineCount = enabledDevices.filter((dt) => getDeviceState(aptId, dt) === "online").length;
 
   if (!apt) {
     return (
@@ -113,6 +123,38 @@ export default async function TechAptPage({
     redirect(`/app/tech/apt/${aptId}?r=${Date.now()}`);
   }
 
+  async function actOpenGate() {
+    "use server";
+    openGate(aptId);
+
+    events_log(Store, {
+      aptId,
+      type: "gate_opened",
+      actor: "tech",
+      label: "Portone aperto (azione Tech)",
+    });
+
+    revalidatePath("/app/tech");
+    revalidatePath(`/app/tech/apt/${aptId}`);
+    redirect(`/app/tech/apt/${aptId}?r=${Date.now()}`);
+  }
+
+  async function actCloseGate() {
+    "use server";
+    closeGate(aptId);
+
+    events_log(Store, {
+      aptId,
+      type: "gate_closed",
+      actor: "tech",
+      label: "Portone chiuso (azione Tech)",
+    });
+
+    revalidatePath("/app/tech");
+    revalidatePath(`/app/tech/apt/${aptId}`);
+    redirect(`/app/tech/apt/${aptId}?r=${Date.now()}`);
+  }
+
   async function actRevoke() {
     "use server";
 
@@ -136,7 +178,17 @@ export default async function TechAptPage({
 
   async function actWan() {
     "use server";
-    toggleWan(aptId);
+    const apt = toggleWan(aptId);
+    
+    if (apt) {
+      events_log(Store, {
+        aptId,
+        type: "wan_switched",
+        actor: "tech",
+        label: `WAN switched to ${apt.network === "main" ? "MAIN WAN" : "BACKUP WAN"}`,
+      });
+    }
+
     revalidatePath("/app/tech");
     revalidatePath(`/app/tech/apt/${aptId}`);
     redirect(`/app/tech/apt/${aptId}?r=${Date.now()}`);
@@ -144,21 +196,22 @@ export default async function TechAptPage({
 
   async function actVpn() {
     "use server";
-    toggleVpn(aptId);
+    const apt = toggleVpn(aptId);
+    
+    if (apt) {
+      events_log(Store, {
+        aptId,
+        type: "vpn_toggled",
+        actor: "tech",
+        label: `VPN toggled ${apt.vpn.toUpperCase()}`,
+      });
+    }
+
     revalidatePath("/app/tech");
     revalidatePath(`/app/tech/apt/${aptId}`);
     redirect(`/app/tech/apt/${aptId}?r=${Date.now()}`);
   }
 
-  async function actToggleSensor(formData: FormData) {
-    "use server";
-    const sensorId = String(formData.get("sensorId") || "");
-    if (!sensorId) return;
-    toggleSensor(aptId, sensorId);
-    revalidatePath("/app/tech");
-    revalidatePath(`/app/tech/apt/${aptId}`);
-    redirect(`/app/tech/apt/${aptId}?r=${Date.now()}`);
-  }
 
   return (
     <main className="min-h-screen bg-[#0a0d12] text-white p-4 lg:p-6">
@@ -206,60 +259,57 @@ export default async function TechAptPage({
               <div className="opacity-60 text-xs">DOOR</div>
               <div className="font-semibold">{apt.door.toUpperCase()}</div>
             </div>
+            <div className="rounded-xl bg-black/20 border border-white/10 p-3">
+              <div className="opacity-60 text-xs">GATE</div>
+              <div className="font-semibold">{gateStatus.toUpperCase()}</div>
+            </div>
 
-            <details className="rounded-xl bg-black/20 border border-white/10 p-3 group">
-              <summary className="list-none cursor-pointer">
-                <div className="opacity-60 text-xs">SENSORS</div>
-                <div className="font-semibold">{onlineCount}/{sensors.length} online</div>
-                <div className="text-[11px] opacity-60 mt-1">Click per dettaglio</div>
-              </summary>
-
-              <div className="mt-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs uppercase tracking-wider opacity-60">Dettaglio sensori</div>
-                  <div className="text-xs opacity-60">{controllable.length} controllabili</div>
-                </div>
-
-                <div className="space-y-2">
-                  {sensors.map((s) => (
-                    <div
-                      key={s.id}
-                      className="flex items-center justify-between gap-3 rounded-xl bg-black/30 border border-white/10 px-3 py-2"
-                    >
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold truncate">{s.name}</div>
-                        <div className="text-[11px] opacity-60 truncate">
-                          {s.kind.toUpperCase()} • {s.status.toUpperCase()}
-                        </div>
-                      </div>
-
-                      {s.controllable ? (
-                        <form action={actToggleSensor}>
-                          <input type="hidden" name="sensorId" value={s.id} />
-                          <button className="rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 text-xs font-semibold">
-                            {s.state === "on" ? "Spegni" : "Accendi"}
-                          </button>
-                        </form>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={`h-2 w-2 rounded-full ${
-                              s.status === "online" ? "bg-emerald-400" : "bg-red-400"
-                            }`}
-                            aria-label={s.status}
-                          />
-                          <div className="text-xs opacity-70">{s.status}</div>
-                        </div>
-                      )}
+            {apt.door === "unknown" && (
+              <div className="col-span-full mt-3 rounded-xl bg-amber-500/10 border border-amber-400/20 p-3">
+                <div className="flex items-start gap-2">
+                  <span className="text-amber-400">⚠️</span>
+                  <div className="flex-1">
+                    <div className="text-sm font-semibold text-amber-200">Stato porta sconosciuto</div>
+                    <div className="text-xs opacity-80 mt-1">
+                      Non ci sono eventi nel log per questo appartamento. Lo stato della porta verrà aggiornato quando ci sono eventi di apertura/chiusura.
                     </div>
-                  ))}
-                </div>
-
-                <div className="text-[11px] opacity-60">
-                  I toggle sono mock in-memory: vedrai l’effetto al refresh automatico.
+                  </div>
                 </div>
               </div>
-            </details>
+            )}
+
+            {gateStatus === "unknown" && (
+              <div className="col-span-full mt-3 rounded-xl bg-amber-500/10 border border-amber-400/20 p-3">
+                <div className="flex items-start gap-2">
+                  <span className="text-amber-400">⚠️</span>
+                  <div className="flex-1">
+                    <div className="text-sm font-semibold text-amber-200">Stato portone sconosciuto</div>
+                    <div className="text-xs opacity-80 mt-1">
+                      Non ci sono eventi nel log per questo appartamento. Lo stato del portone verrà aggiornato quando ci sono eventi di apertura/chiusura.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <Link
+              href={`/app/tech/apt/${aptId}/devices`}
+              className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border-2 border-cyan-400/40 p-3 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+            >
+              <div className="opacity-80 text-xs font-semibold text-cyan-200">DEVICES</div>
+              <div className="font-semibold text-sm mt-1 text-white">
+                {enabledDevices.length === 0
+                  ? "Nessun device"
+                  : `${enabledDevices.length} device, ${deviceOnlineCount} online`}
+              </div>
+            </Link>
+            <Link
+              href={`/app/tech/apt/${aptId}/settings`}
+              className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border-2 border-cyan-400/40 p-3 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+            >
+              <div className="opacity-80 text-xs font-semibold text-cyan-200">TECHNICAL SETTINGS</div>
+              <div className="font-semibold text-sm mt-1 text-white">Configura API</div>
+            </Link>
           </div>
         </div>
 
@@ -290,6 +340,34 @@ export default async function TechAptPage({
                 <form action={actCloseDoor} className="flex-1">
                   <button className="w-full sm:w-auto rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 font-semibold">
                     Chiudi porta
+                  </button>
+                </form>
+              </>
+            )}
+
+            {gateStatus === "unlocked" ? (
+              <>
+                <form action={actCloseGate} className="flex-1">
+                  <button className="w-full sm:w-auto rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 font-semibold">
+                    Chiudi portone
+                  </button>
+                </form>
+                <form action={actOpenGate} className="flex-1">
+                  <button className="w-full sm:w-auto rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-400/20 px-4 py-2 font-semibold">
+                    Apri portone
+                  </button>
+                </form>
+              </>
+            ) : (
+              <>
+                <form action={actOpenGate} className="flex-1">
+                  <button className="w-full sm:w-auto rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 px-4 py-2 font-semibold">
+                    Apri portone
+                  </button>
+                </form>
+                <form action={actCloseGate} className="flex-1">
+                  <button className="w-full sm:w-auto rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 font-semibold">
+                    Chiudi portone
                   </button>
                 </form>
               </>

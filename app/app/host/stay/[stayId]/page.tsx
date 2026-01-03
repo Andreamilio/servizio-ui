@@ -1194,9 +1194,14 @@ export default async function StayDetailPage({
                         <div className="mt-1 text-xs opacity-60">
                           {job.windowLabel}
                         </div>
-                        {job.notesFromHost && (
-                          <div className="mt-2 text-xs opacity-70 italic">
-                            {job.notesFromHost}
+                        {job.finalPhotos && job.finalPhotos.length > 0 && (
+                          <div className="mt-2 text-xs opacity-70">
+                            📷 {job.finalPhotos.length} foto finali
+                          </div>
+                        )}
+                        {job.status === "problem" && job.problemNote && (
+                          <div className="mt-2 text-xs text-red-300 bg-red-500/10 border border-red-500/20 rounded px-2 py-1">
+                            ⚠️ {job.problemNote.length > 50 ? job.problemNote.substring(0, 50) + "..." : job.problemNote}
                           </div>
                         )}
                       </div>

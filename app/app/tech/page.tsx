@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { readSession } from "@/app/lib/session";
+import { redirect } from "next/navigation";
+import { readSession, validateSessionUser } from "@/app/lib/session";
 import { getAccessLog, getIncidents, listApts, techStore } from "@/app/lib/techstore";
+import { listClients } from "@/app/lib/clientStore";
 
 function pillStatus(s: "online" | "offline") {
   return s === "online"
@@ -22,13 +24,20 @@ export default async function TechPage({
 }) {
   const cookieStore = await cookies();
   const sess = cookieStore.get("sess")?.value;
-  const me = readSession(sess);
+  const session = readSession(sess);
+  const me = validateSessionUser(session);
 
   if (!me || me.role !== "tech") {
+    // Se la sessione era valida ma l'utente è disabilitato, fai logout
+    if (session && session.userId && session.role === "tech") {
+      redirect("/api/auth/logout");
+    }
     return <div className="p-6 text-white">Non autorizzato</div>;
   }
 
   const apts = listApts();
+  const clients = listClients();
+  const clientsCount = clients.length;
 
   // gruppi (es. "Lakeside Tower") per sidebar espandibile
   const groups = Array.from(new Set(apts.map((a) => a.group)));
@@ -56,8 +65,20 @@ export default async function TechPage({
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_360px] gap-4 lg:gap-6 p-4 lg:p-6">
         {/* SIDEBAR */}
         <aside className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
-          <div className="p-4 border-b border-white/10">
+          <div className="p-4 border-b border-white/10 space-y-2">
             <div className="text-xs opacity-60">CLIENTS</div>
+            <Link
+              href="/app/tech/users"
+              className="block text-sm opacity-70 hover:opacity-100 hover:text-cyan-200 transition"
+            >
+              👥 Gestione Utenti
+            </Link>
+            <Link
+              href="/app/tech/clients"
+              className="block text-sm opacity-70 hover:opacity-100 hover:text-cyan-200 transition"
+            >
+              🏢 Gestione Clienti
+            </Link>
           </div>
 
           <div className="p-4">
@@ -65,7 +86,7 @@ export default async function TechPage({
             <div className="px-3 py-2">
               <div className="text-sm font-semibold">{techStore.clientName}</div>
               <div className="text-xs opacity-60 mt-0.5">
-                1 cliente • {apts.length} appartamenti
+                {clientsCount} {clientsCount === 1 ? 'cliente' : 'clienti'} • {apts.length} {apts.length === 1 ? 'appartamento' : 'appartamenti'}
               </div>
             </div>
 
@@ -79,7 +100,6 @@ export default async function TechPage({
                     <details
                       key={g}
                       className="group/apt rounded-xl bg-black/20 border border-white/10 overflow-hidden"
-                      open
                     >
                       <summary className="list-none cursor-pointer select-none px-3 py-2 hover:bg-black/25">
                         <div className="flex items-center justify-between">

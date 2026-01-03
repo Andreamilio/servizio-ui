@@ -65,6 +65,10 @@ export type AccessEventType =
   | "problem_reported"
   | "door_opened"
   | "door_closed"
+  | "gate_opened"
+  | "gate_closed"
+  | "wan_switched"
+  | "vpn_toggled"
   | "stay_created"
   | "stay_deleted"
   | "stay_guests_updated";
@@ -493,7 +497,6 @@ export function createCleanerPinForStay(input: {
       aptName,
       windowFrom: from,
       windowTo: to,
-      notesFromHost: `Pulizia dopo check-out soggiorno ${input.stayId.slice(0, 8)}…`,
       stayId: input.stayId,
     });
   }

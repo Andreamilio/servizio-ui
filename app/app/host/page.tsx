@@ -1,11 +1,13 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 
-import { readSession } from '@/app/lib/session';
+import { readSession, validateSessionUser } from '@/app/lib/session';
 import * as Store from '@/app/lib/store';
 import { listJobsByApt } from '@/app/lib/cleaningstore';
 import { listClients, listApartmentsByClient } from '@/app/lib/clientStore';
+import { getUser } from '@/app/lib/userStore';
 
 import { cleaners_getCfg, cleaners_setDuration, cleaners_add, cleaners_remove, cleaners_normName, cleaners_setTimeRanges } from '@/app/lib/domain/cleanersDomain';
 
@@ -63,6 +65,15 @@ function getDoorUi(aptId: string): { label: string; tone: 'open' | 'closed' | 'u
     return { label: 'BLOCCATA', tone: 'closed' };
 }
 
+function getGateUi(aptId: string): { label: string; tone: 'open' | 'closed' | 'unknown' } {
+    const log = Store.listAccessLogByApt(aptId, 50) ?? [];
+    const last = log.find((e: any) => e?.type === 'gate_opened' || e?.type === 'gate_closed');
+    // Default a BLOCCATO (closed) per prototipo
+    if (!last) return { label: 'BLOCCATO', tone: 'closed' };
+    if (last.type === 'gate_opened') return { label: 'SBLOCCATO', tone: 'open' };
+    return { label: 'BLOCCATO', tone: 'closed' };
+}
+
 type AptHealth = {
     aptId: string;
     name: string;
@@ -93,24 +104,48 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
 
     const cookieStore = await cookies();
     const sess = cookieStore.get('sess')?.value;
-    const me = readSession(sess);
+    const session = readSession(sess);
+    const me = validateSessionUser(session);
 
     if (!me || me.role !== 'host') {
+        // Se la sessione era valida ma l'utente è disabilitato, fai logout
+        if (session && session.userId && session.role === 'host') {
+            redirect('/api/auth/logout');
+        }
         return <div className='p-6 text-white'>Non autorizzato</div>;
     }
 
     const clients = (listClients() as any[]) ?? [];
     const getClientId = (c: any) => String(c?.id ?? c?.clientId ?? c?.clientID ?? c?.slug ?? '');
-    const wantedClientId = (pick(sp, 'client') ?? getClientId(clients[0]) ?? '').trim();
-    const client = clients.find((c) => getClientId(c) === wantedClientId) ?? clients[0] ?? null;
+    
+    // Se l'utente host ha un clientId associato, filtra i clienti disponibili
+    const hostUser = me.userId ? getUser(me.userId) : null;
+    const hostUserClientId = hostUser?.clientId;
+    
+    // Se l'host ha un clientId specifico, mostra solo quel client
+    const availableClients = hostUserClientId 
+      ? clients.filter((c) => getClientId(c) === hostUserClientId)
+      : clients;
+    
+    // Se l'host ha un clientId, usa quello di default, altrimenti usa quello dall'URL (o undefined se non specificato)
+    const urlClientId = pick(sp, 'client')?.trim();
+    const wantedClientId = hostUserClientId || urlClientId || undefined;
+    const client = wantedClientId ? availableClients.find((c) => getClientId(c) === wantedClientId) ?? null : null;
 
-    const clientId = client ? getClientId(client) : '';
+    const clientId = client ? getClientId(client) : (hostUserClientId || urlClientId || undefined);
+    
+    // Se clientId è specificato, mostra solo gli appartamenti di quel client, altrimenti mostra tutti
     const apartments = clientId
         ? (listApartmentsByClient(clientId) as any[]).map((a) => ({
               aptId: String(a?.aptId ?? a?.id ?? a?.apt ?? ''),
               name: String(a?.aptName ?? a?.name ?? a?.title ?? `Apt ${a?.aptId ?? a?.id ?? ''}`),
           }))
-        : [{ aptId: me.aptId, name: `Apt ${me.aptId} — Principale` }];
+        : (listClients() as any[]).flatMap((c) => 
+            (listApartmentsByClient(getClientId(c)) as any[]).map((a) => ({
+              aptId: String(a?.aptId ?? a?.id ?? a?.apt ?? ''),
+              name: String(a?.aptName ?? a?.name ?? a?.title ?? `Apt ${a?.aptId ?? a?.id ?? ''}`),
+            }))
+          );
 
     const orgLabel = 'Global Properties';
 
@@ -135,18 +170,37 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
         const stays = stays_listByApt(aptId) ?? [];
 
         const doorUi = getDoorUi(aptId);
-        const accessEvents = Store.listAccessLogByApt(aptId, 20) ?? [];
+        const gateUi = getGateUi(aptId);
+        const allAccessEvents = Store.listAccessLogByApt(aptId, 20) ?? [];
+        // Filtra eventi WAN/VPN: visibili solo nella vista Tech
+        const accessEvents = allAccessEvents.filter((e: any) => e.type !== 'wan_switched' && e.type !== 'vpn_toggled');
 
         async function actOpenDoor() {
             'use server';
             Store.logAccessEvent(aptId, 'door_opened', '[host] Porta sbloccata');
-            redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
+            revalidatePath('/app/host');
+            redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}&r=${Date.now()}`);
         }
 
         async function actCloseDoor() {
             'use server';
             Store.logAccessEvent(aptId, 'door_closed', '[host] Porta chiusa');
-            redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
+            revalidatePath('/app/host');
+            redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}&r=${Date.now()}`);
+        }
+
+        async function actOpenGate() {
+            'use server';
+            Store.logAccessEvent(aptId, 'gate_opened', '[host] Portone sbloccato');
+            revalidatePath('/app/host');
+            redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}&r=${Date.now()}`);
+        }
+
+        async function actCloseGate() {
+            'use server';
+            Store.logAccessEvent(aptId, 'gate_closed', '[host] Portone chiuso');
+            revalidatePath('/app/host');
+            redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}&r=${Date.now()}`);
         }
 
         async function createStay(formData: FormData) {
@@ -307,6 +361,19 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                     <span className={`h-2 w-2 rounded-full ${doorUi.tone === 'open' ? 'bg-emerald-400' : doorUi.tone === 'closed' ? 'bg-white/40' : 'bg-yellow-400'}`} />
                                     {doorUi.label}
                                 </div>
+
+                                <div className='mt-2 text-sm opacity-70'>Portone</div>
+                                <div
+                                    className={`mt-1 inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold ${
+                                        gateUi.tone === 'open'
+                                            ? 'bg-emerald-500/10 border-emerald-400/20 text-emerald-200'
+                                            : gateUi.tone === 'closed'
+                                            ? 'bg-white/5 border-white/10 text-white/80'
+                                            : 'bg-yellow-500/10 border-yellow-400/20 text-yellow-200'
+                                    }`}>
+                                    <span className={`h-2 w-2 rounded-full ${gateUi.tone === 'open' ? 'bg-emerald-400' : gateUi.tone === 'closed' ? 'bg-white/40' : 'bg-yellow-400'}`} />
+                                    {gateUi.label}
+                                </div>
                             </div>
                             <div className='text-right'>
                                 <div className='text-sm opacity-70'>Ultimo evento</div>
@@ -323,6 +390,18 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                             doorUi.tone === 'open' ? 'bg-white/10 hover:bg-white/15 border border-white/15' : 'bg-emerald-500/25 hover:bg-emerald-500/35 border border-emerald-400/30'
                                         }`}>
                                         {doorUi.tone === 'open' ? 'Chiudi porta' : 'Apri porta'}
+                                    </button>
+                                </form>
+                            )}
+
+                            {gateUi.tone !== 'unknown' && (
+                                <form action={gateUi.tone === 'open' ? actCloseGate : actOpenGate}>
+                                    <button
+                                        type='submit'
+                                        className={`rounded-xl px-4 py-2 text-sm font-semibold ${
+                                            gateUi.tone === 'open' ? 'bg-white/10 hover:bg-white/15 border border-white/15' : 'bg-emerald-500/25 hover:bg-emerald-500/35 border border-emerald-400/30'
+                                        }`}>
+                                        {gateUi.tone === 'open' ? 'Chiudi portone' : 'Apri portone'}
                                     </button>
                                 </form>
                             )}

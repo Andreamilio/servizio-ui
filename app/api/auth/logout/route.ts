@@ -1,9 +1,23 @@
 import { NextResponse } from "next/server";
+import { readSession } from "@/app/lib/session";
 
 export async function POST(req: Request) {
-  // Use the current request origin so it works both locally and on Vercel
+  // Read session before clearing it to determine redirect destination
+  const cookieHeader = req.headers.get("cookie") || "";
+  const sessionCookie = cookieHeader
+    .split(";")
+    .map((c) => c.trim())
+    .find((c) => c.startsWith("sess="));
+  const sessionValue = sessionCookie?.split("=")[1] || "";
+  const session = readSession(sessionValue);
+
+  // Determine redirect based on role
+  const redirectPath = session?.role === "tech" || session?.role === "host" 
+    ? "/loginhost-tech" 
+    : "/";
+
   const url = new URL(req.url);
-  url.pathname = "/";
+  url.pathname = redirectPath;
   url.search = "";
   url.hash = "";
 

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function LoginPage({ searchParams }: any) {
   const next = typeof searchParams?.next === "string" ? searchParams.next : "";
   const err = typeof searchParams?.err === "string" ? searchParams.err : "";
@@ -5,7 +7,7 @@ export default function LoginPage({ searchParams }: any) {
   return (
     <main className="min-h-screen bg-[#0a0d12] text-white p-6">
       <div className="max-w-md mx-auto space-y-4">
-        <h1 className="text-xl font-semibold">Accesso</h1>
+        <h1 className="text-xl font-semibold">Accesso Guest / Cleaner</h1>
 
         {err === "pin" && (
           <div className="rounded-xl bg-red-500/15 border border-red-500/20 p-3 text-sm">
@@ -27,6 +29,10 @@ export default function LoginPage({ searchParams }: any) {
             Entra
           </button>
         </form>
+
+        <div className="text-xs opacity-60 text-center pt-4 border-t border-white/10">
+          <div>Host/Tech? <Link href="/loginhost-tech" className="text-cyan-400 hover:text-cyan-300 underline">Accedi qui</Link></div>
+        </div>
       </div>
     </main>
   );

@@ -39,18 +39,14 @@ export async function POST(req: Request) {
 
   const isDev = process.env.NODE_ENV !== "production";
 
-  // Demo pins: override via Vercel Env Vars, otherwise fall back to defaults for the prototype.
+  // Demo pins: solo per guest/cleaner (host/tech ora usano username/password)
   const demoPins = {
-    host: String(process.env.DEMO_PIN_HOST ?? "111111").trim(),
-    tech: String(process.env.DEMO_PIN_TECH ?? "222222").trim(),
     cleaner: String(process.env.DEMO_PIN_CLEANER ?? "444444").trim(),
     guest: String(process.env.DEMO_PIN_GUEST ?? "333333").trim(),
   };
 
   function matchDemoPin(p: string) {
     // I PIN demo nello store hanno aptId "101" (vedi store.ts seed)
-    if (demoPins.host && p === demoPins.host) return { role: "host" as const, aptId: "101" as const };
-    if (demoPins.tech && p === demoPins.tech) return { role: "tech" as const, aptId: "101" as const };
     if (demoPins.cleaner && p === demoPins.cleaner) return { role: "cleaner" as const, aptId: "101" as const };
     if (demoPins.guest && p === demoPins.guest) return { role: "guest" as const, aptId: "101" as const };
     return null;
@@ -62,8 +58,6 @@ export async function POST(req: Request) {
     isJson,
     pinLen: pin.length,
     demoPinsPresent: {
-      host: Boolean(demoPins.host),
-      tech: Boolean(demoPins.tech),
       cleaner: Boolean(demoPins.cleaner),
       guest: Boolean(demoPins.guest),
     },

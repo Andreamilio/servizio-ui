@@ -1,10 +1,12 @@
 import crypto from "crypto";
+import { getUser } from "./userStore";
 
 const secret = process.env.APP_SECRET || "dev-secret-change-me";
 
 type SessionPayload = {
   role: "host" | "tech" | "guest" | "cleaner";
   aptId: string;
+  userId?: string; // userId per host/tech (opzionale per retrocompatibilità)
   exp: number; // unix seconds
 };
 
@@ -34,4 +36,21 @@ export function readSession(token?: string | null): SessionPayload | null {
   const payload = JSON.parse(json) as SessionPayload;
   if (!payload?.exp || payload.exp < Math.floor(Date.now() / 1000)) return null;
   return payload;
+}
+
+/**
+ * Valida che l'utente associato alla sessione sia ancora abilitato.
+ * Ritorna null se la sessione è invalida o l'utente è disabilitato.
+ */
+export function validateSessionUser(session: SessionPayload | null): SessionPayload | null {
+  if (!session) return null;
+  
+  // Per guest/cleaner (login via PIN) non c'è userId, quindi la validazione passa
+  if (!session.userId) return session;
+  
+  // Per host/tech, verifica che l'utente esista e sia abilitato
+  const user = getUser(session.userId);
+  if (!user || !user.enabled) return null;
+  
+  return session;
 }

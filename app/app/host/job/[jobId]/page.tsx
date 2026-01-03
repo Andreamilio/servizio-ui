@@ -2,7 +2,8 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { readSession } from "@/app/lib/session";
 import { redirect } from "next/navigation";
-import { getJob } from "@/app/lib/cleaningstore";
+import { getJob, resolveProblem } from "@/app/lib/cleaningstore";
+import { revalidatePath } from "next/cache";
 import { listStaysByApt } from "@/app/lib/staysStore";
 import { getApartment } from "@/app/lib/clientStore";
 import { listClients } from "@/app/lib/clientStore";
@@ -190,11 +191,59 @@ export default async function HostJobDetailPage({
           </div>
         )}
 
-        {/* Note dall'host */}
-        {job.notesFromHost && (
+        {/* Foto finali */}
+        {job.finalPhotos && job.finalPhotos.length > 0 && (
           <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
-            <div className="text-sm opacity-70 mb-2">Note</div>
-            <div className="text-sm opacity-90">{job.notesFromHost}</div>
+            <div className="text-sm opacity-70 mb-3">Foto finali</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {job.finalPhotos.map((photo, idx) => (
+                <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-white/10">
+                  <img src={photo} alt={`Foto finale ${idx + 1}`} className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Problema - Note e foto */}
+        {job.status === "problem" && (job.problemNote || (job.problemPhotos && job.problemPhotos.length > 0)) && (
+          <div className="rounded-2xl bg-red-500/10 border border-red-400/20 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-sm font-semibold text-red-200">⚠️ Problema segnalato</div>
+              <form action={async () => {
+                "use server";
+                resolveProblem(jobId);
+                revalidatePath(`/app/host/job/${jobId}`);
+                redirect(`/app/host/job/${jobId}`);
+              }}>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 px-3 py-1.5 text-xs font-semibold"
+                >
+                  Risolvi problema
+                </button>
+              </form>
+            </div>
+            
+            {job.problemNote && (
+              <div className="mb-3">
+                <div className="text-xs opacity-70 mb-1">Note</div>
+                <div className="text-sm opacity-90">{job.problemNote}</div>
+              </div>
+            )}
+
+            {job.problemPhotos && job.problemPhotos.length > 0 && (
+              <div>
+                <div className="text-xs opacity-70 mb-2">Foto</div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {job.problemPhotos.map((photo, idx) => (
+                    <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-red-400/30">
+                      <img src={photo} alt={`Foto problema ${idx + 1}`} className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

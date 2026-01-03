@@ -7,13 +7,25 @@ Applicazione web per la gestione di accessi e controllo porte per appartamenti.
 ### Ruoli disponibili
 
 - **Host**: Gestione appartamenti, soggiorni, PIN e pulizie
-- **Tech**: Monitoraggio tecnico, gestione sensori e rete
-- **Guest**: Accesso ospite, controllo porta, info appartamento
-- **Cleaner**: Gestione job pulizie e checklist
+- **Tech**: Monitoraggio tecnico, gestione sensori e rete, configurazione sistema
+- **Guest**: Accesso ospite, controllo porta/portone, info appartamento
+- **Cleaner**: Gestione job pulizie e checklist con foto
+
+### Login
+
+L'applicazione supporta due tipi di accesso:
+
+1. **Login PIN** (`/`) - Per Guest e Cleaner
+   - Accesso tramite PIN temporaneo associato a uno stay
+   - PIN validi solo nel periodo di validità dello stay
+
+2. **Login Username/Password** (`/loginhost-tech`) - Per Host e Tech
+   - Accesso tramite credenziali username/password
+   - Demo: `tech/tech123` o `host/host123`
 
 ### PIN Demo
 
-Per accedere all'applicazione in modalità demo:
+Per accedere all'applicazione in modalità demo con PIN:
 - **Host**: `111111`
 - **Tech**: `222222`
 - **Guest**: `333333`
@@ -21,18 +33,66 @@ Per accedere all'applicazione in modalità demo:
 
 Tutti i PIN demo sono associati all'appartamento `101` (Lakeside Tower — Apt 101).
 
+**Nota:** Per Host e Tech è consigliato usare il login username/password (`/loginhost-tech`).
+
+### Funzionalità principali
+
+#### User Management (Tech)
+- Gestione completa utenti Tech e Host
+- CRUD utenti con password hashing (pbkdf2)
+- Associazione Host ↔ Clienti
+- Abilitazione/disabilitazione utenti
+
+#### CRUD Clienti e Appartamenti (Tech)
+- Gestione completa clienti e appartamenti
+- Campi estesi appartamenti:
+  - Indirizzo breve, WiFi (SSID/password)
+  - Orari check-in/check-out
+  - House rules, contatti supporto
+  - Note operative interne
+
+#### Portone/Cancello
+- Controllo separato per porta appartamento e portone/cancello
+- Azioni indipendenti per Guest, Host, Tech e Cleaner
+- Stato sincronizzato tra tutte le viste
+
+#### Storage Foto Cleaning
+- Upload foto finali per job pulizie (mock base64 in-memory)
+- Foto problema per segnalazioni
+- Visualizzazione foto in Host view
+
+#### Device Package Checklist (Tech)
+- Configurazione dispositivi per appartamento
+- Supporto per diversi tipi di device (lock, sensors, etc.)
+- Configurazione controller (API/Home Assistant)
+
+#### Technical Settings (Tech)
+- **Home Assistant**: Base URL, Token, Entity mapping
+- **Network**: WireGuard endpoint, Cloudflare endpoint, Health check
+- **Diagnostics**: Test connessioni, risultati test, ultimi errori
+
 ### Architettura dati
 
 #### Store condivisi (Single Source of Truth)
 - `Store.accessLog` - Eventi/audit log condiviso tra tutte le viste
 - `Store.pinStore` - PIN attivi
 - `clientStore` - Informazioni appartamenti e clienti
-- `cleaningStore` - Job pulizie
+- `cleaningStore` - Job pulizie con foto
 - `staysStore` - Soggiorni
+- `userStore` - Utenti Tech/Host
+- `devicePackageStore` - Configurazione dispositivi
+- `technicalSettingsStore` - Impostazioni tecniche
 
-#### Stato porta
-Lo stato della porta è condiviso tra tutte le viste attraverso `Store.accessLog`. 
-Utilizza la funzione `door_getStateFromLog(Store, aptId)` per leggere lo stato corrente.
+#### Stato porta e portone
+Lo stato della porta e del portone è condiviso tra tutte le viste attraverso `Store.accessLog`. 
+Utilizza le funzioni:
+- `door_getStateFromLog(Store, aptId)` - Stato porta appartamento
+- `gate_getStateFromLog(Store, aptId)` - Stato portone/cancello
+
+#### Flusso eventi
+1. Qualsiasi vista (Guest/Host/Tech/Cleaner) esegue un'azione
+2. L'evento viene loggato in `Store.accessLog` tramite `events_log()` o `Store.logAccessEvent()`
+3. Tutte le viste leggono da `Store.accessLog` per mostrare lo stato corrente
 
 Vedi `CHANGELOG.md` per dettagli sulle modifiche recenti.
 

@@ -1,8 +1,10 @@
-import { getClientLabel, listApartmentsByClient } from "@/app/lib/clientStore";
+import { getClientLabel, listApartmentsByClient, listApartments } from "@/app/lib/clientStore";
 import { listAccessLogByApt } from "@/app/lib/store";
+import { gate_open, gate_close } from "@/app/lib/domain/gateStore";
 export type NetPath = "main" | "backup";
 export type OnlineStatus = "online" | "offline";
 export type DoorStatus = "locked" | "unlocked" | "unknown";
+export type GateStatus = "locked" | "unlocked" | "unknown";
 export type VpnStatus = "up" | "down";
 
 export type SensorKind = "smoke" | "light" | "door" | "window" | "noise";
@@ -103,7 +105,7 @@ export const techStore =
       apts.set(String(apt.aptId), {
         aptId: String(apt.aptId),
         aptName: String(apt.name ?? `Apt ${apt.aptId}`),
-        group: "Lakeside Tower",
+        group: getClientLabel(CLIENT_ID),
         status,
         network,
         lastAccessLabel: nowLabel,
@@ -113,73 +115,6 @@ export const techStore =
         sensorsTotal: 0,
       });
     });
-
-    // Demo sensors (per popup/"details")
-    if (techSensors.size === 0) {
-      techSensors.set("101", [
-        { id: "s_smoke", aptId: "101", name: "Sensore fumo", kind: "smoke", online: true, status: "online" },
-        { id: "l_entry", aptId: "101", name: "Luce ingresso", kind: "light", online: true, controllable: true, state: "off", status: "online" },
-        { id: "d_main", aptId: "101", name: "Allarme porta", kind: "door", online: true, status: "online" },
-        { id: "w_living", aptId: "101", name: "Allarme finestra sala", kind: "window", online: false, status: "offline" },
-        { id: "w_kitchen", aptId: "101", name: "Allarme finestra cucina", kind: "window", online: true, status: "online" },
-        { id: "w_bath", aptId: "101", name: "Allarme bagno", kind: "window", online: true, status: "online" },
-        { id: "n_noise", aptId: "101", name: "Sensore suono", kind: "noise", online: true, status: "online" },
-      ]);
-
-      techSensors.set("102", [
-        { id: "s_smoke", aptId: "102", name: "Sensore fumo", kind: "smoke", online: false, status: "offline" },
-        { id: "l_entry", aptId: "102", name: "Luce ingresso", kind: "light", online: true, controllable: true, state: "on", status: "online" },
-        { id: "d_main", aptId: "102", name: "Allarme porta", kind: "door", online: false, status: "offline" },
-        { id: "w_living", aptId: "102", name: "Allarme finestra sala", kind: "window", online: false, status: "offline" },
-        { id: "n_noise", aptId: "102", name: "Sensore suono", kind: "noise", online: true, status: "online" },
-      ]);
-
-      // Seed minimal sensors for other demo apartments so UI doesn't show 0/0
-      techSensors.set("103", [
-        { id: "s_smoke", aptId: "103", name: "Sensore fumo", kind: "smoke", online: true, status: "online" },
-        { id: "l_entry", aptId: "103", name: "Luce ingresso", kind: "light", online: true, controllable: true, state: "off", status: "online" },
-        { id: "d_main", aptId: "103", name: "Allarme porta", kind: "door", online: true, status: "online" },
-        { id: "w_living", aptId: "103", name: "Allarme finestra sala", kind: "window", online: true, status: "online" },
-        { id: "w_kitchen", aptId: "103", name: "Allarme finestra cucina", kind: "window", online: true, status: "online" },
-      ]);
-
-      techSensors.set("104", [
-        { id: "s_smoke", aptId: "104", name: "Sensore fumo", kind: "smoke", online: true, status: "online" },
-        { id: "l_entry", aptId: "104", name: "Luce ingresso", kind: "light", online: true, controllable: true, state: "on", status: "online" },
-        { id: "d_main", aptId: "104", name: "Allarme porta", kind: "door", online: true, status: "online" },
-        { id: "w_living", aptId: "104", name: "Allarme finestra sala", kind: "window", online: true, status: "online" },
-        { id: "w_kitchen", aptId: "104", name: "Allarme finestra cucina", kind: "window", online: true, status: "online" },
-        { id: "w_bath", aptId: "104", name: "Allarme bagno", kind: "window", online: true, status: "online" },
-        { id: "n_noise", aptId: "104", name: "Sensore suono", kind: "noise", online: true, status: "online" },
-      ]);
-
-      techSensors.set("105", [
-        { id: "s_smoke", aptId: "105", name: "Sensore fumo", kind: "smoke", online: true, status: "online" },
-        { id: "l_entry", aptId: "105", name: "Luce ingresso", kind: "light", online: true, controllable: true, state: "off", status: "online" },
-        { id: "d_main", aptId: "105", name: "Allarme porta", kind: "door", online: false, status: "offline" },
-        { id: "w_living", aptId: "105", name: "Allarme finestra sala", kind: "window", online: false, status: "offline" },
-        { id: "w_kitchen", aptId: "105", name: "Allarme finestra cucina", kind: "window", online: true, status: "online" },
-        { id: "w_bath", aptId: "105", name: "Allarme bagno", kind: "window", online: false, status: "offline" },
-        { id: "n_noise", aptId: "105", name: "Sensore suono", kind: "noise", online: true, status: "online" },
-      ]);
-
-      techSensors.set("106", [
-        { id: "s_smoke", aptId: "106", name: "Sensore fumo", kind: "smoke", online: true, status: "online" },
-        { id: "l_entry", aptId: "106", name: "Luce ingresso", kind: "light", online: true, controllable: true, state: "off", status: "online" },
-        { id: "d_main", aptId: "106", name: "Allarme porta", kind: "door", online: true, status: "online" },
-        { id: "n_noise", aptId: "106", name: "Sensore suono", kind: "noise", online: true, status: "online" },
-      ]);
-
-      // Ensure every apartment has at least 1 sensor in the prototype
-      apartments.forEach((apt, idx) => {
-        const aptId = String(apt.aptId);
-        if (techSensors.has(aptId)) return;
-        techSensors.set(aptId, [
-          { id: "s_smoke", aptId, name: "Sensore fumo", kind: "smoke", online: idx % 5 !== 0, status: idx % 5 !== 0 ? "online" : "offline" },
-          { id: "d_main", aptId, name: "Allarme porta", kind: "door", online: true, status: "online" },
-        ]);
-      });
-    }
 
     const accessLog: AccessLogItem[] = [
       { id: "l1", tsLabel: "11:32 AM", aptId: "101", title: "Door Unlocked", detail: "Keycard: D. Smith", level: "ok" },
@@ -207,20 +142,82 @@ global.__techStore = techStore;
 
 function computeDoorFromSharedLog(aptId: string): DoorStatus {
   // Shared, cross-app source of truth (Host/Guest/Tech all write here)
+  // listAccessLogByApt restituisce gli eventi più recenti per primi
   const log = listAccessLogByApt(aptId, 50) ?? [];
 
-  // Find most recent door event
+  // Find most recent door event (il primo nel log è il più recente)
+  // Deve trovare l'evento più recente tra door_opened e door_closed
   for (const e of log) {
-    if (e.type === "door_opened") return "unlocked";
-    if (e.type === "door_closed") return "locked";
+    if (e.type === "door_opened" || e.type === "door_closed") {
+      return e.type === "door_opened" ? "unlocked" : "locked";
+    }
   }
 
   // If no door events yet, fall back to unknown
   return "unknown";
 }
 
+export function computeGateFromSharedLog(aptId: string): GateStatus {
+  // Shared, cross-app source of truth (Host/Guest/Tech all write here)
+  // listAccessLogByApt restituisce gli eventi più recenti per primi
+  const log = listAccessLogByApt(aptId, 50) ?? [];
+
+  // Find most recent gate event (il primo nel log è il più recente)
+  // Deve trovare l'evento più recente tra gate_opened e gate_closed
+  for (const e of log) {
+    if (e.type === "gate_opened" || e.type === "gate_closed") {
+      return e.type === "gate_opened" ? "unlocked" : "locked";
+    }
+  }
+
+  // If no gate events yet, fall back to unknown
+  return "unknown";
+}
+
 // ---- selectors
 export function listApts() {
+  // Sync techStore.apts with clientStore (source of truth)
+  const allApartments = listApartments(); // Gets all apartments from all clients
+  const existingAptIds = new Set(techStore.apts.keys());
+  const currentAptIds = new Set(allApartments.map((a) => a.aptId));
+
+  // Add new apartments from clientStore
+  allApartments.forEach((apt) => {
+    if (!techStore.apts.has(apt.aptId)) {
+      // New apartment: create AptHealth entry with default values
+      const status: OnlineStatus = "online";
+      const network: NetPath = "main";
+      const vpn: VpnStatus = "up";
+      const nowLabel = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+      techStore.apts.set(apt.aptId, {
+        aptId: apt.aptId,
+        aptName: apt.name ?? `Apt ${apt.aptId}`,
+        group: getClientLabel(apt.clientId), // Use client name as group
+        status,
+        network,
+        lastAccessLabel: nowLabel,
+        vpn,
+        door: computeDoorFromSharedLog(apt.aptId),
+        sensorsOnline: 0,
+        sensorsTotal: 0,
+      });
+    } else {
+      // Update existing apartment name if it changed
+      const existing = techStore.apts.get(apt.aptId)!;
+      existing.aptName = apt.name ?? `Apt ${apt.aptId}`;
+      // Update group based on clientId (use client name)
+      existing.group = getClientLabel(apt.clientId);
+    }
+  });
+
+  // Remove apartments that no longer exist in clientStore
+  existingAptIds.forEach((aptId) => {
+    if (!currentAptIds.has(aptId)) {
+      techStore.apts.delete(aptId);
+    }
+  });
+
   return Array.from(techStore.apts.values())
     .map((a) => ({
       ...a,
@@ -280,19 +277,28 @@ export function getApt(aptId: string) {
   if (!a) return null;
 
   const sensors = getSensorsByApt(aptId);
-  if (!sensors.length) return a;
+  
+  // Sempre aggiorna door state dal log condiviso (single source of truth)
+  const doorState = computeDoorFromSharedLog(aptId);
 
+  // Se non ci sono sensori, ritorna solo con door aggiornato
+  if (!sensors.length) {
+    return {
+      ...a,
+      door: doorState,
+    };
+  }
+
+  // Se ci sono sensori, aggiorna anche status, sensorsTotal, sensorsOnline
   const sensorsOnline = sensors.filter((s) => s.online).length;
   const sensorsTotal = sensors.length;
-
   // prototype rule: if most sensors are offline -> mark apt offline
   const derivedStatus: OnlineStatus = sensorsOnline === 0 ? "offline" : a.status;
 
   return {
     ...a,
     status: derivedStatus,
-    // UI door state must follow shared log, not local seed
-    door: computeDoorFromSharedLog(aptId),
+    door: doorState,
     sensorsTotal,
     sensorsOnline,
   };
@@ -310,14 +316,6 @@ export function toggleWan(aptId: string) {
   if (!a) return null;
   a.network = a.network === "main" ? "backup" : "main";
   techStore.apts.set(aptId, a);
-
-  pushLog({
-    tsLabel: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    aptId,
-    title: "Network Switched",
-    detail: `Now: ${a.network === "main" ? "MAIN WAN" : "BACKUP WAN"}`,
-    level: "warn",
-  });
   return a;
 }
 
@@ -326,14 +324,6 @@ export function toggleVpn(aptId: string) {
   if (!a) return null;
   a.vpn = a.vpn === "up" ? "down" : "up";
   techStore.apts.set(aptId, a);
-
-  pushLog({
-    tsLabel: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    aptId,
-    title: "VPN Toggled",
-    detail: `VPN is now: ${a.vpn.toUpperCase()}`,
-    level: a.vpn === "up" ? "ok" : "bad",
-  });
   return a;
 }
 
@@ -349,6 +339,26 @@ export function closeDoor(aptId: string) {
   const a = techStore.apts.get(aptId);
   if (!a) return null;
   // Rimossa gestione stato porta locale: ora usiamo Store.accessLog come single source of truth
+  // events_log() viene chiamato dalla pagina tech/apt/[aptId]/page.tsx dopo questa funzione
+  return a;
+}
+
+export function openGate(aptId: string) {
+  const a = techStore.apts.get(aptId);
+  if (!a) return null;
+  // Usa gateStore per la logica
+  gate_open(aptId);
+  // Rimossa gestione stato portone locale: ora usiamo Store.accessLog come single source of truth
+  // events_log() viene chiamato dalla pagina tech/apt/[aptId]/page.tsx dopo questa funzione
+  return a;
+}
+
+export function closeGate(aptId: string) {
+  const a = techStore.apts.get(aptId);
+  if (!a) return null;
+  // Usa gateStore per la logica
+  gate_close(aptId);
+  // Rimossa gestione stato portone locale: ora usiamo Store.accessLog come single source of truth
   // events_log() viene chiamato dalla pagina tech/apt/[aptId]/page.tsx dopo questa funzione
   return a;
 }
