@@ -81,7 +81,8 @@ export async function POST(req: Request) {
     60 * 60 * 6 // 6 ore
   );
 
-  const res = NextResponse.redirect(new URL(next, req.url));
+  // Usa un path relativo - Next.js risolverà automaticamente l'URL corretto
+  const res = NextResponse.redirect(next);
   res.cookies.set("sess", session, {
     httpOnly: true,
     sameSite: "lax",

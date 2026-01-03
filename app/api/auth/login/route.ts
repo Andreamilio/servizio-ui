@@ -73,7 +73,9 @@ export async function POST(req: Request) {
     });
     return res;
   } else {
-    const res = NextResponse.redirect(new URL(redirectTo, req.url), { status: 303 });
+    // Usa un path relativo - Next.js risolverà automaticamente l'URL corretto
+    // Questo funziona correttamente su Render senza configurazioni aggiuntive
+    const res = NextResponse.redirect(redirectTo, { status: 303 });
     res.cookies.set("sess", session, {
       httpOnly: true,
       sameSite: "lax",
