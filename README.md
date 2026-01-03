@@ -1,5 +1,41 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Servizio UI
+
+Applicazione web per la gestione di accessi e controllo porte per appartamenti.
+
+### Ruoli disponibili
+
+- **Host**: Gestione appartamenti, soggiorni, PIN e pulizie
+- **Tech**: Monitoraggio tecnico, gestione sensori e rete
+- **Guest**: Accesso ospite, controllo porta, info appartamento
+- **Cleaner**: Gestione job pulizie e checklist
+
+### PIN Demo
+
+Per accedere all'applicazione in modalità demo:
+- **Host**: `111111`
+- **Tech**: `222222`
+- **Guest**: `333333`
+- **Cleaner**: `444444`
+
+Tutti i PIN demo sono associati all'appartamento `101` (Lakeside Tower — Apt 101).
+
+### Architettura dati
+
+#### Store condivisi (Single Source of Truth)
+- `Store.accessLog` - Eventi/audit log condiviso tra tutte le viste
+- `Store.pinStore` - PIN attivi
+- `clientStore` - Informazioni appartamenti e clienti
+- `cleaningStore` - Job pulizie
+- `staysStore` - Soggiorni
+
+#### Stato porta
+Lo stato della porta è condiviso tra tutte le viste attraverso `Store.accessLog`. 
+Utilizza la funzione `door_getStateFromLog(Store, aptId)` per leggere lo stato corrente.
+
+Vedi `CHANGELOG.md` per dettagli sulle modifiche recenti.
+
 ## Getting Started
 
 First, run the development server:
