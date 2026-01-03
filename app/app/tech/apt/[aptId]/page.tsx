@@ -3,9 +3,9 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { readSession } from "@/app/lib/session";
+
 import {
   closeDoor,
-  getAccessLogByApt,
   getApt,
   getSensorsByApt,
   openDoor,
@@ -14,6 +14,9 @@ import {
   toggleVpn,
   toggleWan,
 } from "@/app/lib/techstore";
+
+import * as Store from "@/app/lib/store";
+import { events_listByApt, events_log } from "@/app/lib/domain/eventsDomain";
 
 export const dynamic = "force-dynamic";
 
@@ -56,8 +59,11 @@ export default async function TechAptPage({
       </main>
     );
   }
+
   const apt = getApt(aptId);
-  const aptLog = getAccessLogByApt(aptId, 20);
+
+  // ✅ LOG: single source of truth (store.ts via eventsDomain)
+  const aptLog = events_listByApt(Store, aptId, 20);
 
   const sensors = getSensorsByApt(aptId);
   const controllable = sensors.filter((s) => s.controllable);
@@ -78,6 +84,14 @@ export default async function TechAptPage({
   async function actOpenDoor() {
     "use server";
     openDoor(aptId);
+
+    events_log(Store, {
+      aptId,
+      type: "door_opened",
+      actor: "tech",
+      label: "Porta aperta (azione Tech)",
+    });
+
     revalidatePath("/app/tech");
     revalidatePath(`/app/tech/apt/${aptId}`);
     redirect(`/app/tech/apt/${aptId}?r=${Date.now()}`);
@@ -86,6 +100,14 @@ export default async function TechAptPage({
   async function actCloseDoor() {
     "use server";
     closeDoor(aptId);
+
+    events_log(Store, {
+      aptId,
+      type: "door_closed",
+      actor: "tech",
+      label: "Porta chiusa (azione Tech)",
+    });
+
     revalidatePath("/app/tech");
     revalidatePath(`/app/tech/apt/${aptId}`);
     redirect(`/app/tech/apt/${aptId}?r=${Date.now()}`);
@@ -93,7 +115,20 @@ export default async function TechAptPage({
 
   async function actRevoke() {
     "use server";
+
+    // ✅ revoke reale PIN nello store centrale
+    Store.revokePinsByApt(aptId);
+
+    // (manteniamo anche il mock techstore, così la UI “Tech monitoring” resta coerente)
     revokeAccess(aptId);
+
+    events_log(Store, {
+      aptId,
+      type: "pin_revoked",
+      actor: "tech",
+      label: "Revocati accessi (azione Tech)",
+    });
+
     revalidatePath("/app/tech");
     revalidatePath(`/app/tech/apt/${aptId}`);
     redirect(`/app/tech/apt/${aptId}?r=${Date.now()}`);
@@ -153,10 +188,10 @@ export default async function TechAptPage({
 
               <div className="mt-2 rounded-2xl bg-white/5 border border-white/10 p-3 space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="text-xs uppercase tracking-wider opacity-60">Dettaglio sensori</div>
-                  <div className="text-xs opacity-60">
-                    {controllable.length} controllabili
+                  <div className="text-xs uppercase tracking-wider opacity-60">
+                    Dettaglio sensori
                   </div>
+                  <div className="text-xs opacity-60">{controllable.length} controllabili</div>
                 </div>
 
                 <div className="space-y-2">
@@ -198,6 +233,7 @@ export default async function TechAptPage({
             </details>
           </div>
         </div>
+
         <Link className="hidden lg:inline-block text-sm opacity-70 hover:opacity-100" href="/app/tech">
           ← Torna a Tech
         </Link>
@@ -218,9 +254,7 @@ export default async function TechAptPage({
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             <div className="rounded-xl bg-black/20 border border-white/10 p-3">
               <div className="opacity-60 text-xs">WAN</div>
-              <div className="font-semibold">
-                {apt.network === "main" ? "MAIN WAN" : "BACKUP WAN"}
-              </div>
+              <div className="font-semibold">{apt.network === "main" ? "MAIN WAN" : "BACKUP WAN"}</div>
             </div>
             <div className="rounded-xl bg-black/20 border border-white/10 p-3">
               <div className="opacity-60 text-xs">VPN</div>
@@ -230,12 +264,11 @@ export default async function TechAptPage({
               <div className="opacity-60 text-xs">DOOR</div>
               <div className="font-semibold">{apt.door.toUpperCase()}</div>
             </div>
+
             <details className="rounded-xl bg-black/20 border border-white/10 p-3 group">
               <summary className="list-none cursor-pointer">
                 <div className="opacity-60 text-xs">SENSORS</div>
-                <div className="font-semibold">
-                  {onlineCount}/{sensors.length} online
-                </div>
+                <div className="font-semibold">{onlineCount}/{sensors.length} online</div>
                 <div className="text-[11px] opacity-60 mt-1">Click per dettaglio</div>
               </summary>
 
@@ -292,7 +325,6 @@ export default async function TechAptPage({
           <div className="text-sm opacity-70 mb-3">Azioni rapide</div>
 
           <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
-            {/* Primary CTA depends on door state */}
             {apt.door === "unlocked" ? (
               <>
                 <form action={actCloseDoor} className="flex-1">
@@ -351,16 +383,20 @@ export default async function TechAptPage({
               <div className="text-sm opacity-60">Nessun evento.</div>
             ) : (
               aptLog.map((e) => (
-                <div
-                  key={e.id}
-                  className="rounded-xl bg-black/20 border border-white/10 p-3"
-                >
+                <div key={e.id} className="rounded-xl bg-black/20 border border-white/10 p-3">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="text-xs opacity-60">{e.tsLabel}</div>
+                    <div className="text-xs opacity-60">
+                      {new Date(e.ts).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </div>
                     <div className="text-[10px] opacity-50">Apt {aptId}</div>
                   </div>
-                  <div className="mt-1 text-sm font-semibold leading-snug">{e.title}</div>
-                  <div className="mt-1 text-xs opacity-70 leading-snug">{e.detail}</div>
+                  <div className="mt-1 text-sm font-semibold leading-snug">{e.label}</div>
+                  <div className="mt-1 text-xs opacity-70 leading-snug">
+                    {e.type} • {e.actor}
+                  </div>
                 </div>
               ))
             )}

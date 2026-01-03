@@ -32,9 +32,7 @@ declare global {
   var __clientStore: Map<string, Client> | undefined;
 }
 
-const store: Map<string, Client> =
-  global.__clientStore ?? new Map<string, Client>();
-
+const store: Map<string, Client> = global.__clientStore ?? new Map<string, Client>();
 global.__clientStore = store;
 
 /* ----------------------------------------
@@ -51,15 +49,13 @@ export function getClient(clientId: string): Client | null {
 
 export function listApartments(): Apartment[] {
   const out: Apartment[] = [];
-  for (const c of store.values()) {
-    out.push(...c.apartments);
-  }
+  for (const c of store.values()) out.push(...c.apartments);
   return out;
 }
 
 export function getApartment(aptId: string): Apartment | null {
   for (const c of store.values()) {
-    const a = c.apartments.find((a) => a.aptId === aptId);
+    const a = c.apartments.find((x) => x.aptId === aptId);
     if (a) return a;
   }
   return null;
@@ -97,12 +93,9 @@ export function getClientLabel(clientId: string): string {
  * WRITE (mock)
  * ------------------------------------- */
 
-export function setApartmentStatus(
-  aptId: string,
-  status: ApartmentStatus
-) {
+export function setApartmentStatus(aptId: string, status: ApartmentStatus) {
   for (const c of store.values()) {
-    const a = c.apartments.find((a) => a.aptId === aptId);
+    const a = c.apartments.find((x) => x.aptId === aptId);
     if (a) {
       a.status = status;
       return;
@@ -115,52 +108,18 @@ export function setApartmentStatus(
  * ------------------------------------- */
 
 if (process.env.NODE_ENV !== "production" && store.size === 0) {
+  // ✅ Single demo client + populated apartments (101–106)
+  // Source of truth for Host / Tech / Guest views.
   store.set("global-properties", {
     clientId: "global-properties",
     name: "Global Properties",
     apartments: [
-      {
-        aptId: "017",
-        name: "Lakeside Tower — Apt 017",
-        clientId: "global-properties",
-        status: "ok",
-      },
-      {
-        aptId: "018",
-        name: "Lakeside Tower — Apt 018",
-        clientId: "global-properties",
-        status: "warn",
-      },
-      {
-        aptId: "019",
-        name: "Lakeside Tower — Apt 019",
-        clientId: "global-properties",
-        status: "crit",
-      },
-    ],
-  });
-  store.set("lakeside-hospitality", {
-    clientId: "lakeside-hospitality",
-    name: "Lakeside Hospitality",
-    apartments: [
-      {
-        aptId: "101",
-        name: "City View — Apt 101",
-        clientId: "lakeside-hospitality",
-        status: "ok",
-      },
-      {
-        aptId: "102",
-        name: "City View — Apt 102",
-        clientId: "lakeside-hospitality",
-        status: "warn",
-      },
-      {
-        aptId: "103",
-        name: "City View — Apt 103",
-        clientId: "lakeside-hospitality",
-        status: "ok",
-      },
+      { aptId: "101", name: "Lakeside Tower — Apt 101", clientId: "global-properties", status: "ok" },
+      { aptId: "102", name: "Lakeside Tower — Apt 102", clientId: "global-properties", status: "warn" },
+      { aptId: "103", name: "Lakeside Tower — Apt 103", clientId: "global-properties", status: "ok" },
+      { aptId: "104", name: "Lakeside Tower — Apt 104", clientId: "global-properties", status: "ok" },
+      { aptId: "105", name: "Lakeside Tower — Apt 105", clientId: "global-properties", status: "crit" },
+      { aptId: "106", name: "Lakeside Tower — Apt 106", clientId: "global-properties", status: "ok" },
     ],
   });
 }

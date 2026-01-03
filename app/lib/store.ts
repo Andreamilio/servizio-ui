@@ -1,6 +1,7 @@
 // app/lib/store.ts
-// PIN + AccessLog + Readiness (mock in-memory).
-// IMPORTANT: the apartments list (names, client grouping, etc.) comes from clientStore.
+// Single source of truth for:
+// - STAYS: delegated to staysStore.ts (V2)
+// - PINS + AccessLog + Readiness: kept here (in-memory)
 
 import crypto from "crypto";
 import {
@@ -8,7 +9,37 @@ import {
   getApartment as getClientApartment,
 } from "./clientStore";
 
-type Role = "host" | "tech" | "guest" | "cleaner";
+import {
+  type Stay,
+  type StayGuest,
+  createStay as createStayV2,
+  getStay as getStayV2,
+  listStaysByApt as listStaysByAptV2,
+  setStayGuestNames as setStayGuestNamesV2,
+  deleteStay as deleteStayV2,
+} from "./staysStore";
+
+import { getCleanerCfg, normalizeCleanerName } from "./cleanerCfgStore";
+
+export type Role = "host" | "tech" | "guest" | "cleaner";
+export type PinSource = "auto" | "manual";
+
+export type PinRecord = {
+  pin: string;
+  role: Role;
+  aptId: string;
+
+  validFrom: number; // unix ms
+  validTo: number; // unix ms
+  expiresAt?: number; // legacy alias
+
+  stayId: string;
+  guestId: string;
+  guestName?: string;
+
+  source: PinSource;
+  createdAt: number;
+};
 
 export type Readiness =
   | "ready"
@@ -23,14 +54,6 @@ export type AptReadiness = {
   readiness: Readiness;
 };
 
-export type PinRecord = {
-  pin: string;
-  role: Role;
-  aptId: string;
-  expiresAt: number; // unix ms
-  createdAt: number;
-};
-
 export type AccessEventType =
   | "guest_access_ok"
   | "guest_access_ko"
@@ -40,7 +63,10 @@ export type AccessEventType =
   | "cleaning_done"
   | "problem_reported"
   | "door_opened"
-  | "door_closed";
+  | "door_closed"
+  | "stay_created"
+  | "stay_deleted"
+  | "stay_guests_updated";
 
 export type AccessEvent = {
   id: string;
@@ -65,52 +91,214 @@ global.__pinStore = pinStore;
 export const accessLog: AccessEvent[] = global.__accessLog ?? [];
 global.__accessLog = accessLog;
 
-// readiness keyed by aptId (source-of-truth for apt names is clientStore)
 export const readinessStore: Map<string, Readiness> =
   global.__readinessStore ?? new Map();
 global.__readinessStore = readinessStore;
 
 /* ----------------------------------------
+ * STAYS (delegated to staysStore.ts)
+ * ------------------------------------- */
+
+export type { Stay, StayGuest };
+
+export function createStay(input: {
+  aptId: string;
+  checkInAt: number;
+  checkOutAt: number;
+  guests: { name: string }[];
+  createdBy?: "host" | "system";
+}): Stay {
+  const st = createStayV2({
+    aptId: input.aptId,
+    checkInAt: input.checkInAt,
+    checkOutAt: input.checkOutAt,
+    guests: input.guests,
+    createdBy: input.createdBy ?? "host",
+  });
+  logAccessEvent(input.aptId, "stay_created", `Stay creato (${st.stayId.slice(0, 8)}…)`);
+  return st;
+}
+
+export function getStay(stayId: string): Stay | null {
+  return getStayV2(stayId);
+}
+
+export function listStaysByApt(aptId: string): Stay[] {
+  return listStaysByAptV2(aptId);
+}
+
+export function setStayGuestNames(stayId: string, names: string[]) {
+  const st = getStayV2(stayId);
+  const out = setStayGuestNamesV2(stayId, names);
+  if (st?.aptId) {
+    logAccessEvent(st.aptId, "stay_guests_updated", `Ospiti aggiornati (${stayId.slice(0, 8)}…)`);
+  }
+  return out;
+}
+
+/**
+ * Delete stay + revoke pins linked to it (clean)
+ */
+export function deleteStay(stayId: string) {
+  const st = getStayV2(stayId);
+  try {
+    revokePinsByStay(stayId);
+  } catch {}
+  const out = deleteStayV2(stayId);
+  if (st?.aptId) {
+    logAccessEvent(st.aptId, "stay_deleted", `Stay eliminato (${stayId.slice(0, 8)}…)`);
+  }
+  return out;
+}
+
+/**
+ * Source of truth for “current stay”:
+ * - active if now in [checkInAt, checkOutAt)
+ * - else upcoming nearest future
+ * - else most recent past
+ */
+export function getCurrentStayForApt(aptId: string): Stay | null {
+  const now = Date.now();
+  const stays = listStaysByAptV2(aptId);
+  if (stays.length === 0) return null;
+
+  const active = stays.find((s) => now >= s.checkInAt && now < s.checkOutAt);
+  if (active) return active;
+
+  const upcoming = stays
+    .filter((s) => s.checkInAt > now)
+    .sort((a, b) => a.checkInAt - b.checkInAt)[0];
+  if (upcoming) return upcoming;
+
+  // past: return the most recent by checkOutAt/checkInAt
+  return stays.sort((a, b) => (b.checkOutAt ?? b.checkInAt) - (a.checkOutAt ?? a.checkInAt))[0];
+}
+
+export function getOrCreateCurrentStayForApt(aptId: string): Stay {
+  return getCurrentStayForApt(aptId) ?? ensureAdHocStayForApt(aptId);
+}
+
+function ensureAdHocStayForApt(aptId: string): Stay {
+  const now = Date.now();
+  return createStayV2({
+    aptId,
+    checkInAt: now - 60 * 60_000,
+    checkOutAt: now + 6 * 60 * 60_000,
+    guests: [{ name: "Ospite 1" }],
+    createdBy: "host",
+  });
+}
+
+/* ----------------------------------------
  * PINS
  * ------------------------------------- */
 
+function gen6Digits(): string {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
 export function createPin(role: Role, aptId: string, ttlMinutes: number) {
-  const pin = String(Math.floor(100000 + Math.random() * 900000)); // 6 cifre
-  const now = Date.now();
-  const rec: PinRecord = {
-    pin,
+  const stay = getOrCreateCurrentStayForApt(aptId);
+  const guest0 = stay.guests[0] ?? { guestId: `g-${crypto.randomUUID()}`, name: "Ospite 1" };
+
+  return createPinForGuest({
     role,
     aptId,
-    expiresAt: now + ttlMinutes * 60_000,
+    stayId: stay.stayId,
+    guestId: guest0.guestId,
+    guestName: guest0.name,
+    validFrom: Date.now(),
+    validTo: Date.now() + ttlMinutes * 60_000,
+    source: "manual",
+  });
+}
+
+export function createPinForGuest(input: {
+  role: Role;
+  aptId: string;
+  stayId: string;
+  guestId: string;
+  guestName?: string;
+  validFrom: number;
+  validTo: number;
+  source: PinSource;
+}): PinRecord {
+  const now = Date.now();
+
+  const rec: PinRecord = {
+    pin: gen6Digits(),
+    role: input.role,
+    aptId: input.aptId,
+    validFrom: input.validFrom,
+    validTo: input.validTo,
+    expiresAt: input.validTo,
+    stayId: input.stayId,
+    guestId: input.guestId,
+    guestName: input.guestName?.trim() || undefined,
+    source: input.source,
     createdAt: now,
   };
-  pinStore.set(pin, rec);
+
+  pinStore.set(rec.pin, rec);
+
   accessLog.unshift({
     id: crypto.randomUUID(),
-    aptId,
+    aptId: input.aptId,
     type: "pin_created",
-    label: `PIN ${role} creato`,
+    label: `PIN ${input.role} creato (${input.source})`,
     ts: now,
   });
+
   return rec;
 }
 
-export function consumePin(pin: string) {
-  const rec = pinStore.get(pin);
-  if (!rec) return null;
-  if (Date.now() > rec.expiresAt) {
-    pinStore.delete(pin);
-    return null;
+export function createPinsForStayGuests(input: {
+  aptId: string;
+  stayId: string;
+  role: Role;
+  validFrom: number;
+  validTo: number;
+  source: PinSource;
+  guestNames?: string[];
+  guestIds?: string[];
+}): PinRecord[] {
+  const st = getStayV2(input.stayId);
+  if (!st) return [];
+
+  if (input.guestNames?.length) {
+    setStayGuestNamesV2(input.stayId, input.guestNames);
   }
-  return rec;
+
+  const refreshed = getStayV2(input.stayId)!;
+  const targets =
+    input.guestIds?.length
+      ? refreshed.guests.filter((g) => input.guestIds!.includes(g.guestId))
+      : refreshed.guests;
+
+  return targets.map((g) =>
+    createPinForGuest({
+      role: input.role,
+      aptId: input.aptId,
+      stayId: input.stayId,
+      guestId: g.guestId,
+      guestName: g.name,
+      validFrom: input.validFrom,
+      validTo: input.validTo,
+      source: input.source,
+    })
+  );
 }
 
-export function listPinsByApt(aptId: string) {
-  const out: PinRecord[] = [];
-  for (const rec of pinStore.values()) {
-    if (rec.aptId === aptId) out.push(rec);
-  }
-  return out.sort((a, b) => b.createdAt - a.createdAt);
+export function listPinsByStay(stayId: string): PinRecord[] {
+  return Array.from(pinStore.values())
+    .filter((p) => p.stayId === stayId)
+    .sort((a, b) => b.createdAt - a.createdAt);
+}
+
+export function listPinsByApt(aptId: string): PinRecord[] {
+  return Array.from(pinStore.values())
+    .filter((p) => p.aptId === aptId)
+    .sort((a, b) => b.createdAt - a.createdAt);
 }
 
 export function revokePin(pin: string) {
@@ -129,14 +317,30 @@ export function revokePin(pin: string) {
   return true;
 }
 
-export function revokePinsByApt(aptId: string) {
-  const toDelete: string[] = [];
-  for (const rec of pinStore.values()) {
-    if (rec.aptId === aptId) toDelete.push(rec.pin);
-  }
+export function revokePinsByStay(stayId: string) {
+  const toDelete = listPinsByStay(stayId).map((p) => p.pin);
+  let aptId: string | null = null;
+
   for (const p of toDelete) {
+    const rec = pinStore.get(p);
+    if (!aptId && rec?.aptId) aptId = rec.aptId;
     pinStore.delete(p);
   }
+
+  accessLog.unshift({
+    id: crypto.randomUUID(),
+    aptId: aptId ?? "-",
+    type: "pin_revoked",
+    label: `Revocati ${toDelete.length} PIN dello stay`,
+    ts: Date.now(),
+  });
+
+  return toDelete.length;
+}
+
+export function revokePinsByApt(aptId: string) {
+  const toDelete = listPinsByApt(aptId).map((p) => p.pin);
+  for (const p of toDelete) pinStore.delete(p);
 
   accessLog.unshift({
     id: crypto.randomUUID(),
@@ -147,6 +351,79 @@ export function revokePinsByApt(aptId: string) {
   });
 
   return toDelete.length;
+}
+
+export function consumePin(pin: string) {
+  const rec = pinStore.get(pin);
+  if (!rec) return null;
+
+  const now = Date.now();
+  const from = rec.validFrom ?? rec.createdAt;
+  const to = rec.validTo ?? rec.expiresAt ?? rec.createdAt;
+
+  if (now < from || now > to) {
+    if (now > to) pinStore.delete(pin);
+    return null;
+  }
+  return rec;
+}
+
+/* ----------------------------------------
+ * CLEANER PIN (1 per stay)
+ * ------------------------------------- */
+
+export function revokeCleanerPinsByStay(stayId: string): number {
+  const pins = listPinsByStay(stayId).filter((p) => p.role === "cleaner");
+  for (const p of pins) pinStore.delete(p.pin);
+
+  if (pins.length) {
+    accessLog.unshift({
+      id: crypto.randomUUID(),
+      aptId: pins[0]?.aptId ?? "-",
+      type: "pin_revoked",
+      label: `Revocati ${pins.length} PIN cleaner dello stay`,
+      ts: Date.now(),
+    });
+  }
+  return pins.length;
+}
+
+export function createCleanerPinForStay(input: {
+  aptId: string;
+  stayId: string;
+  cleanerName: string;
+  cleaningDurationMinutes?: number; // override
+  source?: PinSource; // default "auto"
+}): PinRecord | null {
+  const st = getStayV2(input.stayId);
+  if (!st) return null;
+
+  revokeCleanerPinsByStay(input.stayId);
+
+  const nm = normalizeCleanerName(input.cleanerName ?? "");
+  if (!nm) return null;
+
+  const cfg = getCleanerCfg(st.aptId);
+  const dur =
+    Number.isFinite(Number(input.cleaningDurationMinutes))
+      ? Math.max(15, Math.min(24 * 60, Math.round(Number(input.cleaningDurationMinutes))))
+      : Math.max(15, Math.min(24 * 60, Math.round(cfg.durationMin ?? 60)));
+
+  const from = st.checkOutAt;
+  const to = st.checkOutAt + dur * 60_000;
+
+  const g0 = st.guests[0] ?? { guestId: `g-${crypto.randomUUID()}`, name: "Ospite 1" };
+
+  return createPinForGuest({
+    role: "cleaner",
+    aptId: input.aptId,
+    stayId: input.stayId,
+    guestId: g0.guestId,
+    guestName: nm,
+    validFrom: from,
+    validTo: to,
+    source: input.source ?? "auto",
+  });
 }
 
 /* ----------------------------------------
@@ -177,10 +454,11 @@ export function getApartment(aptId: string): AptReadiness | null {
 }
 
 export function setReadiness(aptId: string, readiness: Readiness) {
-  // Only allow if the apartment exists in clientStore
   const a = getClientApartment(aptId);
   if (!a) return null;
+
   readinessStore.set(aptId, readiness);
+
   return {
     aptId,
     name: a.name ?? fallbackName(aptId),
@@ -207,42 +485,40 @@ export function logAccessEvent(aptId: string, type: AccessEventType, label: stri
 }
 
 /* ----------------------------------------
- * DEV SEED
+ * DEV SEED (optional)
  * ------------------------------------- */
 
-// NOTE: apartments are seeded in clientStore. Here we only seed readiness + demo PINs.
 if (process.env.NODE_ENV !== "production" && pinStore.size === 0) {
-  // readiness seeds (if those apartments exist in clientStore)
+  // readiness seed
   if (getClientApartment("017")) readinessStore.set("017", "ready");
   if (getClientApartment("018")) readinessStore.set("018", "to_clean");
   if (getClientApartment("019")) readinessStore.set("019", "checkout_today");
 
-  pinStore.set("111111", {
-    pin: "111111",
-    role: "host",
+  // demo stay + demo pins ONLY once (uses staysStore V2)
+  const now = Date.now();
+  const st = createStayV2({
     aptId: "017",
-    expiresAt: Date.now() + 9999 * 60_000,
-    createdAt: Date.now(),
+    checkInAt: now - 2 * 60 * 60_000,
+    checkOutAt: now + 24 * 60 * 60_000,
+    guests: [{ name: "Giulia" }, { name: "Marco" }, { name: "Sara" }],
+    createdBy: "system",
   });
-  pinStore.set("222222", {
-    pin: "222222",
-    role: "tech",
+
+  const mk = (pin: string, role: Role, guestId: string, guestName?: string, source: PinSource = "manual"): PinRecord => ({
+    pin,
+    role,
     aptId: "017",
-    expiresAt: Date.now() + 9999 * 60_000,
-    createdAt: Date.now(),
+    validFrom: now - 60_000,
+    validTo: now + 9999 * 60_000,
+    expiresAt: now + 9999 * 60_000,
+    stayId: st.stayId,
+    guestId,
+    guestName,
+    source,
+    createdAt: now,
   });
-  pinStore.set("333333", {
-    pin: "333333",
-    role: "guest",
-    aptId: "017",
-    expiresAt: Date.now() + 9999 * 60_000,
-    createdAt: Date.now(),
-  });
-  pinStore.set("444444", {
-    pin: "444444",
-    role: "cleaner",
-    aptId: "017",
-    expiresAt: Date.now() + 9999 * 60_000,
-    createdAt: Date.now(),
-  });
+
+  pinStore.set("111111", mk("111111", "host", st.guests[0].guestId, st.guests[0].name, "manual"));
+  pinStore.set("222222", mk("222222", "tech", st.guests[0].guestId, st.guests[0].name, "manual"));
+  pinStore.set("333333", mk("333333", "guest", st.guests[1].guestId, st.guests[1].name, "auto"));
 }

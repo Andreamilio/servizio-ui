@@ -1,0 +1,32 @@
+// app/lib/domain/cleanersDomain.ts
+import {
+  getCleanerCfg,
+  setCleanerDuration,
+  addCleaner,
+  removeCleaner,
+  normalizeCleanerName,
+  type CleanerCfg,
+} from "@/app/lib/cleanerCfgStore";
+
+export function cleaners_getCfg(aptId: string): CleanerCfg {
+  return getCleanerCfg(aptId);
+}
+
+export function cleaners_setDuration(aptId: string, durationMin: number) {
+  if (!aptId) return;
+  setCleanerDuration(aptId, durationMin);
+}
+
+export function cleaners_add(aptId: string, name: string) {
+  if (!aptId) return;
+  addCleaner(aptId, name);
+}
+
+export function cleaners_remove(aptId: string, name: string) {
+  if (!aptId) return;
+  removeCleaner(aptId, name);
+}
+
+export function cleaners_normName(name: string) {
+  return normalizeCleanerName(name);
+}

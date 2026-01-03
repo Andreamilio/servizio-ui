@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { readSession } from "@/app/lib/session";
-import { getAccessLog, getIncidents, listApts, techStore } from "@/app/lib/techstore";
+import { getIncidents, listApts, techStore } from "@/app/lib/techstore";
+import * as Store from "@/app/lib/store";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -36,7 +37,45 @@ export default async function TechPage() {
   }
 
   const apts = listApts();
-  const accessLog = getAccessLog(10);
+
+  // ✅ Shared audit log (same source as Host)
+  const accessLog = (Store.accessLog ?? []).slice(0, 10).map((e) => {
+    const tsLabel = new Date(e.ts).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    const title =
+      e.type === "door_opened"
+        ? "Door Opened"
+        : e.type === "door_closed"
+        ? "Door Closed"
+        : e.type === "pin_created"
+        ? "PIN Created"
+        : e.type === "pin_revoked"
+        ? "PIN Revoked"
+        : e.type === "cleaning_done"
+        ? "Cleaning Done"
+        : e.type === "problem_reported"
+        ? "Problem Reported"
+        : e.type === "guest_access_ok"
+        ? "Guest Access OK"
+        : e.type === "guest_access_ko"
+        ? "Guest Access KO"
+        : e.type === "cleaner_access_ok"
+        ? "Cleaner Access OK"
+        : String(e.type);
+
+    return {
+      id: String(e.id),
+      tsLabel,
+      aptId: String(e.aptId),
+      title,
+      detail: String(e.label ?? ""),
+      level: "ok" as const,
+    };
+  });
+
   const incidents = getIncidents(6);
 
   const totalApts = apts.length;
@@ -126,40 +165,34 @@ export default async function TechPage() {
                     href={`/app/tech/apt/${a.aptId}`}
                     className="block rounded-xl bg-black/20 border border-white/10 hover:border-white/20"
                   >
-                    {/* mobile row */}
-                    <div className="md:hidden p-4 space-y-2">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <div className="font-semibold">{a.aptName}</div>
-                          <div className="text-xs opacity-60">{a.group}</div>
-                        </div>
-                        <div className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold ${st.box}`}>
+                    <div className="p-4 grid grid-cols-1 gap-3 md:grid-cols-[1.2fr_1fr_1fr_1fr] md:items-center md:gap-2">
+                      <div>
+                        <div className="font-semibold">{a.aptName}</div>
+                        <div className="text-xs opacity-60">{a.group}</div>
+                      </div>
+
+                      <div>
+                        <div
+                          className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold ${st.box}`}
+                        >
                           <span className={`h-2 w-2 rounded-full ${st.dot}`} />
                           {st.text}
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        <div className={`inline-flex items-center rounded-lg border px-3 py-2 text-xs font-semibold ${net.box}`}>{net.text}</div>
-                        <div className="text-xs opacity-80 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
-                          Last access: <span className="opacity-100">{a.lastAccessLabel}</span>
+
+                      <div>
+                        <div
+                          className={`inline-flex items-center rounded-lg border px-3 py-2 text-xs font-semibold ${net.box}`}
+                        >
+                          {net.text}
                         </div>
                       </div>
-                    </div>
 
-                    {/* desktop grid row */}
-                    <div className="hidden md:grid grid-cols-[1.2fr_1fr_1fr_1fr] gap-2 items-center px-4 py-3">
-                      <div className="font-semibold">{a.aptName}</div>
-
-                      <div className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold ${st.box}`}>
-                        <span className={`h-2 w-2 rounded-full ${st.dot}`} />
-                        {st.text}
+                      <div>
+                        <div className="text-xs opacity-80 rounded-lg border border-white/10 bg-white/5 px-3 py-2 md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-sm md:opacity-90">
+                          Last Access: <span className="opacity-100">{a.lastAccessLabel}</span>
+                        </div>
                       </div>
-
-                      <div className={`inline-flex items-center rounded-lg border px-3 py-2 text-xs font-semibold ${net.box}`}>
-                        {net.text}
-                      </div>
-
-                      <div className="text-sm opacity-90">Last Access: {a.lastAccessLabel}</div>
                     </div>
                   </Link>
                 );

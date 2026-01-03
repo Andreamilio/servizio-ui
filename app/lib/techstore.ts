@@ -1,3 +1,5 @@
+import { getClientLabel, listApartmentsByClient } from "@/app/lib/clientStore";
+import { listAccessLogByApt } from "@/app/lib/store";
 export type NetPath = "main" | "backup";
 export type OnlineStatus = "online" | "offline";
 export type DoorStatus = "locked" | "unlocked" | "unknown";
@@ -74,17 +76,43 @@ export const techStore =
   (() => {
     const apts = new Map<string, AptHealth>();
 
-    // ✅ Scelta A: seed 101–106 (coerente con mockup)
-    const seed: AptHealth[] = [
-      { aptId: "101", aptName: "Apt 101", group: "Lakeside Tower", status: "online",  network: "main",   lastAccessLabel: "11:32 AM", vpn: "up",   door: "locked",  sensorsOnline: 6, sensorsTotal: 6 },
-      { aptId: "102", aptName: "Apt 102", group: "Lakeside Tower", status: "offline", network: "backup", lastAccessLabel: "10:15 AM", vpn: "down", door: "unknown", sensorsOnline: 2, sensorsTotal: 6 },
-      { aptId: "103", aptName: "Apt 103", group: "Lakeside Tower", status: "online",  network: "main",   lastAccessLabel: "11:48 AM", vpn: "up",   door: "locked",  sensorsOnline: 5, sensorsTotal: 5 },
-      { aptId: "104", aptName: "Apt 104", group: "Lakeside Tower", status: "online",  network: "main",   lastAccessLabel: "11:25 AM", vpn: "up",   door: "locked",  sensorsOnline: 7, sensorsTotal: 7 },
-      { aptId: "105", aptName: "Apt 105", group: "Lakeside Tower", status: "offline", network: "backup", lastAccessLabel: "09:57 AM", vpn: "down", door: "unknown", sensorsOnline: 3, sensorsTotal: 7 },
-      { aptId: "106", aptName: "Apt 106", group: "Lakeside Tower", status: "online",  network: "main",   lastAccessLabel: "11:10 AM", vpn: "up",   door: "locked",  sensorsOnline: 4, sensorsTotal: 4 },
-    ];
+    // Source of truth: clientStore (1 client: global-properties)
+    const CLIENT_ID = "global-properties";
+    const clientName = getClientLabel(CLIENT_ID);
 
-    seed.forEach((a) => apts.set(a.aptId, a));
+    let apartments = listApartmentsByClient(CLIENT_ID);
+    if (!apartments || apartments.length === 0) {
+      apartments = [
+        { aptId: "101", name: "Lakeside Tower — Apt 101", clientId: CLIENT_ID, status: "ok" },
+        { aptId: "102", name: "Lakeside Tower — Apt 102", clientId: CLIENT_ID, status: "warn" },
+        { aptId: "103", name: "Lakeside Tower — Apt 103", clientId: CLIENT_ID, status: "ok" },
+        { aptId: "104", name: "Lakeside Tower — Apt 104", clientId: CLIENT_ID, status: "ok" },
+        { aptId: "105", name: "Lakeside Tower — Apt 105", clientId: CLIENT_ID, status: "crit" },
+        { aptId: "106", name: "Lakeside Tower — Apt 106", clientId: CLIENT_ID, status: "ok" },
+      ];
+    }
+
+    // Seed AptHealth from apartments list (no more divergent datasets)
+    const nowLabel = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+    apartments.forEach((apt, idx) => {
+      const status: OnlineStatus = idx % 4 === 1 ? "offline" : "online";
+      const network: NetPath = status === "offline" ? "backup" : "main";
+      const vpn: VpnStatus = status === "offline" ? "down" : "up";
+
+      apts.set(String(apt.aptId), {
+        aptId: String(apt.aptId),
+        aptName: String(apt.name ?? `Apt ${apt.aptId}`),
+        group: "Lakeside Tower",
+        status,
+        network,
+        lastAccessLabel: nowLabel,
+        vpn,
+        door: status === "online" ? "locked" : "unknown",
+        sensorsOnline: 0,
+        sensorsTotal: 0,
+      });
+    });
 
     // Demo sensors (per popup/"details")
     if (techSensors.size === 0) {
@@ -141,6 +169,16 @@ export const techStore =
         { id: "d_main", aptId: "106", name: "Allarme porta", kind: "door", online: true, status: "online" },
         { id: "n_noise", aptId: "106", name: "Sensore suono", kind: "noise", online: true, status: "online" },
       ]);
+
+      // Ensure every apartment has at least 1 sensor in the prototype
+      apartments.forEach((apt, idx) => {
+        const aptId = String(apt.aptId);
+        if (techSensors.has(aptId)) return;
+        techSensors.set(aptId, [
+          { id: "s_smoke", aptId, name: "Sensore fumo", kind: "smoke", online: idx % 5 !== 0, status: idx % 5 !== 0 ? "online" : "offline" },
+          { id: "d_main", aptId, name: "Allarme porta", kind: "door", online: true, status: "online" },
+        ]);
+      });
     }
 
     const accessLog: AccessLogItem[] = [
@@ -157,7 +195,7 @@ export const techStore =
     ];
 
     return {
-      clientName: "Global Properties",
+      clientName,
       groupName: "Lakeside Tower",
       apts,
       accessLog,
@@ -167,14 +205,34 @@ export const techStore =
 
 global.__techStore = techStore;
 
+function computeDoorFromSharedLog(aptId: string): DoorStatus {
+  // Shared, cross-app source of truth (Host/Guest/Tech all write here)
+  const log = listAccessLogByApt(aptId, 50) ?? [];
+
+  // Find most recent door event
+  for (const e of log) {
+    if (e.type === "door_opened") return "unlocked";
+    if (e.type === "door_closed") return "locked";
+  }
+
+  // If no door events yet, fall back to unknown
+  return "unknown";
+}
+
 // ---- selectors
 export function listApts() {
-  return Array.from(techStore.apts.values()).sort((a, b) => {
-    const na = Number(a.aptId);
-    const nb = Number(b.aptId);
-    if (Number.isNaN(na) || Number.isNaN(nb)) return a.aptId.localeCompare(b.aptId);
-    return na - nb;
-  });
+  return Array.from(techStore.apts.values())
+    .map((a) => ({
+      ...a,
+      // UI door state must follow shared log, not local seed
+      door: computeDoorFromSharedLog(a.aptId),
+    }))
+    .sort((a, b) => {
+      const na = Number(a.aptId);
+      const nb = Number(b.aptId);
+      if (Number.isNaN(na) || Number.isNaN(nb)) return a.aptId.localeCompare(b.aptId);
+      return na - nb;
+    });
 }
 
 export function getAccessLog(limit = 12) {
@@ -224,11 +282,19 @@ export function getApt(aptId: string) {
   const sensors = getSensorsByApt(aptId);
   if (!sensors.length) return a;
 
-  // override counters from sensors list
+  const sensorsOnline = sensors.filter((s) => s.online).length;
+  const sensorsTotal = sensors.length;
+
+  // prototype rule: if most sensors are offline -> mark apt offline
+  const derivedStatus: OnlineStatus = sensorsOnline === 0 ? "offline" : a.status;
+
   return {
     ...a,
-    sensorsTotal: sensors.length,
-    sensorsOnline: sensors.filter((s) => s.online).length,
+    status: derivedStatus,
+    // UI door state must follow shared log, not local seed
+    door: computeDoorFromSharedLog(aptId),
+    sensorsTotal,
+    sensorsOnline,
   };
 }
 

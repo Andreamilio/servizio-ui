@@ -8,10 +8,12 @@ import { readSession } from "@/app/lib/session";
 import { unstable_noStore as noStore } from "next/cache";
 import {
   getGuestState,
-  listGuestEvents,
   guestOpenDoor,
   guestCloseDoor,
 } from "@/app/lib/gueststore";
+
+import * as Store from "@/app/lib/store";
+import { events_listByApt, events_log } from "@/app/lib/domain/eventsDomain";
 
 function badge(outcome: "ok" | "retrying" | "fail" | null) {
   if (outcome === "ok") return { t: "Accesso disponibile", c: "bg-emerald-500/15 border-emerald-400/20 text-emerald-200" };
@@ -38,24 +40,54 @@ export default async function GuestPage({
 
   const aptId = me.aptId || "017";
   const state = getGuestState(aptId);
-  const events = listGuestEvents(aptId, 10);
+  const events = events_listByApt(Store, aptId, 10);
   const b = badge(state.lastOutcome);
   const doorIsOpen = state.door === "open";
 
   async function actOpenDoor() {
     "use server";
     const outcome = guestOpenDoor(aptId);
-    redirect(
-      `/app/guest?toast=${outcome === "ok" ? "open_ok" : "open_fail"}`
-    );
+
+    if (outcome === "ok") {
+      events_log(Store, {
+        aptId,
+        type: "door_opened",
+        actor: "guest",
+        label: "Porta aperta dall’ospite",
+      });
+    } else {
+      events_log(Store, {
+        aptId,
+        type: "guest_access_ko",
+        actor: "guest",
+        label: "Tentativo apertura porta fallito",
+      });
+    }
+
+    redirect(`/app/guest?toast=${outcome === "ok" ? "open_ok" : "open_fail"}`);
   }
 
   async function actCloseDoor() {
     "use server";
     const outcome = guestCloseDoor(aptId);
-    redirect(
-      `/app/guest?toast=${outcome === "ok" ? "close_ok" : "close_fail"}`
-    );
+
+    if (outcome === "ok") {
+      events_log(Store, {
+        aptId,
+        type: "door_closed",
+        actor: "guest",
+        label: "Porta chiusa dall’ospite",
+      });
+    } else {
+      events_log(Store, {
+        aptId,
+        type: "guest_access_ko",
+        actor: "guest",
+        label: "Tentativo chiusura porta fallito",
+      });
+    }
+
+    redirect(`/app/guest?toast=${outcome === "ok" ? "close_ok" : "close_fail"}`);
   }
 
   return (
@@ -166,11 +198,9 @@ export default async function GuestPage({
           <div className="p-4 space-y-2">
             {events.map((e) => (
               <div key={e.id} className="rounded-xl bg-black/20 border border-white/10 p-3">
-                <div className="text-xs opacity-60">
-                  {new Date(e.ts).toLocaleString()}
-                </div>
-                <div className="mt-1 text-sm font-semibold">{e.title}</div>
-                <div className="mt-1 text-xs opacity-70">{e.detail}</div>
+                <div className="text-xs opacity-60">{new Date(e.ts).toLocaleString()}</div>
+                <div className="mt-1 text-sm font-semibold">{e.label}</div>
+                <div className="mt-1 text-xs opacity-70">{e.type}</div>
               </div>
             ))}
           </div>

@@ -79,7 +79,10 @@ export default async function HostPage() {
                 <div className="font-semibold tracking-widest">{p.pin}</div>
                 <div className="text-xs opacity-60">
                   {p.role} • scade tra{" "}
-                  {Math.max(0, Math.round((p.expiresAt - Date.now()) / 60000))} min
+                  {(() => {
+                    const to = (p as any).validTo ?? p.expiresAt ?? (p as any).createdAt ?? Date.now();
+                    return Math.max(0, Math.round((Number(to) - Date.now()) / 60000));
+                  })()} min
                 </div>
               </div>
 

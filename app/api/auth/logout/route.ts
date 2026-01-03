@@ -1,7 +1,19 @@
 import { NextResponse } from "next/server";
 
-export async function POST() {
-  const res = NextResponse.json({ ok: true });
-  res.cookies.set("sess", "", { path: "/", maxAge: 0 });
+export async function POST(req: Request) {
+  // Use the current request origin so it works both locally and on Vercel
+  const url = new URL(req.url);
+  url.pathname = "/app/login";
+  url.search = "";
+  url.hash = "";
+
+  const res = NextResponse.redirect(url);
+
+  // Clear session cookie
+  res.cookies.set("sess", "", {
+    path: "/",
+    maxAge: 0,
+  });
+
   return res;
 }
