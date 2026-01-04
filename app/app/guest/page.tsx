@@ -60,8 +60,7 @@ export default async function GuestPage({
   const events = allEvents.filter((e) => 
     e.type === 'door_opened' || 
     e.type === 'door_closed' || 
-    e.type === 'gate_opened' || 
-    e.type === 'gate_closed'
+    e.type === 'gate_opened'
   );
   const b = badge(state.lastOutcome);
   // Leggi stato porta da Store.accessLog (single source of truth) invece che da gueststore locale
