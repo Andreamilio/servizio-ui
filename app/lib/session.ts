@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { getUser } from "./userStore";
+import { getUser, getUserByUsername, createUser } from "./userStore";
 
 const secret = process.env.APP_SECRET || "dev-secret-change-me";
 
@@ -44,13 +44,38 @@ export function readSession(token?: string | null): SessionPayload | null {
  */
 export function validateSessionUser(session: SessionPayload | null): SessionPayload | null {
   if (!session) return null;
+  if (!session.userId) return session; // Guest/cleaner (PIN login)
+
+  // Assicurati che gli utenti demo esistano (importante per serverless/Render)
+  const SHOULD_SEED = process.env.DEMO_MODE === "1" || process.env.NODE_ENV !== "production";
   
-  // Per guest/cleaner (login via PIN) non c'è userId, quindi la validazione passa
-  if (!session.userId) return session;
+  if (SHOULD_SEED) {
+    const techUser = getUserByUsername("tech");
+    const hostUser = getUserByUsername("host");
+    
+    if (!techUser) {
+      try {
+        createUser({ username: "tech", password: "tech123", role: "tech" });
+      } catch (error) {
+        // Ignora se già esiste
+      }
+    }
+    if (!hostUser) {
+      try {
+        createUser({ username: "host", password: "host123", role: "host", clientId: "global-properties" });
+      } catch (error) {
+        // Ignora se già esiste
+      }
+    }
+  }
   
-  // Per host/tech, verifica che l'utente esista e sia abilitato
-  const user = getUser(session.userId);
+  let user = getUser(session.userId);
+  
+  // Se l'utente non è trovato per userId (es. store resettato), prova per username
+  if (!user && (session.role === "tech" || session.role === "host")) {
+    user = getUserByUsername(session.role); // Cerca "tech" o "host"
+  }
+
   if (!user || !user.enabled) return null;
-  
   return session;
 }

@@ -20,24 +20,25 @@ function roleHome(role: string) {
 export async function POST(req: Request) {
   const ct = req.headers.get("content-type") || "";
   const isJson = ct.includes("application/json");
+  
+  try {
+    let pin = "";
+    let next = "";
 
-  let pin = "";
-  let next = "";
+    const norm = (v: unknown) => String(v ?? "").trim().replace(/\s+/g, "");
 
-  const norm = (v: unknown) => String(v ?? "").trim().replace(/\s+/g, "");
+    if (isJson) {
+      const body = await req.json().catch(() => ({} as any));
+      pin = norm(body?.pin ?? body?.code ?? body?.otp);
+      next = String(body?.next ?? "").trim();
+    } else {
+      // iPhone/Safari spesso manda form-urlencoded o formData se submitti un <form>
+      const fd = await req.formData().catch(() => null);
+      pin = norm(fd?.get("pin") ?? fd?.get("code") ?? fd?.get("otp"));
+      next = String(fd?.get("next") ?? "").trim();
+    }
 
-  if (isJson) {
-    const body = await req.json().catch(() => ({} as any));
-    pin = norm(body?.pin ?? body?.code ?? body?.otp);
-    next = String(body?.next ?? "").trim();
-  } else {
-    // iPhone/Safari spesso manda form-urlencoded o formData se submitti un <form>
-    const fd = await req.formData().catch(() => null);
-    pin = norm(fd?.get("pin") ?? fd?.get("code") ?? fd?.get("otp"));
-    next = String(fd?.get("next") ?? "").trim();
-  }
-
-  const isDev = process.env.NODE_ENV !== "production";
+    const isDev = process.env.NODE_ENV !== "production";
 
   // Demo pins: solo per guest/cleaner (host/tech ora usano username/password)
   const demoPins = {
@@ -74,10 +75,9 @@ export async function POST(req: Request) {
         { status: 401 }
       );
     }
-    const url = new URL("/", req.url);
-    url.searchParams.set("err", "pin");
-    if (next) url.searchParams.set("next", next);
-    return NextResponse.redirect(url, { status: 303 });
+    // Usa path relativo per il redirect
+    const redirectUrl = next ? `/?err=pin&next=${encodeURIComponent(next)}` : "/?err=pin";
+    return NextResponse.redirect(redirectUrl, { status: 303 });
   }
 
   const session = createSession(
@@ -108,5 +108,15 @@ export async function POST(req: Request) {
       path: "/",
     });
     return res;
+  }
+  } catch (error: any) {
+    console.error("[auth/pin] Error:", error);
+    if (isJson) {
+      return NextResponse.json(
+        { ok: false, error: "Errore interno del server" },
+        { status: 500 }
+      );
+    }
+    return NextResponse.redirect("/?err=server", { status: 303 });
   }
 }

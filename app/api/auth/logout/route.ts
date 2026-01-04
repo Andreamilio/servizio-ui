@@ -16,12 +16,8 @@ export async function POST(req: Request) {
     ? "/loginhost-tech" 
     : "/";
 
-  const url = new URL(req.url);
-  url.pathname = redirectPath;
-  url.search = "";
-  url.hash = "";
-
-  const res = NextResponse.redirect(url, { status: 303 });
+  // Usa path relativo - Next.js risolverà automaticamente l'URL corretto
+  const res = NextResponse.redirect(redirectPath, { status: 303 });
 
   // Clear session cookie
   res.cookies.set("sess", "", {

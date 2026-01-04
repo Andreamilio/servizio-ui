@@ -188,6 +188,32 @@ export function recordUserLogin(userId: string): void {
  * ------------------------------------- */
 
 export function authenticateUser(username: string, password: string): User | null {
+  // Assicurati che gli utenti demo esistano (importante per serverless/Render)
+  const SHOULD_SEED = process.env.DEMO_MODE === "1" || process.env.NODE_ENV !== "production";
+  
+  if (SHOULD_SEED) {
+    const techUser = getUserByUsername("tech");
+    const hostUser = getUserByUsername("host");
+    
+    if (!techUser) {
+      try {
+        createUser({ username: "tech", password: "tech123", role: "tech" });
+        console.log("[userStore] ✅ Seeded demo user: tech/tech123");
+      } catch (error: any) {
+        // Ignora se già esiste (race condition)
+        if (!error.message?.includes("già esistente")) console.error("[userStore] Seed error:", error);
+      }
+    }
+    if (!hostUser) {
+      try {
+        createUser({ username: "host", password: "host123", role: "host", clientId: "global-properties" });
+        console.log("[userStore] ✅ Seeded demo user: host/host123");
+      } catch (error: any) {
+        if (!error.message?.includes("già esistente")) console.error("[userStore] Seed error:", error);
+      }
+    }
+  }
+  
   const user = getUserByUsername(username);
   if (!user) return null;
   if (!user.enabled) return null;

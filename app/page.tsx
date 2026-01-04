@@ -69,11 +69,9 @@ export async function POST(req: Request) {
 
   const rec = consumePin(pin);
   if (!rec) {
-    const url = new URL(req.url);
-    url.pathname = "/";
-    url.searchParams.set("err", "pin");
-    url.searchParams.set("next", next);
-    return NextResponse.redirect(url);
+    // Usa path relativo per il redirect
+    const redirectUrl = next ? `/?err=pin&next=${encodeURIComponent(next)}` : "/?err=pin";
+    return NextResponse.redirect(redirectUrl);
   }
 
   const session = createSession(
