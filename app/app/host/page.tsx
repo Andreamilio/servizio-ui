@@ -6,8 +6,9 @@ import { revalidatePath } from 'next/cache';
 import { readSession, validateSessionUser } from '@/app/lib/session';
 import * as Store from '@/app/lib/store';
 import { listJobsByApt } from '@/app/lib/cleaningstore';
-import { listClients, listApartmentsByClient } from '@/app/lib/clientStore';
+import { listClients, listApartmentsByClient, getApartment, updateApartment } from '@/app/lib/clientStore';
 import { getUser } from '@/app/lib/userStore';
+import { UserProfile } from '../components/UserProfile';
 
 import { cleaners_getCfg, cleaners_setDuration, cleaners_add, cleaners_remove, cleaners_normName, cleaners_setTimeRanges } from '@/app/lib/domain/cleanersDomain';
 
@@ -15,6 +16,7 @@ import { stays_listByApt } from '@/app/lib/domain/staysDomain';
 
 import { stays_createWithOptionalCleaner, stays_createWithGuestsAndCleaner } from '@/app/lib/domain/pinsDomain';
 import { GuestFields } from './components/GuestFields';
+import { getAllEnabledDevices, getDeviceState, getDeviceLabel } from '@/app/lib/devicePackageStore';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -158,6 +160,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
         const aptId = String(aptSelected);
         const apt = apartments.find((x) => x.aptId === aptId);
         const health = apt ? computeHealth(aptId, apt.name) : null;
+        const apartmentDetails = getApartment(aptId);
 
         const stays = stays_listByApt(aptId) ?? [];
 
@@ -322,6 +325,16 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                 ← Dashboard
                             </Link>
 
+                            {hostUser && (
+                                <UserProfile
+                                    key={`${hostUser.userId}-${hostUser.profileImageUrl || 'no-image'}`}
+                                    userId={hostUser.userId}
+                                    username={hostUser.username}
+                                    role={hostUser.role}
+                                    profileImageUrl={hostUser.profileImageUrl}
+                                />
+                            )}
+
                             <form action='/api/auth/logout' method='post'>
                                 <button className='whitespace-nowrap text-sm opacity-70 hover:opacity-100'>Esci</button>
                             </form>
@@ -375,8 +388,173 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                 </button>
                             </form>
 
-                            <button className='rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-sm opacity-90'>Supporto</button>
+                            <Link 
+                                href={aptId 
+                                    ? `/app/host/support?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`
+                                    : clientId
+                                    ? `/app/host/support?client=${encodeURIComponent(clientId)}`
+                                    : '/app/host/support'
+                                }
+                                className='rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-sm opacity-90'>
+                                Supporto
+                            </Link>
                         </div>
+                    </section>
+
+                    {/* Dettagli Appartamento */}
+                    <section className='rounded-2xl bg-white/5 border border-white/10 p-4'>
+                        <div className='text-sm font-semibold mb-4'>Dettagli Appartamento</div>
+                        <form
+                            action={async (formData: FormData) => {
+                                'use server';
+                                const aptId = formData.get('aptId')?.toString() ?? '';
+                                if (!aptId) return;
+
+                                const wifiSsid = (formData.get('wifiSsid')?.toString() ?? '').trim() || undefined;
+                                const wifiPass = (formData.get('wifiPass')?.toString() ?? '').trim() || undefined;
+                                const checkIn = (formData.get('checkIn')?.toString() ?? '').trim() || undefined;
+                                const checkOut = (formData.get('checkOut')?.toString() ?? '').trim() || undefined;
+                                const rulesText = (formData.get('rules')?.toString() ?? '').trim();
+                                const rules = rulesText ? rulesText.split('\n').filter((r) => r.trim().length > 0) : undefined;
+                                const supportContacts = (formData.get('supportContacts')?.toString() ?? '').trim() || undefined;
+
+                                updateApartment(aptId, {
+                                    wifiSsid,
+                                    wifiPass,
+                                    checkIn,
+                                    checkOut,
+                                    rules,
+                                    supportContacts,
+                                });
+
+                                revalidatePath('/app/host');
+                                redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}&r=${Date.now()}`);
+                            }}
+                            className='space-y-4'>
+                            <input type='hidden' name='aptId' value={aptId} />
+
+                            <div className='grid grid-cols-2 gap-4'>
+                                <div>
+                                    <label className='block text-sm font-medium mb-2'>Wi-Fi SSID</label>
+                                    <input
+                                        type='text'
+                                        name='wifiSsid'
+                                        defaultValue={apartmentDetails?.wifiSsid ?? ''}
+                                        className='w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500'
+                                        placeholder='Nome rete Wi-Fi'
+                                    />
+                                </div>
+                                <div>
+                                    <label className='block text-sm font-medium mb-2'>Wi-Fi Password</label>
+                                    <input
+                                        type='text'
+                                        name='wifiPass'
+                                        defaultValue={apartmentDetails?.wifiPass ?? ''}
+                                        className='w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500'
+                                        placeholder='Password Wi-Fi'
+                                    />
+                                </div>
+                            </div>
+
+                            <div className='grid grid-cols-2 gap-4'>
+                                <div>
+                                    <label className='block text-sm font-medium mb-2'>Check-in (HH:mm)</label>
+                                    <input
+                                        type='time'
+                                        name='checkIn'
+                                        defaultValue={apartmentDetails?.checkIn ?? ''}
+                                        className='w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500'
+                                    />
+                                </div>
+                                <div>
+                                    <label className='block text-sm font-medium mb-2'>Check-out (HH:mm)</label>
+                                    <input
+                                        type='time'
+                                        name='checkOut'
+                                        defaultValue={apartmentDetails?.checkOut ?? ''}
+                                        className='w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500'
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className='block text-sm font-medium mb-2'>House Rules (una per riga)</label>
+                                <textarea
+                                    name='rules'
+                                    rows={4}
+                                    defaultValue={apartmentDetails?.rules?.join('\n') ?? ''}
+                                    className='w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500'
+                                    placeholder='No smoking&#10;Silenzio dopo le 22:30'
+                                />
+                            </div>
+
+                            <div>
+                                <label className='block text-sm font-medium mb-2'>Contatti Supporto</label>
+                                <textarea
+                                    name='supportContacts'
+                                    rows={2}
+                                    defaultValue={apartmentDetails?.supportContacts ?? ''}
+                                    className='w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500'
+                                    placeholder='Telefono, email, ecc.'
+                                />
+                            </div>
+
+                            <div className='flex gap-3 pt-2 border-t border-white/10'>
+                                <button
+                                    type='submit'
+                                    className='rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-6 py-3 font-semibold text-sm'>
+                                    Salva Dettagli
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+
+                    {/* Device Status */}
+                    <section className='rounded-2xl bg-white/5 border border-white/10 p-4'>
+                        <div className='text-sm font-semibold mb-4'>Device</div>
+                        {(() => {
+                            const enabledDevices = getAllEnabledDevices(aptId);
+                            
+                            if (enabledDevices.length === 0) {
+                                return (
+                                    <div className='text-sm opacity-60 py-4 text-center'>
+                                        Nessun device configurato per questo appartamento.
+                                        <div className='text-xs opacity-50 mt-1'>I device vengono configurati dalla sezione Tech.</div>
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <div className='space-y-2'>
+                                    {enabledDevices.map((deviceType) => {
+                                        const state = getDeviceState(aptId, deviceType);
+                                        const label = getDeviceLabel(deviceType);
+                                        const isOnline = state === 'online';
+
+                                        return (
+                                            <div
+                                                key={deviceType}
+                                                className='flex items-center justify-between gap-3 rounded-xl bg-black/20 border border-white/10 p-3'>
+                                                <div className='flex-1 min-w-0'>
+                                                    <div className='text-sm font-semibold'>{label}</div>
+                                                    <div className='text-xs opacity-60 mt-0.5'>{deviceType}</div>
+                                                </div>
+                                                <div className='flex items-center gap-2'>
+                                                    <div
+                                                        className={`text-xs px-3 py-1 rounded-lg border ${
+                                                            isOnline
+                                                                ? 'bg-emerald-500/10 border-emerald-400/20 text-emerald-200'
+                                                                : 'bg-red-500/10 border-red-400/20 text-red-200'
+                                                        }`}>
+                                                        {state.toUpperCase()}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            );
+                        })()}
                     </section>
 
                     {/* Cleaner config */}
@@ -783,6 +961,16 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                             />
                             <button className='rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm opacity-90'>Cerca</button>
                         </form>
+
+                        {hostUser && (
+                            <UserProfile
+                                key={`${hostUser.userId}-${hostUser.profileImageUrl || 'no-image'}`}
+                                userId={hostUser.userId}
+                                username={hostUser.username}
+                                role={hostUser.role}
+                                profileImageUrl={hostUser.profileImageUrl}
+                            />
+                        )}
 
                         <form action='/api/auth/logout' method='post'>
                             <button className='rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-sm opacity-90'>Logout</button>
