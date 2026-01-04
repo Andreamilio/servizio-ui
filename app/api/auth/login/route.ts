@@ -16,40 +16,41 @@ function roleHome(role: string) {
 export async function POST(req: Request) {
   const ct = req.headers.get("content-type") || "";
   const isJson = ct.includes("application/json");
+  
+  try {
 
-  let username = "";
-  let password = "";
-  let next = "";
+    let username = "";
+    let password = "";
+    let next = "";
 
-  if (isJson) {
-    const body = await req.json().catch(() => ({} as any));
-    username = String(body?.username ?? "").trim();
-    password = String(body?.password ?? "").trim();
-    next = String(body?.next ?? "").trim();
-  } else {
-    const fd = await req.formData().catch(() => null);
-    username = String(fd?.get("username") ?? "").trim();
-    password = String(fd?.get("password") ?? "").trim();
-    next = String(fd?.get("next") ?? "").trim();
-  }
-
-  const isDev = process.env.NODE_ENV !== "production";
-
-  // Autentica user
-  const user = authenticateUser(username, password);
-
-  if (!user) {
     if (isJson) {
-      return NextResponse.json(
-        { ok: false, error: "Username o password non validi" },
-        { status: 401 }
-      );
+      const body = await req.json().catch(() => ({} as any));
+      username = String(body?.username ?? "").trim();
+      password = String(body?.password ?? "").trim();
+      next = String(body?.next ?? "").trim();
+    } else {
+      const fd = await req.formData().catch(() => null);
+      username = String(fd?.get("username") ?? "").trim();
+      password = String(fd?.get("password") ?? "").trim();
+      next = String(fd?.get("next") ?? "").trim();
     }
-    const url = new URL("/loginhost-tech", req.url);
-    url.searchParams.set("err", "auth");
-    if (next) url.searchParams.set("next", next);
-    return NextResponse.redirect(url, { status: 303 });
-  }
+
+    const isDev = process.env.NODE_ENV !== "production";
+
+    // Autentica user
+    const user = authenticateUser(username, password);
+
+    if (!user) {
+      if (isJson) {
+        return NextResponse.json(
+          { ok: false, error: "Username o password non validi" },
+          { status: 401 }
+        );
+      }
+      // Usa path relativo per il redirect
+      const redirectUrl = next ? `/loginhost-tech?err=auth&next=${encodeURIComponent(next)}` : "/loginhost-tech?err=auth";
+      return NextResponse.redirect(redirectUrl, { status: 303 });
+    }
 
   // Per host, serviamo l'aptId - per ora usiamo il primo apt del client
   // TODO: In futuro potremmo permettere all'host di selezionare l'apt, per ora usiamo "101" come default
@@ -83,5 +84,15 @@ export async function POST(req: Request) {
       path: "/",
     });
     return res;
+  }
+  } catch (error: any) {
+    console.error("[auth/login] Error:", error);
+    if (isJson) {
+      return NextResponse.json(
+        { ok: false, error: "Errore interno del server" },
+        { status: 500 }
+      );
+    }
+    return NextResponse.redirect("/loginhost-tech?err=server", { status: 303 });
   }
 }
