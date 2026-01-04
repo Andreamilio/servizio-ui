@@ -20,23 +20,27 @@ function roleHome(role: string) {
 // Helper per costruire URL assoluti usando gli header della richiesta
 function getAbsoluteUrl(req: Request, path: string): string {
   try {
-    if (req.url) {
-      try {
-        const baseUrl = new URL(req.url);
-        const url = new URL(path, baseUrl.origin);
-        return url.toString();
-      } catch {
-        // Se req.url è malformato, continua con la costruzione manuale
-      }
-    }
+    // NON usare req.url perché su Render contiene l'URL interno (localhost:10000)
+    // Usa sempre gli header per costruire l'URL pubblico corretto
     
-    const host = req.headers.get('x-forwarded-host') || req.headers.get('host');
+    // Preferisci x-forwarded-host (set da proxy/reverse proxy come Render)
+    const xForwardedHost = req.headers.get('x-forwarded-host');
+    const hostHeader = req.headers.get('host');
+    const host = xForwardedHost || hostHeader;
+    
     if (!host) {
       throw new Error('No host header available');
     }
     
-    const protocol = req.headers.get('x-forwarded-proto') || 
-                     (process.env.NODE_ENV === 'production' ? 'https' : 'http');
+    // Se l'host è localhost o 127.0.0.1, preferisci sempre x-forwarded-host
+    // (su Render potrebbe esserci un problema di configurazione)
+    if ((host.includes('localhost') || host.includes('127.0.0.1')) && !xForwardedHost) {
+      console.warn('[getAbsoluteUrl] Host è localhost ma x-forwarded-host non disponibile:', { host, reqUrl: req.url });
+    }
+    
+    // Preferisci x-forwarded-proto, poi assumi https in produzione (Render usa sempre https)
+    const xForwardedProto = req.headers.get('x-forwarded-proto');
+    const protocol = xForwardedProto || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
     
     const cleanPath = path.startsWith('/') ? path : `/${path}`;
     const absoluteUrl = `${protocol}://${host}${cleanPath}`;
@@ -49,7 +53,8 @@ function getAbsoluteUrl(req: Request, path: string): string {
       host: req.headers.get('host'),
       xForwardedHost: req.headers.get('x-forwarded-host'),
       xForwardedProto: req.headers.get('x-forwarded-proto'),
-      nodeEnv: process.env.NODE_ENV
+      nodeEnv: process.env.NODE_ENV,
+      reqUrl: req.url
     });
     return path.startsWith('/') ? path : `/${path}`;
   }
