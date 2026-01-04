@@ -19,9 +19,9 @@ export function cleaners_setDuration(aptId: string, durationMin: number) {
   setCleanerDuration(aptId, durationMin);
 }
 
-export function cleaners_add(aptId: string, name: string) {
+export function cleaners_add(aptId: string, name: string, phone: string) {
   if (!aptId) return;
-  addCleaner(aptId, name);
+  addCleaner(aptId, name, phone);
 }
 
 export function cleaners_remove(aptId: string, name: string) {

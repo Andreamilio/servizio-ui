@@ -4,8 +4,13 @@ export type CleaningTimeRange = {
   to: string; // HH:mm format, es. "18:00"
 };
 
+export type CleanerInfo = {
+  name: string;
+  phone: string;
+};
+
 export type CleanerCfg = {
-  cleaners: string[];
+  cleaners: CleanerInfo[];
   durationMin: number; // durata default pulizia
   cleaningTimeRanges: CleaningTimeRange[]; // range orari disponibili per le pulizie
 };
@@ -23,10 +28,26 @@ function norm(v: string) {
 }
 
 export function getCleanerCfg(aptId: string): CleanerCfg {
-  return cfgStore.get(aptId) ?? { 
-    cleaners: [], 
-    durationMin: 60,
-    cleaningTimeRanges: [{ from: "09:00", to: "18:00" }] // default: 9:00-18:00
+  const cfg = cfgStore.get(aptId);
+  if (!cfg) {
+    return { 
+      cleaners: [], 
+      durationMin: 60,
+      cleaningTimeRanges: [{ from: "09:00", to: "18:00" }] // default: 9:00-18:00
+    };
+  }
+  
+  // Migrazione legacy: converte stringhe in oggetti CleanerInfo
+  const cleaners = cfg.cleaners.map((c) => {
+    if (typeof c === 'string') {
+      return { name: c, phone: '' };
+    }
+    return c;
+  });
+  
+  return {
+    ...cfg,
+    cleaners
   };
 }
 
@@ -36,18 +57,21 @@ export function setCleanerDuration(aptId: string, durationMin: number) {
   cfgStore.set(aptId, { ...prev, durationMin: clamp(durationMin, 15, 24 * 60) });
 }
 
-export function addCleaner(aptId: string, name: string) {
+export function addCleaner(aptId: string, name: string, phone: string) {
   const n = norm(name);
-  if (!n) return;
+  const p = norm(phone);
+  if (!n || !p) return;
   const prev = getCleanerCfg(aptId);
-  const next = Array.from(new Set([...(prev.cleaners ?? []), n]));
+  const newCleaner: CleanerInfo = { name: n, phone: p };
+  // Rimuove eventuali cleaner con lo stesso nome e aggiunge quello nuovo
+  const next = [...(prev.cleaners ?? []).filter((c) => c.name !== n), newCleaner];
   cfgStore.set(aptId, { ...prev, cleaners: next });
 }
 
 export function removeCleaner(aptId: string, name: string) {
   const n = norm(name);
   const prev = getCleanerCfg(aptId);
-  cfgStore.set(aptId, { ...prev, cleaners: (prev.cleaners ?? []).filter((x) => x !== n) });
+  cfgStore.set(aptId, { ...prev, cleaners: (prev.cleaners ?? []).filter((c) => c.name !== n) });
 }
 
 export function normalizeCleanerName(v: string) {

@@ -1,6 +1,6 @@
 import { getClientLabel, listApartmentsByClient, listApartments } from "@/app/lib/clientStore";
 import { listAccessLogByApt } from "@/app/lib/store";
-import { gate_open, gate_close } from "@/app/lib/domain/gateStore";
+import { gate_open } from "@/app/lib/domain/gateStore";
 export type NetPath = "main" | "backup";
 export type OnlineStatus = "online" | "offline";
 export type DoorStatus = "locked" | "unlocked" | "unknown";
@@ -162,11 +162,10 @@ export function computeGateFromSharedLog(aptId: string): GateStatus {
   // listAccessLogByApt restituisce gli eventi più recenti per primi
   const log = listAccessLogByApt(aptId, 50) ?? [];
 
-  // Find most recent gate event (il primo nel log è il più recente)
-  // Deve trovare l'evento più recente tra gate_opened e gate_closed
+  // Find most recent gate_opened event (il primo nel log è il più recente)
   for (const e of log) {
-    if (e.type === "gate_opened" || e.type === "gate_closed") {
-      return e.type === "gate_opened" ? "unlocked" : "locked";
+    if (e.type === "gate_opened") {
+      return "unlocked";
     }
   }
 
@@ -353,15 +352,6 @@ export function openGate(aptId: string) {
   return a;
 }
 
-export function closeGate(aptId: string) {
-  const a = techStore.apts.get(aptId);
-  if (!a) return null;
-  // Usa gateStore per la logica
-  gate_close(aptId);
-  // Rimossa gestione stato portone locale: ora usiamo Store.accessLog come single source of truth
-  // events_log() viene chiamato dalla pagina tech/apt/[aptId]/page.tsx dopo questa funzione
-  return a;
-}
 
 export function revokeAccess(aptId: string) {
   const a = techStore.apts.get(aptId);

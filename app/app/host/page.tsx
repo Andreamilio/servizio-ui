@@ -65,14 +65,6 @@ function getDoorUi(aptId: string): { label: string; tone: 'open' | 'closed' | 'u
     return { label: 'BLOCCATA', tone: 'closed' };
 }
 
-function getGateUi(aptId: string): { label: string; tone: 'open' | 'closed' | 'unknown' } {
-    const log = Store.listAccessLogByApt(aptId, 50) ?? [];
-    const last = log.find((e: any) => e?.type === 'gate_opened' || e?.type === 'gate_closed');
-    // Default a BLOCCATO (closed) per prototipo
-    if (!last) return { label: 'BLOCCATO', tone: 'closed' };
-    if (last.type === 'gate_opened') return { label: 'SBLOCCATO', tone: 'open' };
-    return { label: 'BLOCCATO', tone: 'closed' };
-}
 
 type AptHealth = {
     aptId: string;
@@ -170,7 +162,6 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
         const stays = stays_listByApt(aptId) ?? [];
 
         const doorUi = getDoorUi(aptId);
-        const gateUi = getGateUi(aptId);
         const allAccessEvents = Store.listAccessLogByApt(aptId, 20) ?? [];
         // Filtra eventi WAN/VPN: visibili solo nella vista Tech
         const accessEvents = allAccessEvents.filter((e: any) => e.type !== 'wan_switched' && e.type !== 'vpn_toggled');
@@ -196,12 +187,6 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
             redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}&r=${Date.now()}`);
         }
 
-        async function actCloseGate() {
-            'use server';
-            Store.logAccessEvent(aptId, 'gate_closed', '[host] Portone chiuso');
-            revalidatePath('/app/host');
-            redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}&r=${Date.now()}`);
-        }
 
         async function createStay(formData: FormData) {
             'use server';
@@ -362,18 +347,6 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                     {doorUi.label}
                                 </div>
 
-                                <div className='mt-2 text-sm opacity-70'>Portone</div>
-                                <div
-                                    className={`mt-1 inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold ${
-                                        gateUi.tone === 'open'
-                                            ? 'bg-emerald-500/10 border-emerald-400/20 text-emerald-200'
-                                            : gateUi.tone === 'closed'
-                                            ? 'bg-white/5 border-white/10 text-white/80'
-                                            : 'bg-yellow-500/10 border-yellow-400/20 text-yellow-200'
-                                    }`}>
-                                    <span className={`h-2 w-2 rounded-full ${gateUi.tone === 'open' ? 'bg-emerald-400' : gateUi.tone === 'closed' ? 'bg-white/40' : 'bg-yellow-400'}`} />
-                                    {gateUi.label}
-                                </div>
                             </div>
                             <div className='text-right'>
                                 <div className='text-sm opacity-70'>Ultimo evento</div>
@@ -394,17 +367,13 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                 </form>
                             )}
 
-                            {gateUi.tone !== 'unknown' && (
-                                <form action={gateUi.tone === 'open' ? actCloseGate : actOpenGate}>
-                                    <button
-                                        type='submit'
-                                        className={`rounded-xl px-4 py-2 text-sm font-semibold ${
-                                            gateUi.tone === 'open' ? 'bg-white/10 hover:bg-white/15 border border-white/15' : 'bg-emerald-500/25 hover:bg-emerald-500/35 border border-emerald-400/30'
-                                        }`}>
-                                        {gateUi.tone === 'open' ? 'Chiudi portone' : 'Apri portone'}
-                                    </button>
-                                </form>
-                            )}
+                            <form action={actOpenGate}>
+                                <button
+                                    type='submit'
+                                    className='rounded-xl px-4 py-2 text-sm font-semibold bg-emerald-500/25 hover:bg-emerald-500/35 border border-emerald-400/30'>
+                                    Apri portone
+                                </button>
+                            </form>
 
                             <button className='rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-sm opacity-90'>Supporto</button>
                         </div>
@@ -452,15 +421,17 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                             'use server';
                                             const aptId = (fd.get('aptId')?.toString() ?? '').trim();
                                             const name = fd.get('cleanerName')?.toString() ?? '';
+                                            const phone = fd.get('cleanerPhone')?.toString() ?? '';
                                             if (!aptId) return;
-                                            cleaners_add(aptId, name);
+                                            cleaners_add(aptId, name, phone);
                                             redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
                                         }}
                                         className='space-y-2'>
                                         <input type='hidden' name='aptId' value={aptId} />
                                         <div className='text-[11px] opacity-60'>Aggiungi cleaner</div>
                                         <div className='flex gap-2'>
-                                            <input name='cleanerName' placeholder='Es. Mario Rossi' className='flex-1 rounded-xl bg-black/40 border border-white/10 p-2' />
+                                            <input name='cleanerName' placeholder='Es. Mario Rossi' required className='flex-1 rounded-xl bg-black/40 border border-white/10 p-2' />
+                                            <input name='cleanerPhone' type='tel' placeholder='Telefono' required className='flex-1 rounded-xl bg-black/40 border border-white/10 p-2' />
                                             <button type='submit' className='rounded-xl bg-cyan-500/30 border border-cyan-400/30 px-4 text-sm font-semibold'>
                                                 Aggiungi
                                             </button>
@@ -627,9 +598,12 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                             <div className='text-sm opacity-50'>Nessun cleaner censito.</div>
                                         ) : (
                                             <div className='space-y-2'>
-                                                {cfg.cleaners.map((nm) => (
-                                                    <div key={nm} className='flex items-center justify-between rounded-xl bg-black/30 border border-white/10 p-3'>
-                                                        <div className='text-sm font-semibold'>{nm}</div>
+                                                {cfg.cleaners.map((cleaner) => (
+                                                    <div key={cleaner.name} className='flex items-center justify-between rounded-xl bg-black/30 border border-white/10 p-3'>
+                                                        <div>
+                                                            <div className='text-sm font-semibold'>{cleaner.name}</div>
+                                                            <div className='text-xs opacity-60'>{cleaner.phone}</div>
+                                                        </div>
                                                         <form
                                                             action={async (fd: FormData) => {
                                                                 'use server';
@@ -640,7 +614,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                                                 redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
                                                             }}>
                                                             <input type='hidden' name='aptId' value={aptId} />
-                                                            <input type='hidden' name='name' value={nm} />
+                                                            <input type='hidden' name='name' value={cleaner.name} />
                                                             <button type='submit' className='text-xs px-3 py-2 rounded-lg bg-red-500/20 border border-red-500/30'>
                                                                 Rimuovi
                                                             </button>
@@ -738,9 +712,9 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                         return (
                                             <select name='cleaner' required className='w-full rounded-xl bg-black/40 border border-white/10 p-2'>
                                                 <option value=''>— Seleziona cleaner —</option>
-                                                {cfg.cleaners.map((nm) => (
-                                                    <option key={nm} value={nm}>
-                                                        {nm}
+                                                {cfg.cleaners.map((cleaner) => (
+                                                    <option key={cleaner.name} value={cleaner.name}>
+                                                        {cleaner.name} - {cleaner.phone}
                                                     </option>
                                                 ))}
                                             </select>

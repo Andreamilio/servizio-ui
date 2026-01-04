@@ -12,13 +12,11 @@ import {
   guestOpenDoor,
   guestCloseDoor,
   guestOpenGate,
-  guestCloseGate,
 } from "@/app/lib/gueststore";
 
 import * as Store from "@/app/lib/store";
 import { events_listByApt, events_log } from "@/app/lib/domain/eventsDomain";
 import { door_getStateFromLog } from "@/app/lib/domain/doorStore";
-import { gate_getStateFromLog } from "@/app/lib/domain/gateStore";
 
 function badge(outcome: "ok" | "retrying" | "fail" | null) {
   if (outcome === "ok") return { t: "Accesso disponibile", c: "bg-emerald-500/15 border-emerald-400/20 text-emerald-200" };
@@ -59,21 +57,12 @@ export default async function GuestPage({
   // Leggi stato porta da Store.accessLog (single source of truth) invece che da gueststore locale
   const doorState = door_getStateFromLog(Store, aptId);
   const doorIsOpen = doorState === "open";
-  // Leggi stato portone da Store.accessLog (single source of truth)
-  const gateState = gate_getStateFromLog(Store, aptId);
-  const gateIsOpen = gateState === "open";
 
   // Rimuovi toast dall'URL se non corrisponde allo stato attuale (evita toast fuorvianti dopo refresh)
   if (toast && toast.startsWith("open_") && !doorIsOpen && !toast.includes("gate")) {
     redirect("/app/guest");
   }
   if (toast && toast.startsWith("close_") && doorIsOpen && !toast.includes("gate")) {
-    redirect("/app/guest");
-  }
-  if (toast && toast.startsWith("gate_open_") && !gateIsOpen) {
-    redirect("/app/guest");
-  }
-  if (toast && toast.startsWith("gate_close_") && gateIsOpen) {
     redirect("/app/guest");
   }
 
@@ -149,29 +138,6 @@ export default async function GuestPage({
     redirect(`/app/guest?toast=${outcome === "ok" ? "gate_open_ok" : "gate_open_fail"}&r=${Date.now()}`);
   }
 
-  async function actCloseGate() {
-    "use server";
-    const outcome = guestCloseGate(aptId);
-
-    if (outcome === "ok") {
-      events_log(Store, {
-        aptId,
-        type: "gate_closed",
-        actor: "guest",
-        label: "Portone chiuso dall'ospite",
-      });
-    } else {
-      events_log(Store, {
-        aptId,
-        type: "guest_access_ko",
-        actor: "guest",
-        label: "Tentativo chiusura portone fallito",
-      });
-    }
-
-    revalidatePath("/app/guest");
-    redirect(`/app/guest?toast=${outcome === "ok" ? "gate_close_ok" : "gate_close_fail"}&r=${Date.now()}`);
-  }
 
   return (
     <main className="min-h-screen bg-[#0a0d12] text-white">
@@ -207,11 +173,8 @@ export default async function GuestPage({
             {toast === "close_fail" &&
               "Non riesco a chiudere. Prova ancora o contatta supporto."}
             {toast === "gate_open_ok" && "Portone sbloccato ✅"}
-            {toast === "gate_close_ok" && "Portone chiuso ✅"}
             {toast === "gate_open_fail" &&
               "Non riesco ad aprire il portone. Prova ancora o contatta supporto."}
-            {toast === "gate_close_fail" &&
-              "Non riesco a chiudere il portone. Prova ancora o contatta supporto."}
           </div>
         )}
 
@@ -240,20 +203,6 @@ export default async function GuestPage({
                 {doorIsOpen ? "PORTA SBLOCCATA" : "PORTA CHIUSA"}
               </div>
 
-              <div
-                className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold ${
-                  gateIsOpen
-                    ? "bg-emerald-500/10 border-emerald-400/20 text-emerald-200"
-                    : "bg-white/5 border-white/10 text-white/80"
-                }`}
-              >
-                <span
-                  className={`h-2 w-2 rounded-full ${
-                    gateIsOpen ? "bg-emerald-400" : "bg-white/40"
-                  }`}
-                />
-                {gateIsOpen ? "PORTONE SBLOCCATO" : "PORTONE CHIUSO"}
-              </div>
             </div>
           </div>
 
@@ -271,19 +220,11 @@ export default async function GuestPage({
                 </button>
               </form>
             )}
-            {gateIsOpen ? (
-              <form action={actCloseGate}>
-                <button className="w-full rounded-2xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 py-4 text-base font-semibold">
-                  Chiudi portone
-                </button>
-              </form>
-            ) : (
-              <form action={actOpenGate}>
-                <button className="w-full rounded-2xl bg-cyan-500/25 hover:bg-cyan-500/35 border border-cyan-400/30 py-4 text-base font-semibold">
-                  Apri portone
-                </button>
-              </form>
-            )}
+            <form action={actOpenGate}>
+              <button className="w-full rounded-2xl bg-cyan-500/25 hover:bg-cyan-500/35 border border-cyan-400/30 py-4 text-base font-semibold">
+                Apri portone
+              </button>
+            </form>
           </div>
 
           <div className="grid grid-cols-2 gap-3 text-sm">

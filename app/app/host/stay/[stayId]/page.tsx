@@ -542,9 +542,9 @@ export default async function StayDetailPage({
                             defaultValue={stayObj.cleanerName ?? ""}
                             className="w-full rounded-xl bg-black/40 border border-white/10 p-2">
                             <option value="">— Seleziona cleaner —</option>
-                            {cleanersList.map((c: string) => (
-                              <option key={c} value={c}>
-                                {c}
+                            {cleanersList.map((cleaner) => (
+                              <option key={cleaner.name} value={cleaner.name}>
+                                {cleaner.name} - {cleaner.phone}
                               </option>
                             ))}
                           </select>

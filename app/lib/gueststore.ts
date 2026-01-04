@@ -1,5 +1,5 @@
 import { getApartment } from "@/app/lib/clientStore";
-import { gate_open, gate_close } from "@/app/lib/domain/gateStore";
+import { gate_open } from "@/app/lib/domain/gateStore";
 
 export type DoorOutcome = "ok" | "retrying" | "fail";
 
@@ -256,55 +256,3 @@ export function guestOpenGate(aptId: string): DoorOutcome {
   return outcome;
 }
 
-/**
- * Simula "Chiudi portone".
- * - 90% ok
- * - 10% fail
- */
-export function guestCloseGate(aptId: string): DoorOutcome {
-  const s = getGuestState(aptId);
-
-  const r = Math.random();
-  const now = Date.now();
-
-  s.events.unshift({
-    id: id(),
-    aptId,
-    ts: now,
-    outcome: "retrying",
-    title: "Invio comando",
-    detail: "Sto chiudendo il portone…",
-  });
-
-  let outcome: DoorOutcome = "ok";
-
-  if (r < 0.9) {
-    outcome = "ok";
-    // Usa gateStore per la logica
-    gate_close(aptId);
-    s.events.unshift({
-      id: id(),
-      aptId,
-      ts: now + 600,
-      outcome: "ok",
-      title: "Portone chiuso ✅",
-      detail: "Portone chiuso correttamente.",
-    });
-  } else {
-    outcome = "fail";
-    s.events.unshift({
-      id: id(),
-      aptId,
-      ts: now + 900,
-      outcome: "fail",
-      title: "Chiusura non riuscita",
-      detail: "Non riesco a chiudere. Riprova tra poco o contatta supporto.",
-    });
-  }
-
-  s.lastOutcome = outcome;
-  s.lastTs = now;
-  store.set(aptId, s);
-
-  return outcome;
-}

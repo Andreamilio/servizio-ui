@@ -9,11 +9,9 @@ import {
   getApt,
   openDoor,
   openGate,
-  closeGate,
   revokeAccess,
   toggleVpn,
   toggleWan,
-  computeGateFromSharedLog,
 } from "@/app/lib/techstore";
 
 import * as Store from "@/app/lib/store";
@@ -72,8 +70,6 @@ export default async function TechAptPage({
   // ✅ LOG: single source of truth (store.ts via eventsDomain)
   const aptLog = events_listByApt(Store, aptId, 20);
   
-  // Stato portone dal log condiviso
-  const gateStatus = computeGateFromSharedLog(aptId);
 
   // Device Package stats
   const enabledDevices = getAllEnabledDevices(aptId);
@@ -139,21 +135,6 @@ export default async function TechAptPage({
     redirect(`/app/tech/apt/${aptId}?r=${Date.now()}`);
   }
 
-  async function actCloseGate() {
-    "use server";
-    closeGate(aptId);
-
-    events_log(Store, {
-      aptId,
-      type: "gate_closed",
-      actor: "tech",
-      label: "Portone chiuso (azione Tech)",
-    });
-
-    revalidatePath("/app/tech");
-    revalidatePath(`/app/tech/apt/${aptId}`);
-    redirect(`/app/tech/apt/${aptId}?r=${Date.now()}`);
-  }
 
   async function actRevoke() {
     "use server";
@@ -259,10 +240,6 @@ export default async function TechAptPage({
               <div className="opacity-60 text-xs">DOOR</div>
               <div className="font-semibold">{apt.door.toUpperCase()}</div>
             </div>
-            <div className="rounded-xl bg-black/20 border border-white/10 p-3">
-              <div className="opacity-60 text-xs">GATE</div>
-              <div className="font-semibold">{gateStatus.toUpperCase()}</div>
-            </div>
 
             {apt.door === "unknown" && (
               <div className="col-span-full mt-3 rounded-xl bg-amber-500/10 border border-amber-400/20 p-3">
@@ -278,19 +255,6 @@ export default async function TechAptPage({
               </div>
             )}
 
-            {gateStatus === "unknown" && (
-              <div className="col-span-full mt-3 rounded-xl bg-amber-500/10 border border-amber-400/20 p-3">
-                <div className="flex items-start gap-2">
-                  <span className="text-amber-400">⚠️</span>
-                  <div className="flex-1">
-                    <div className="text-sm font-semibold text-amber-200">Stato portone sconosciuto</div>
-                    <div className="text-xs opacity-80 mt-1">
-                      Non ci sono eventi nel log per questo appartamento. Lo stato del portone verrà aggiornato quando ci sono eventi di apertura/chiusura.
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
 
             <Link
               href={`/app/tech/apt/${aptId}/devices`}
@@ -345,33 +309,11 @@ export default async function TechAptPage({
               </>
             )}
 
-            {gateStatus === "unlocked" ? (
-              <>
-                <form action={actCloseGate} className="flex-1">
-                  <button className="w-full sm:w-auto rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 font-semibold">
-                    Chiudi portone
-                  </button>
-                </form>
-                <form action={actOpenGate} className="flex-1">
-                  <button className="w-full sm:w-auto rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-400/20 px-4 py-2 font-semibold">
-                    Apri portone
-                  </button>
-                </form>
-              </>
-            ) : (
-              <>
-                <form action={actOpenGate} className="flex-1">
-                  <button className="w-full sm:w-auto rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 px-4 py-2 font-semibold">
-                    Apri portone
-                  </button>
-                </form>
-                <form action={actCloseGate} className="flex-1">
-                  <button className="w-full sm:w-auto rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 font-semibold">
-                    Chiudi portone
-                  </button>
-                </form>
-              </>
-            )}
+            <form action={actOpenGate} className="flex-1">
+              <button className="w-full sm:w-auto rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 px-4 py-2 font-semibold">
+                Apri portone
+              </button>
+            </form>
 
             <form action={actRevoke}>
               <button className="w-full sm:w-auto rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 px-4 py-2 font-semibold">

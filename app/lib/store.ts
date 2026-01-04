@@ -66,7 +66,6 @@ export type AccessEventType =
   | "door_opened"
   | "door_closed"
   | "gate_opened"
-  | "gate_closed"
   | "wan_switched"
   | "vpn_toggled"
   | "stay_created"

@@ -16,7 +16,7 @@ import {
 import { listPinsByApt } from "@/app/lib/store";
 import * as Store from "@/app/lib/store";
 import { door_open, door_close, door_getStateFromLog } from "@/app/lib/domain/doorStore";
-import { gate_open, gate_close, gate_getStateFromLog } from "@/app/lib/domain/gateStore";
+import { gate_open } from "@/app/lib/domain/gateStore";
 import { ProblemModal } from "./ProblemModal";
 
 export const dynamic = "force-dynamic";
@@ -126,11 +126,9 @@ export default async function CleanerJobPage({
 
   const aptId = job.aptId;
   
-  // Leggi stato porta e portone dal log condiviso
+  // Leggi stato porta dal log condiviso
   const doorState = door_getStateFromLog(Store, aptId);
   const doorIsOpen = doorState === "open";
-  const gateState = gate_getStateFromLog(Store, aptId);
-  const gateIsOpen = gateState === "open";
   
   // Verifica se "Foto finali" è nella checklist e se è done
   const photoItem = job.checklist.find((it) => it.label.includes("Foto finali"));
@@ -182,19 +180,6 @@ export default async function CleanerJobPage({
     redirect(`/app/cleaner/${jobIdStr}`);
   }
 
-  async function actCloseGate() {
-    "use server";
-    const outcome = gate_close(aptId);
-    
-    if (outcome === "ok") {
-      Store.logAccessEvent(aptId, "gate_closed", "[cleaner] Portone chiuso dal cleaner");
-    } else {
-      Store.logAccessEvent(aptId, "guest_access_ko", "[cleaner] Tentativo chiusura portone fallito");
-    }
-
-    revalidatePath(`/app/cleaner/${jobIdStr}`);
-    redirect(`/app/cleaner/${jobIdStr}`);
-  }
 
   async function actUploadFinalPhotos() {
     "use server";
@@ -379,36 +364,12 @@ export default async function CleanerJobPage({
 
             <div className="space-y-2">
               <div className="text-xs opacity-60">Portone</div>
-              <div className="flex items-center gap-2">
-                <div
-                  className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold ${
-                    gateIsOpen
-                      ? "bg-emerald-500/10 border-emerald-400/20 text-emerald-200"
-                      : "bg-white/5 border-white/10 text-white/80"
-                  }`}
-                >
-                  <span
-                    className={`h-2 w-2 rounded-full ${
-                      gateIsOpen ? "bg-emerald-400" : "bg-white/40"
-                    }`}
-                  />
-                  {gateIsOpen ? "SBLOCCATO" : "CHIUSO"}
-                </div>
-              </div>
               <div className="flex gap-2">
-                {gateIsOpen ? (
-                  <form action={actCloseGate} className="flex-1">
-                    <button className="w-full rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 px-3 py-2 text-xs font-semibold">
-                      Chiudi portone
-                    </button>
-                  </form>
-                ) : (
-                  <form action={actOpenGate} className="flex-1">
-                    <button className="w-full rounded-xl bg-cyan-500/25 hover:bg-cyan-500/35 border border-cyan-400/30 px-3 py-2 text-xs font-semibold">
-                      Apri portone
-                    </button>
-                  </form>
-                )}
+                <form action={actOpenGate} className="flex-1">
+                  <button className="w-full rounded-xl bg-cyan-500/25 hover:bg-cyan-500/35 border border-cyan-400/30 px-3 py-2 text-xs font-semibold">
+                    Apri portone
+                  </button>
+                </form>
               </div>
             </div>
           </div>

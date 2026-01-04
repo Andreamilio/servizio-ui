@@ -54,13 +54,6 @@ export function gate_open(aptId: string): DoorOutcome {
   return outcome;
 }
 
-export function gate_close(aptId: string): DoorOutcome {
-  const now = Date.now();
-  const ok = Math.random() < 0.9;
-  const outcome: DoorOutcome = ok ? "ok" : "fail";
-  gate_set(aptId, { state: ok ? "closed" : gate_get(aptId).state, lastOutcome: outcome, lastTs: now });
-  return outcome;
-}
 
 /**
  * Legge lo stato del portone da Store.accessLog (single source of truth)
@@ -70,10 +63,9 @@ export function gate_getStateFromLog(Store: any, aptId: string): "open" | "close
   if (!Store?.listAccessLogByApt) return "unknown";
   
   const log = Store.listAccessLogByApt(aptId, 50) ?? [];
-  const last = log.find((e: any) => e?.type === "gate_opened" || e?.type === "gate_closed");
+  const last = log.find((e: any) => e?.type === "gate_opened");
   
   if (!last) return "unknown";
-  if (last.type === "gate_opened") return "open";
-  return "closed";
+  return "open";
 }
 
