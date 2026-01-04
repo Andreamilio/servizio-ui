@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { consumePin, pinStore } from "@/app/lib/store";
+import { consumePin } from "@/app/lib/store";
 import { createSession } from "@/app/lib/session";
 
 function roleHome(role: string) {
@@ -96,50 +96,20 @@ export async function POST(req: Request) {
     return null;
   }
 
-  const storeSize = pinStore.size;
-  const pinExists = pinStore.has(pin);
-  const samplePins = Array.from(pinStore.keys()).slice(0, 5);
-  const pinRecord = pinStore.get(pin);
-
-  console.log("[auth/pin] Tentativo login con PIN:", {
+  console.log("[auth/pin]", {
     nodeEnv: process.env.NODE_ENV,
     contentType: ct,
     isJson,
-    pin,
     pinLen: pin.length,
-    storeSize,
-    pinExists,
-    samplePins,
     demoPinsPresent: {
       cleaner: Boolean(demoPins.cleaner),
       guest: Boolean(demoPins.guest),
     },
-    matchedDemoPin: matchDemoPin(pin)?.role ?? null,
+    matchedRole: matchDemoPin(pin)?.role ?? null,
     nextProvided: Boolean(next),
-    pinRecord: pinRecord ? {
-      role: pinRecord.role,
-      aptId: pinRecord.aptId,
-      stayId: pinRecord.stayId,
-      validFrom: pinRecord.validFrom,
-      validTo: pinRecord.validTo,
-      validFromFormatted: new Date(pinRecord.validFrom).toISOString(),
-      validToFormatted: new Date(pinRecord.validTo).toISOString(),
-      now: Date.now(),
-      nowFormatted: new Date().toISOString(),
-    } : null,
   });
 
   const rec = matchDemoPin(pin) ?? consumePin(pin);
-
-  console.log("[auth/pin] Risultato validazione:", {
-    pin,
-    hasRecord: !!rec,
-    record: rec ? {
-      role: rec.role,
-      aptId: rec.aptId,
-      stayId: 'stayId' in rec ? rec.stayId : undefined,
-    } : null,
-  });
 
   if (!rec) {
     if (isJson) {

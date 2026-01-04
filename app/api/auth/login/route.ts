@@ -43,18 +43,6 @@ function getAbsoluteUrl(req: Request, path: string): string {
     
     // Valida l'URL costruito
     new URL(absoluteUrl);
-    
-    // Log temporaneo per debug su Render
-    console.log('[getAbsoluteUrl] URL costruito:', {
-      absoluteUrl,
-      path,
-      host,
-      xForwardedHost,
-      xForwardedProto,
-      protocol,
-      nodeEnv: process.env.NODE_ENV
-    });
-    
     return absoluteUrl;
   } catch (error) {
     console.error('[getAbsoluteUrl] Error constructing URL:', { 
