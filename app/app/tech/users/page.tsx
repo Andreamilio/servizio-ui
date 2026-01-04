@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { readSession, validateSessionUser } from "@/app/lib/session";
 import {
   listUsers,
@@ -14,8 +15,18 @@ import {
   type UserRole,
 } from "@/app/lib/userStore";
 import { listClients } from "@/app/lib/clientStore";
+import { UserImageEditor } from "../../components/UserImageEditor";
 
 export const dynamic = "force-dynamic";
+
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
 
 export default async function TechUsersPage({
   searchParams,
@@ -57,9 +68,17 @@ export default async function TechUsersPage({
 
     try {
       createUser({ username, password, role, clientId });
+      revalidatePath("/app/tech/users");
       redirect("/app/tech/users");
-    } catch (error) {
-      redirect("/app/tech/users?err=exists");
+    } catch (error: any) {
+      const errorMessage = error?.message || "";
+      if (errorMessage.includes("già esistente")) {
+        redirect("/app/tech/users?action=create&err=exists");
+      } else {
+        // Altri errori - reindirizza senza mostrare errore specifico
+        revalidatePath("/app/tech/users");
+        redirect("/app/tech/users");
+      }
     }
   }
 
@@ -273,6 +292,14 @@ export default async function TechUsersPage({
                       </select>
                     </div>
 
+                    <div className="pt-4 border-t border-white/10">
+                      <UserImageEditor
+                        userId={selectedUser!.userId}
+                        username={selectedUser!.username}
+                        currentImageUrl={selectedUser!.profileImageUrl}
+                      />
+                    </div>
+
                     <div className="flex gap-3 pt-4 border-t border-white/10">
                       <button
                         type="submit"
@@ -326,9 +353,23 @@ export default async function TechUsersPage({
                     key={user.userId}
                     className="flex items-center justify-between gap-3 rounded-xl bg-black/20 border border-white/10 p-3"
                   >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <div className="text-sm font-semibold">{user.username}</div>
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      {user.profileImageUrl ? (
+                        <img
+                          src={user.profileImageUrl}
+                          alt={user.username}
+                          className="w-10 h-10 rounded-full object-cover border border-white/20 flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-cyan-500/20 border border-cyan-400/30 flex items-center justify-center flex-shrink-0">
+                          <span className="text-xs font-semibold text-cyan-200">
+                            {getInitials(user.username)}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm font-semibold">{user.username}</div>
                         <div
                           className={`text-xs px-2 py-0.5 rounded border ${
                             user.role === "tech"
@@ -344,9 +385,10 @@ export default async function TechUsersPage({
                           </div>
                         )}
                       </div>
-                      <div className="text-xs opacity-60 mt-1">
-                        {user.clientId && `Client: ${clients.find((c) => c.clientId === user.clientId)?.name || user.clientId}`}
-                        {user.lastLoginAt && ` • Ultimo accesso: ${new Date(user.lastLoginAt).toLocaleString()}`}
+                        <div className="text-xs opacity-60 mt-1">
+                          {user.clientId && `Client: ${clients.find((c) => c.clientId === user.clientId)?.name || user.clientId}`}
+                          {user.lastLoginAt && ` • Ultimo accesso: ${new Date(user.lastLoginAt).toLocaleString()}`}
+                        </div>
                       </div>
                     </div>
 

@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { getUser, getUserByUsername, createUser } from "./userStore";
+import { getPin } from "./store";
 
 const secret = process.env.APP_SECRET || "dev-secret-change-me";
 
@@ -7,6 +8,7 @@ type SessionPayload = {
   role: "host" | "tech" | "guest" | "cleaner";
   aptId: string;
   userId?: string; // userId per host/tech (opzionale per retrocompatibilità)
+  pin?: string; // PIN usato per guest/cleaner (opzionale)
   exp: number; // unix seconds
 };
 
@@ -42,10 +44,45 @@ export function readSession(token?: string | null): SessionPayload | null {
  * Valida che l'utente associato alla sessione sia ancora abilitato.
  * Ritorna null se la sessione è invalida o l'utente è disabilitato.
  */
+function isDemoPin(pin: string): boolean {
+  const demoPins = {
+    cleaner: String(process.env.DEMO_PIN_CLEANER ?? "444444").trim(),
+    guest: String(process.env.DEMO_PIN_GUEST ?? "333333").trim(),
+  };
+  return pin === demoPins.cleaner || pin === demoPins.guest;
+}
+
 export function validateSessionUser(session: SessionPayload | null): SessionPayload | null {
   if (!session) return null;
-  if (!session.userId) return session; // Guest/cleaner (PIN login)
+  
+  // Per guest/cleaner: verificare che il PIN esista ancora
+  if ((session.role === "guest" || session.role === "cleaner") && session.pin) {
+    // I demo pins non sono nello store, quindi li accettiamo sempre
+    if (isDemoPin(session.pin)) {
+      return session;
+    }
+    
+    const pinRec = getPin(session.pin);
+    if (!pinRec) {
+      // PIN revocato, sessione invalida
+      return null;
+    }
+    // Verificare anche validità temporale del PIN
+    const now = Date.now();
+    const from = pinRec.validFrom ?? pinRec.createdAt;
+    const to = pinRec.validTo ?? pinRec.expiresAt ?? pinRec.createdAt;
+    if (now < from || now > to) {
+      return null; // PIN scaduto
+    }
+    // PIN valido, sessione valida
+    return session;
+  }
+  
+  // Per guest/cleaner senza PIN (retrocompatibilità): accetta la sessione
+  // Le nuove sessioni includeranno sempre il PIN
+  if (!session.userId) return session;
 
+  // Per host/tech: validazione utente esistente
   // Assicurati che gli utenti demo esistano (importante per serverless/Render)
   const SHOULD_SEED = process.env.DEMO_MODE === "1" || process.env.NODE_ENV !== "production";
   

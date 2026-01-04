@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { readSession } from "@/app/lib/session";
+import { readSession, validateSessionUser } from "@/app/lib/session";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import {
@@ -35,9 +35,10 @@ export default async function CleanerJobPage({
   const cookieStore = await cookies();
   const sess = cookieStore.get("sess")?.value;
 
-  const me = readSession(sess); // <-- NON await (è sync)
+  const me = validateSessionUser(readSession(sess));
 
   if (!me || me.role !== "cleaner") {
+    redirect("/?err=session_expired");
     return <div className="p-6 text-white">Non autorizzato</div>;
   }
 

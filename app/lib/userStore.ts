@@ -14,6 +14,7 @@ export type User = {
   enabled: boolean;
   createdAt: number;
   lastLoginAt?: number;
+  profileImageUrl?: string; // URL o base64 per immagine profilo (mockup)
 };
 
 declare global {

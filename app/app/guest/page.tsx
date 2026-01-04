@@ -5,7 +5,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { readSession } from "@/app/lib/session";
+import { readSession, validateSessionUser } from "@/app/lib/session";
 import { unstable_noStore as noStore } from "next/cache";
 import {
   getGuestState,
@@ -25,6 +25,13 @@ function badge(outcome: "ok" | "retrying" | "fail" | null) {
   return { t: "Pronto", c: "bg-white/5 border-white/10 text-white/80" };
 }
 
+function fmtDT(ts?: number | null) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export default async function GuestPage({
   searchParams,
 }: {
@@ -37,21 +44,24 @@ export default async function GuestPage({
 
   const cookieStore = await cookies();
   const sess = cookieStore.get("sess")?.value;
-  const me = readSession(sess);
+  const me = validateSessionUser(readSession(sess));
 
-  if (!me || me.role !== "guest") return <div className="p-6 text-white">Non autorizzato</div>;
+  if (!me || me.role !== "guest") {
+    redirect("/?err=session_expired");
+    return <div className="p-6 text-white">Non autorizzato</div>;
+  }
 
   const aptId = me.aptId;
   if (!aptId) return <div className="p-6 text-white">AptId non disponibile</div>;
   
   const state = getGuestState(aptId);
-  const allEvents = events_listByApt(Store, aptId, 5);
-  // Filtra eventi WAN/VPN: visibili solo nella vista Tech
-  // Filtra eventi cleaner: visibili solo in host e tech
+  const allEvents = events_listByApt(Store, aptId, 20);
+  // Filtra eventi: il guest vede solo eventi relativi a porta e portone
   const events = allEvents.filter((e) => 
-    e.type !== 'wan_switched' && 
-    e.type !== 'vpn_toggled' &&
-    !e.label.includes('[cleaner]')
+    e.type === 'door_opened' || 
+    e.type === 'door_closed' || 
+    e.type === 'gate_opened' || 
+    e.type === 'gate_closed'
   );
   const b = badge(state.lastOutcome);
   // Leggi stato porta da Store.accessLog (single source of truth) invece che da gueststore locale
@@ -256,13 +266,16 @@ export default async function GuestPage({
             <div className="text-sm font-semibold">Attività recente</div>
           </div>
           <div className="p-4 space-y-2">
-            {events.map((e) => (
-              <div key={e.id} className="rounded-xl bg-black/20 border border-white/10 p-3">
-                <div className="text-xs opacity-60">{new Date(e.ts).toLocaleString()}</div>
-                <div className="mt-1 text-sm font-semibold">{e.label}</div>
-                <div className="mt-1 text-xs opacity-70">{e.type}</div>
-              </div>
-            ))}
+            {events.length === 0 ? (
+              <div className="text-sm opacity-60 py-4 text-center">Nessuna attività recente</div>
+            ) : (
+              events.map((e) => (
+                <div key={e.id} className="rounded-xl bg-black/20 border border-white/10 p-3">
+                  <div className="text-xs opacity-60">{fmtDT(e.ts)}</div>
+                  <div className="mt-1 text-sm font-semibold">{e.label}</div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

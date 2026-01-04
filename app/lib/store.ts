@@ -305,6 +305,10 @@ export function listPinsByApt(aptId: string): PinRecord[] {
     .sort((a, b) => b.createdAt - a.createdAt);
 }
 
+export function getPin(pin: string): PinRecord | null {
+  return pinStore.get(pin) ?? null;
+}
+
 export function revokePin(pin: string) {
   const rec = pinStore.get(pin);
   if (!rec) return false;

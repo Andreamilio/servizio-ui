@@ -1,14 +1,18 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { readSession } from "@/app/lib/session";
+import { redirect } from "next/navigation";
+import { readSession, validateSessionUser } from "@/app/lib/session";
 import { getGuestState } from "@/app/lib/gueststore";
 
 export default async function GuestApartmentPage() {
   const cookieStore = await cookies();
   const sess = cookieStore.get("sess")?.value;
-  const me = readSession(sess);
+  const me = validateSessionUser(readSession(sess));
 
-  if (!me || me.role !== "guest") return <div className="p-6 text-white">Non autorizzato</div>;
+  if (!me || me.role !== "guest") {
+    redirect("/?err=session_expired");
+    return <div className="p-6 text-white">Non autorizzato</div>;
+  }
 
   const aptId = me.aptId;
   if (!aptId) return <div className="p-6 text-white">AptId non disponibile</div>;

@@ -124,7 +124,7 @@ export async function POST(req: Request) {
   }
 
   const session = createSession(
-    { role: rec.role, aptId: rec.aptId },
+    { role: rec.role, aptId: rec.aptId, pin: pin },
     60 * 60 * 6
   );
 

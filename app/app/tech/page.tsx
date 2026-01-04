@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { readSession, validateSessionUser } from "@/app/lib/session";
 import { getAccessLog, getIncidents, listApts, techStore } from "@/app/lib/techstore";
 import { listClients } from "@/app/lib/clientStore";
+import { getUser } from "@/app/lib/userStore";
+import { UserProfile } from "../components/UserProfile";
 
 function pillStatus(s: "online" | "offline") {
   return s === "online"
@@ -49,6 +51,8 @@ export default async function TechPage({
   const accessLog = getAccessLog(logLimit);
   const incidents = getIncidents(6);
 
+  const techUser = me.userId ? getUser(me.userId) : null;
+
   return (
     <main className="min-h-screen bg-[#0a0d12] text-white">
       <div className="lg:hidden px-4 pt-4 pb-2 flex items-center justify-between">
@@ -56,11 +60,22 @@ export default async function TechPage({
           <div className="text-xs opacity-60">TECH</div>
           <div className="text-sm font-semibold">{techStore.clientName}</div>
         </div>
-        <form action="/api/auth/logout" method="post">
-          <button className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm">
-            Logout
-          </button>
-        </form>
+        <div className="flex items-center gap-2">
+          {techUser && (
+            <UserProfile
+              key={`${techUser.userId}-${techUser.profileImageUrl || 'no-image'}`}
+              userId={techUser.userId}
+              username={techUser.username}
+              role={techUser.role}
+              profileImageUrl={techUser.profileImageUrl}
+            />
+          )}
+          <form action="/api/auth/logout" method="post">
+            <button className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm">
+              Logout
+            </button>
+          </form>
+        </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_360px] gap-4 lg:gap-6 p-4 lg:p-6">
         {/* SIDEBAR */}
@@ -251,11 +266,21 @@ export default async function TechPage({
             </div>
           </div>
 
-          <form action="/api/auth/logout" method="post" className="hidden lg:block">
-            <button className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3">
-              Logout
-            </button>
-          </form>
+          <div className="hidden lg:block space-y-2">
+            {techUser && (
+              <UserProfile
+                userId={techUser.userId}
+                username={techUser.username}
+                role={techUser.role}
+                profileImageUrl={techUser.profileImageUrl}
+              />
+            )}
+            <form action="/api/auth/logout" method="post">
+              <button className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3">
+                Logout
+              </button>
+            </form>
+          </div>
         </aside>
       </div>
     </main>

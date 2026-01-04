@@ -104,14 +104,6 @@ export default async function TechClientsPage({
     const name = (formData.get("name")?.toString() ?? "").trim();
     const status = (formData.get("status")?.toString() ?? "ok") as ApartmentStatus;
     const addressShort = (formData.get("addressShort")?.toString() ?? "").trim() || undefined;
-    const wifiSsid = (formData.get("wifiSsid")?.toString() ?? "").trim() || undefined;
-    const wifiPass = (formData.get("wifiPass")?.toString() ?? "").trim() || undefined;
-    const checkIn = (formData.get("checkIn")?.toString() ?? "").trim() || undefined;
-    const checkOut = (formData.get("checkOut")?.toString() ?? "").trim() || undefined;
-    const rulesText = (formData.get("rules")?.toString() ?? "").trim();
-    const rules = rulesText ? rulesText.split("\n").filter((r) => r.trim().length > 0) : undefined;
-    const supportContacts = (formData.get("supportContacts")?.toString() ?? "").trim() || undefined;
-    const notes = (formData.get("notes")?.toString() ?? "").trim() || undefined;
 
     if (!cId || !id || !name) {
       redirect(`/app/tech/clients?action=createApt&clientId=${cId}&err=missing`);
@@ -122,13 +114,7 @@ export default async function TechClientsPage({
         name,
         status,
         addressShort,
-        wifiSsid,
-        wifiPass,
-        checkIn,
-        checkOut,
-        rules,
-        supportContacts,
-        notes,
+        // I dettagli (WiFi, Check-in/out, Rules, Contatti) vengono aggiunti successivamente dall'host
       });
     } catch (error: any) {
       redirect(`/app/tech/clients?action=createApt&clientId=${cId}&err=${encodeURIComponent(error.message)}`);
@@ -143,14 +129,6 @@ export default async function TechClientsPage({
     const name = (formData.get("name")?.toString() ?? "").trim();
     const status = (formData.get("status")?.toString() ?? "ok") as ApartmentStatus;
     const addressShort = (formData.get("addressShort")?.toString() ?? "").trim() || undefined;
-    const wifiSsid = (formData.get("wifiSsid")?.toString() ?? "").trim() || undefined;
-    const wifiPass = (formData.get("wifiPass")?.toString() ?? "").trim() || undefined;
-    const checkIn = (formData.get("checkIn")?.toString() ?? "").trim() || undefined;
-    const checkOut = (formData.get("checkOut")?.toString() ?? "").trim() || undefined;
-    const rulesText = (formData.get("rules")?.toString() ?? "").trim();
-    const rules = rulesText ? rulesText.split("\n").filter((r) => r.trim().length > 0) : undefined;
-    const supportContacts = (formData.get("supportContacts")?.toString() ?? "").trim() || undefined;
-    const notes = (formData.get("notes")?.toString() ?? "").trim() || undefined;
 
     if (!id || !name) {
       redirect(`/app/tech/clients?action=editApt&aptId=${id}&err=missing`);
@@ -161,17 +139,11 @@ export default async function TechClientsPage({
       redirect("/app/tech/clients?err=aptnotfound");
     }
 
+    // Aggiorna solo i campi base, i dettagli vengono gestiti dall'host
     updateApartment(id, {
       name,
       status,
       addressShort,
-      wifiSsid,
-      wifiPass,
-      checkIn,
-      checkOut,
-      rules,
-      supportContacts,
-      notes,
     });
 
     redirect(`/app/tech/clients?clientId=${apt.clientId}`);
@@ -374,66 +346,8 @@ export default async function TechClientsPage({
                     placeholder="es: Via Demo 12, Milano"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Wi-Fi SSID</label>
-                    <input
-                      type="text"
-                      name="wifiSsid"
-                      className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Wi-Fi Password</label>
-                    <input
-                      type="text"
-                      name="wifiPass"
-                      className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Check-in (HH:mm)</label>
-                    <input
-                      type="time"
-                      name="checkIn"
-                      className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Check-out (HH:mm)</label>
-                    <input
-                      type="time"
-                      name="checkOut"
-                      className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">House Rules (una per riga)</label>
-                  <textarea
-                    name="rules"
-                    rows={4}
-                    className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    placeholder="No smoking&#10;Silenzio dopo le 22:30"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Contatti Supporto</label>
-                  <textarea
-                    name="supportContacts"
-                    rows={2}
-                    className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Note Operative Interne</label>
-                  <textarea
-                    name="notes"
-                    rows={3}
-                    className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  />
+                <div className="text-xs opacity-60 mt-2">
+                  I dettagli (Wi-Fi, Check-in/out, House Rules, Contatti) possono essere aggiunti successivamente dall'host nella vista appartamento.
                 </div>
                 <div className="flex gap-3 pt-4 border-t border-white/10">
                   <button
@@ -501,72 +415,8 @@ export default async function TechClientsPage({
                     className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Wi-Fi SSID</label>
-                    <input
-                      type="text"
-                      name="wifiSsid"
-                      defaultValue={selectedApartment!.wifiSsid ?? ""}
-                      className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Wi-Fi Password</label>
-                    <input
-                      type="text"
-                      name="wifiPass"
-                      defaultValue={selectedApartment!.wifiPass ?? ""}
-                      className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Check-in (HH:mm)</label>
-                    <input
-                      type="time"
-                      name="checkIn"
-                      defaultValue={selectedApartment!.checkIn ?? ""}
-                      className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Check-out (HH:mm)</label>
-                    <input
-                      type="time"
-                      name="checkOut"
-                      defaultValue={selectedApartment!.checkOut ?? ""}
-                      className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">House Rules (una per riga)</label>
-                  <textarea
-                    name="rules"
-                    rows={4}
-                    defaultValue={selectedApartment!.rules?.join("\n") ?? ""}
-                    className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Contatti Supporto</label>
-                  <textarea
-                    name="supportContacts"
-                    rows={2}
-                    defaultValue={selectedApartment!.supportContacts ?? ""}
-                    className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Note Operative Interne</label>
-                  <textarea
-                    name="notes"
-                    rows={3}
-                    defaultValue={selectedApartment!.notes ?? ""}
-                    className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  />
+                <div className="text-xs opacity-60 mt-2">
+                  I dettagli (Wi-Fi, Check-in/out, House Rules, Contatti) possono essere modificati dall'host nella vista appartamento.
                 </div>
                 <div className="flex gap-3 pt-4 border-t border-white/10">
                   <button
