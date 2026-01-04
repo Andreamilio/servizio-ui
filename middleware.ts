@@ -18,11 +18,39 @@ export function middleware(req: NextRequest) {
   if (pathname.startsWith("/app/")) {
     const sess = req.cookies.get("sess")?.value;
     if (!sess) {
-      const url = req.nextUrl.clone();
-      // Redirect a login appropriato basato sul path (per ora sempre /)
-      url.pathname = "/";
-      url.searchParams.set("next", pathname);
-      return NextResponse.redirect(url);
+      try {
+        const url = req.nextUrl.clone();
+        // Redirect a login appropriato basato sul path (per ora sempre /)
+        url.pathname = "/";
+        url.searchParams.set("next", pathname);
+        
+        // Verifica che l'URL sia valido (su Render potrebbe essere malformato)
+        const urlString = url.toString();
+        try {
+          new URL(urlString);
+          return NextResponse.redirect(url);
+        } catch {
+          // Se l'URL clonato è malformato, costruiscilo manualmente
+          const host = req.headers.get('x-forwarded-host') || req.headers.get('host');
+          const protocol = req.headers.get('x-forwarded-proto') || 'https';
+          if (host) {
+            const absoluteUrl = `${protocol}://${host}/?next=${encodeURIComponent(pathname)}`;
+            return NextResponse.redirect(absoluteUrl);
+          }
+          // Fallback: usa il path relativo (meglio che crashare)
+          return NextResponse.redirect(`/?next=${encodeURIComponent(pathname)}`);
+        }
+      } catch (error) {
+        // Se anche il clone fallisce, costruisci manualmente
+        const host = req.headers.get('x-forwarded-host') || req.headers.get('host');
+        const protocol = req.headers.get('x-forwarded-proto') || 'https';
+        if (host) {
+          const absoluteUrl = `${protocol}://${host}/?next=${encodeURIComponent(pathname)}`;
+          return NextResponse.redirect(absoluteUrl);
+        }
+        // Ultimo fallback
+        return NextResponse.redirect(`/?next=${encodeURIComponent(pathname)}`);
+      }
     }
   }
 

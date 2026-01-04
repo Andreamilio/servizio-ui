@@ -50,6 +50,44 @@ function safeNextPath(input: unknown) {
   return next;
 }
 
+// Helper per costruire URL assoluti usando gli header della richiesta
+function getAbsoluteUrl(req: Request, path: string): string {
+  try {
+    if (req.url) {
+      try {
+        const baseUrl = new URL(req.url);
+        const url = new URL(path, baseUrl.origin);
+        return url.toString();
+      } catch {
+        // Se req.url è malformato, continua con la costruzione manuale
+      }
+    }
+    
+    const host = req.headers.get('x-forwarded-host') || req.headers.get('host');
+    if (!host) {
+      throw new Error('No host header available');
+    }
+    
+    const protocol = req.headers.get('x-forwarded-proto') || 
+                     (process.env.NODE_ENV === 'production' ? 'https' : 'http');
+    
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    const absoluteUrl = `${protocol}://${host}${cleanPath}`;
+    
+    new URL(absoluteUrl);
+    return absoluteUrl;
+  } catch (error) {
+    console.error('[getAbsoluteUrl] Error constructing URL:', { 
+      error, path, 
+      host: req.headers.get('host'),
+      xForwardedHost: req.headers.get('x-forwarded-host'),
+      xForwardedProto: req.headers.get('x-forwarded-proto'),
+      nodeEnv: process.env.NODE_ENV
+    });
+    return path.startsWith('/') ? path : `/${path}`;
+  }
+}
+
 export async function POST(req: Request) {
   const ct = req.headers.get("content-type") || "";
 
@@ -69,9 +107,9 @@ export async function POST(req: Request) {
 
   const rec = consumePin(pin);
   if (!rec) {
-    // Usa path relativo per il redirect
-    const redirectUrl = next ? `/?err=pin&next=${encodeURIComponent(next)}` : "/?err=pin";
-    return NextResponse.redirect(redirectUrl);
+    // Costruisci URL assoluto per il redirect
+    const redirectPath = next ? `/?err=pin&next=${encodeURIComponent(next)}` : "/?err=pin";
+    return NextResponse.redirect(getAbsoluteUrl(req, redirectPath));
   }
 
   const session = createSession(
@@ -79,8 +117,8 @@ export async function POST(req: Request) {
     60 * 60 * 6 // 6 ore
   );
 
-  // Usa un path relativo - Next.js risolverà automaticamente l'URL corretto
-  const res = NextResponse.redirect(next);
+  // Costruisci URL assoluto per il redirect (Next.js richiede URL assoluti)
+  const res = NextResponse.redirect(getAbsoluteUrl(req, next));
   res.cookies.set("sess", session, {
     httpOnly: true,
     sameSite: "lax",
