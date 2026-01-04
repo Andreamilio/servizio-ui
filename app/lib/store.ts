@@ -90,6 +90,11 @@ declare global {
   var __readinessStore: Map<string, Readiness> | undefined;
 }
 
+// Inizializzazione store con logging per diagnosticare problemi su Render
+const wasPinStoreInitialized = global.__pinStore !== undefined;
+const wasAccessLogInitialized = global.__accessLog !== undefined;
+const wasReadinessStoreInitialized = global.__readinessStore !== undefined;
+
 export const pinStore: Map<string, PinRecord> = global.__pinStore ?? new Map();
 global.__pinStore = pinStore;
 
@@ -99,6 +104,34 @@ global.__accessLog = accessLog;
 export const readinessStore: Map<string, Readiness> =
   global.__readinessStore ?? new Map();
 global.__readinessStore = readinessStore;
+
+// Logging all'inizializzazione per diagnosticare problemi su Render
+if (!wasPinStoreInitialized) {
+  console.log('[store] pinStore inizializzato (nuovo)', {
+    storeSize: pinStore.size,
+    timestamp: Date.now(),
+    timestampFormatted: new Date().toISOString(),
+  });
+} else {
+  console.log('[store] pinStore già esistente (riutilizzato)', {
+    storeSize: pinStore.size,
+    timestamp: Date.now(),
+    timestampFormatted: new Date().toISOString(),
+    samplePins: Array.from(pinStore.keys()).slice(0, 5),
+  });
+}
+
+if (!wasAccessLogInitialized) {
+  console.log('[store] accessLog inizializzato (nuovo)', {
+    logSize: accessLog.length,
+  });
+}
+
+if (!wasReadinessStoreInitialized) {
+  console.log('[store] readinessStore inizializzato (nuovo)', {
+    storeSize: readinessStore.size,
+  });
+}
 
 /* ----------------------------------------
  * STAYS (delegated to staysStore.ts)
@@ -229,6 +262,7 @@ export function createPinForGuest(input: {
   source: PinSource;
 }): PinRecord {
   const now = Date.now();
+  const storeSizeBefore = pinStore.size;
 
   const rec: PinRecord = {
     pin: gen6Digits(),
@@ -244,7 +278,44 @@ export function createPinForGuest(input: {
     createdAt: now,
   };
 
+  console.log('[createPinForGuest] Creazione PIN:', {
+    pin: rec.pin,
+    role: rec.role,
+    aptId: rec.aptId,
+    stayId: rec.stayId,
+    guestId: rec.guestId,
+    guestName: rec.guestName,
+    source: rec.source,
+    validFrom: rec.validFrom,
+    validTo: rec.validTo,
+    createdAt: rec.createdAt,
+    validFromFormatted: new Date(rec.validFrom).toISOString(),
+    validToFormatted: new Date(rec.validTo).toISOString(),
+    nowFormatted: new Date(now).toISOString(),
+    storeSizeBefore,
+  });
+
   pinStore.set(rec.pin, rec);
+
+  const storeSizeAfter = pinStore.size;
+  const pinSaved = pinStore.has(rec.pin);
+  const savedRecord = pinStore.get(rec.pin);
+
+  console.log('[createPinForGuest] PIN salvato nello store:', {
+    pin: rec.pin,
+    storeSizeBefore,
+    storeSizeAfter,
+    pinSaved,
+    hasSavedRecord: !!savedRecord,
+    savedRecordMatches: savedRecord?.pin === rec.pin && savedRecord?.role === rec.role,
+  });
+
+  if (!pinSaved) {
+    console.error('[createPinForGuest] ERRORE: PIN non salvato correttamente!', {
+      pin: rec.pin,
+      storeSizeAfter,
+    });
+  }
 
   accessLog.unshift({
     id: crypto.randomUUID(),
@@ -359,17 +430,73 @@ export function revokePinsByApt(aptId: string) {
 }
 
 export function consumePin(pin: string) {
+  const storeSize = pinStore.size;
+  const pinExists = pinStore.has(pin);
   const rec = pinStore.get(pin);
-  if (!rec) return null;
+  
+  console.log('[consumePin] Inizio validazione PIN:', {
+    pin,
+    pinExists,
+    storeSize,
+    hasRecord: !!rec,
+  });
+
+  if (!rec) {
+    console.log('[consumePin] PIN non trovato nello store:', {
+      pin,
+      storeSize,
+      // Log primi 5 PIN nello store per debug
+      samplePins: Array.from(pinStore.keys()).slice(0, 5),
+    });
+    return null;
+  }
 
   const now = Date.now();
   const from = rec.validFrom ?? rec.createdAt;
   const to = rec.validTo ?? rec.expiresAt ?? rec.createdAt;
 
+  console.log('[consumePin] Validazione date:', {
+    pin,
+    now,
+    validFrom: from,
+    validTo: to,
+    createdAt: rec.createdAt,
+    nowFormatted: new Date(now).toISOString(),
+    fromFormatted: new Date(from).toISOString(),
+    toFormatted: new Date(to).toISOString(),
+    isBeforeValidFrom: now < from,
+    isAfterValidTo: now > to,
+    timeUntilValid: now < from ? from - now : 0,
+    timeSinceExpired: now > to ? now - to : 0,
+  });
+
   if (now < from || now > to) {
-    if (now > to) pinStore.delete(pin);
+    if (now > to) {
+      console.log('[consumePin] PIN scaduto, eliminato dallo store:', {
+        pin,
+        expiredBy: now - to,
+        expiredByMinutes: Math.round((now - to) / 60000),
+      });
+      pinStore.delete(pin);
+    } else {
+      console.log('[consumePin] PIN non ancora valido:', {
+        pin,
+        validFrom: from,
+        now,
+        timeUntilValid: from - now,
+        timeUntilValidMinutes: Math.round((from - now) / 60000),
+      });
+    }
     return null;
   }
+
+  console.log('[consumePin] PIN valido:', {
+    pin,
+    role: rec.role,
+    aptId: rec.aptId,
+    stayId: rec.stayId,
+  });
+
   return rec;
 }
 
