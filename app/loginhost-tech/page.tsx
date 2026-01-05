@@ -1,3 +1,8 @@
+import { Input } from "@/app/components/ui/Input";
+import { Button } from "@/app/components/ui/Button";
+import { Card, CardBody } from "@/app/components/ui/Card";
+import { User } from "lucide-react";
+
 export const dynamic = "force-dynamic";
 
 export default function LoginHostTechPage({ searchParams }: { searchParams?: { err?: string; next?: string } }) {
@@ -5,49 +10,58 @@ export default function LoginHostTechPage({ searchParams }: { searchParams?: { e
   const next = typeof searchParams?.next === "string" ? searchParams.next : "";
 
   return (
-    <main className="min-h-screen bg-[#0a0d12] text-white p-6">
-      <div className="max-w-md mx-auto space-y-4">
-        <h1 className="text-xl font-semibold">Accesso Host / Tech</h1>
+    <main className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center p-4 sm:p-6">
+      <div className="w-full max-w-md">
+        <Card variant="elevated" className="w-full">
+          <CardBody className="space-y-6">
+            <div className="text-center space-y-2">
+              <div className="flex justify-center">
+                <div className="p-3 rounded-2xl bg-[var(--pastel-purple)]">
+                  <User className="w-8 h-8 text-[var(--accent-primary)]" />
+                </div>
+              </div>
+              <h1 className="text-2xl font-semibold text-[var(--text-primary)]">Accesso Host / Tech</h1>
+              <p className="text-sm text-[var(--text-secondary)]">Inserisci le tue credenziali per accedere</p>
+            </div>
 
-        {err === "auth" && (
-          <div className="rounded-xl bg-red-500/15 border border-red-500/20 p-3 text-sm">
-            Username o password non validi
-          </div>
-        )}
+            {err === "auth" && (
+              <div className="rounded-xl bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 p-4">
+                <p className="text-sm text-red-600 dark:text-red-400 font-medium">Username o password non validi</p>
+              </div>
+            )}
 
-        <form action="/api/auth/login" method="post" className="space-y-3">
-          <input type="hidden" name="next" value={next} />
+            <form action="/api/auth/login" method="post" className="space-y-4">
+              <input type="hidden" name="next" value={next} />
 
-          <div>
-            <input
-              name="username"
-              type="text"
-              placeholder="Username"
-              autoComplete="username"
-              className="w-full rounded-xl bg-black/40 border border-white/10 p-3"
-              required
-            />
-          </div>
+              <Input
+                name="username"
+                type="text"
+                placeholder="Username"
+                autoComplete="username"
+                required
+                autoFocus
+              />
 
-          <div>
-            <input
-              name="password"
-              type="password"
-              placeholder="Password"
-              autoComplete="current-password"
-              className="w-full rounded-xl bg-black/40 border border-white/10 p-3"
-              required
-            />
-          </div>
+              <Input
+                name="password"
+                type="password"
+                placeholder="Password"
+                autoComplete="current-password"
+                required
+              />
 
-          <button type="submit" className="w-full rounded-xl bg-cyan-500/30 border border-cyan-400/30 p-3 font-semibold">
-            Entra
-          </button>
-        </form>
+              <Button type="submit" variant="primary" size="lg" fullWidth>
+                Entra
+              </Button>
+            </form>
 
-        <div className="text-xs opacity-60 text-center pt-4 border-t border-white/10">
-          <div>Demo: tech/tech123 oppure host/host123</div>
-        </div>
+            <div className="pt-4 border-t border-[var(--border-light)]">
+              <p className="text-center text-sm text-[var(--text-secondary)]">
+                Demo: <span className="font-mono">tech/tech123</span> oppure <span className="font-mono">host/host123</span>
+              </p>
+            </div>
+          </CardBody>
+        </Card>
       </div>
     </main>
   );

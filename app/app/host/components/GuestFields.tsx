@@ -47,54 +47,54 @@ export function GuestFields({ maxGuests = 10 }: { maxGuests?: number }) {
                     <div
                         key={guestNum}
                         id={`guest_${guestNum}_container`}
-                        className='guest-container rounded-xl bg-black/20 border border-white/10 p-3 space-y-2'>
-                        <div className='text-xs opacity-70 mb-2'>Ospite {guestNum}</div>
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
+                        className='guest-container rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-4 space-y-3'>
+                        <div className='text-sm font-medium text-[var(--text-primary)] mb-2'>Ospite {guestNum}</div>
+                        <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
                             <div>
-                                <div className='text-[11px] opacity-60 mb-1'>
-                                    Nome <span className='text-red-400'>*</span>
+                                <div className='text-xs font-medium text-[var(--text-primary)] mb-1.5'>
+                                    Nome <span className='text-[var(--accent-error)]'>*</span>
                                 </div>
                                 <input
                                     type='text'
                                     name={`guest_${guestNum}_firstName`}
                                     required
                                     placeholder='Nome'
-                                    className='w-full rounded-xl bg-black/40 border border-white/10 p-2 text-sm'
+                                    className='w-full rounded-xl bg-[var(--bg-card)] border border-[var(--border-light)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]'
                                 />
                             </div>
                             <div>
-                                <div className='text-[11px] opacity-60 mb-1'>
-                                    Cognome <span className='text-red-400'>*</span>
+                                <div className='text-xs font-medium text-[var(--text-primary)] mb-1.5'>
+                                    Cognome <span className='text-[var(--accent-error)]'>*</span>
                                 </div>
                                 <input
                                     type='text'
                                     name={`guest_${guestNum}_lastName`}
                                     required
                                     placeholder='Cognome'
-                                    className='w-full rounded-xl bg-black/40 border border-white/10 p-2 text-sm'
+                                    className='w-full rounded-xl bg-[var(--bg-card)] border border-[var(--border-light)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]'
                                 />
                             </div>
                         </div>
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
+                        <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
                             <div>
-                                <div className='text-[11px] opacity-60 mb-1'>
-                                    Telefono <span className='text-red-400'>*</span>
+                                <div className='text-xs font-medium text-[var(--text-primary)] mb-1.5'>
+                                    Telefono <span className='text-[var(--accent-error)]'>*</span>
                                 </div>
                                 <input
                                     type='tel'
                                     name={`guest_${guestNum}_phone`}
                                     required
                                     placeholder='+39 123 456 7890'
-                                    className='w-full rounded-xl bg-black/40 border border-white/10 p-2 text-sm'
+                                    className='w-full rounded-xl bg-[var(--bg-card)] border border-[var(--border-light)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]'
                                 />
                             </div>
                             <div>
-                                <div className='text-[11px] opacity-60 mb-1'>Email (opzionale)</div>
+                                <div className='text-xs font-medium text-[var(--text-primary)] mb-1.5'>Email (opzionale)</div>
                                 <input
                                     type='email'
                                     name={`guest_${guestNum}_email`}
                                     placeholder='email@example.com'
-                                    className='w-full rounded-xl bg-black/40 border border-white/10 p-2 text-sm'
+                                    className='w-full rounded-xl bg-[var(--bg-card)] border border-[var(--border-light)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]'
                                 />
                             </div>
                         </div>

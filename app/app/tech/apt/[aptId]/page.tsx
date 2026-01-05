@@ -22,7 +22,7 @@ export const dynamic = "force-dynamic";
 
 function Chip({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-black/20 border border-white/10 px-3 py-2">
+    <div className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-3 py-2">
       <div className="text-[10px] uppercase tracking-wider opacity-60">{label}</div>
       <div className="text-sm font-semibold">{value}</div>
     </div>
@@ -44,7 +44,7 @@ export default async function TechAptPage({
     if (session && session.userId && session.role === "tech") {
       redirect("/api/auth/logout");
     }
-    return <div className="p-6 text-white">Non autorizzato</div>;
+    return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
   }
 
   const p = await Promise.resolve(params);
@@ -52,7 +52,7 @@ export default async function TechAptPage({
 
   if (!aptId) {
     return (
-      <main className="min-h-screen bg-[#0a0d12] text-white p-4 lg:p-6">
+      <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-4 lg:p-6">
         <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
           ← Back
         </Link>
@@ -77,7 +77,7 @@ export default async function TechAptPage({
 
   if (!apt) {
     return (
-      <main className="min-h-screen bg-[#0a0d12] text-white p-4 lg:p-6">
+      <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-4 lg:p-6">
         <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
           ← Back
         </Link>
@@ -195,9 +195,9 @@ export default async function TechAptPage({
 
 
   return (
-    <main className="min-h-screen bg-[#0a0d12] text-white p-4 lg:p-6">
+    <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-4 lg:p-6">
       <div className="max-w-3xl mx-auto space-y-4">
-        <div className="lg:hidden rounded-2xl bg-white/5 border border-white/10 p-4 space-y-3">
+        <div className="lg:hidden rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4 space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <div className="text-xs opacity-60">TECH</div>
@@ -214,7 +214,7 @@ export default async function TechAptPage({
           ← Torna a Tech
         </Link>
 
-        <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div>
               <div className="text-lg font-semibold">{apt.aptName}</div>
@@ -228,15 +228,15 @@ export default async function TechAptPage({
           </div>
 
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-            <div className="rounded-xl bg-black/20 border border-white/10 p-3">
+            <div className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3">
               <div className="opacity-60 text-xs">WAN</div>
               <div className="font-semibold">{apt.network === "main" ? "MAIN WAN" : "BACKUP WAN"}</div>
             </div>
-            <div className="rounded-xl bg-black/20 border border-white/10 p-3">
+            <div className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3">
               <div className="opacity-60 text-xs">VPN</div>
               <div className="font-semibold">{apt.vpn.toUpperCase()}</div>
             </div>
-            <div className="rounded-xl bg-black/20 border border-white/10 p-3">
+            <div className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3">
               <div className="opacity-60 text-xs">DOOR</div>
               <div className="font-semibold">{apt.door.toUpperCase()}</div>
             </div>
@@ -260,8 +260,8 @@ export default async function TechAptPage({
               href={`/app/tech/apt/${aptId}/devices`}
               className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border-2 border-cyan-400/40 p-3 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             >
-              <div className="opacity-80 text-xs font-semibold text-cyan-200">DEVICES</div>
-              <div className="font-semibold text-sm mt-1 text-white">
+              <div className="text-xs font-semibold text-[var(--text-primary)]">DEVICES</div>
+              <div className="font-semibold text-sm mt-1 text-[var(--text-primary)]">
                 {enabledDevices.length === 0
                   ? "Nessun device"
                   : `${enabledDevices.length} device, ${deviceOnlineCount} online`}
@@ -271,25 +271,25 @@ export default async function TechAptPage({
               href={`/app/tech/apt/${aptId}/settings`}
               className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border-2 border-cyan-400/40 p-3 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             >
-              <div className="opacity-80 text-xs font-semibold text-cyan-200">TECHNICAL SETTINGS</div>
-              <div className="font-semibold text-sm mt-1 text-white">Configura API</div>
+              <div className="text-xs font-semibold text-[var(--text-primary)]">TECHNICAL SETTINGS</div>
+              <div className="font-semibold text-sm mt-1 text-[var(--text-primary)]">Configura API</div>
             </Link>
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
           <div className="text-sm opacity-70 mb-3">Azioni rapide</div>
 
           <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
             {apt.door === "unlocked" ? (
               <>
                 <form action={actCloseDoor} className="flex-1">
-                  <button className="w-full sm:w-auto rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 font-semibold">
+                  <button className="w-full sm:w-auto rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-4 py-2 font-semibold">
                     Chiudi porta
                   </button>
                 </form>
                 <form action={actOpenDoor} className="flex-1">
-                  <button className="w-full sm:w-auto rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-400/20 px-4 py-2 font-semibold">
+                  <button className="w-full sm:w-auto rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 px-4 py-2 font-semibold">
                     Apri porta
                   </button>
                 </form>
@@ -297,12 +297,12 @@ export default async function TechAptPage({
             ) : (
               <>
                 <form action={actOpenDoor} className="flex-1">
-                  <button className="w-full sm:w-auto rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 px-4 py-2 font-semibold">
+                  <button className="w-full sm:w-auto rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 px-4 py-2 font-semibold">
                     Apri porta
                   </button>
                 </form>
                 <form action={actCloseDoor} className="flex-1">
-                  <button className="w-full sm:w-auto rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 font-semibold">
+                  <button className="w-full sm:w-auto rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-4 py-2 font-semibold">
                     Chiudi porta
                   </button>
                 </form>
@@ -310,7 +310,7 @@ export default async function TechAptPage({
             )}
 
             <form action={actOpenGate} className="flex-1">
-              <button className="w-full sm:w-auto rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 px-4 py-2 font-semibold">
+              <button className="w-full sm:w-auto rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 px-4 py-2 font-semibold">
                 Apri portone
               </button>
             </form>
@@ -322,21 +322,21 @@ export default async function TechAptPage({
             </form>
 
             <form action={actWan}>
-              <button className="w-full sm:w-auto rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 font-semibold">
+              <button className="w-full sm:w-auto rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-4 py-2 font-semibold">
                 Switch WAN
               </button>
             </form>
 
             <form action={actVpn}>
-              <button className="w-full sm:w-auto rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 font-semibold">
+              <button className="w-full sm:w-auto rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-4 py-2 font-semibold">
                 Toggle VPN
               </button>
             </form>
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
-          <div className="p-4 border-b border-white/10">
+        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] overflow-hidden">
+          <div className="p-4 border-b border-[var(--border-light)]">
             <div className="text-sm font-semibold">LOG — {apt.aptName}</div>
           </div>
 
@@ -345,7 +345,7 @@ export default async function TechAptPage({
               <div className="text-sm opacity-60">Nessun evento.</div>
             ) : (
               aptLog.map((e) => (
-                <div key={e.id} className="rounded-xl bg-black/20 border border-white/10 p-3">
+                <div key={e.id} className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="text-xs opacity-60">
                       {new Date(e.ts).toLocaleTimeString([], {

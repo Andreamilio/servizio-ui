@@ -38,7 +38,7 @@ export default async function TechClientsPage({
     if (session && session.userId && session.role === "tech") {
       redirect("/api/auth/logout");
     }
-    return <div className="p-6 text-white">Non autorizzato</div>;
+    return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
   }
 
   const sp = await Promise.resolve(searchParams ?? {});
@@ -167,7 +167,7 @@ export default async function TechClientsPage({
   const isClientDetail = clientId && selectedClient && !action;
 
   return (
-    <main className="min-h-screen bg-[#0a0d12] text-white p-4 lg:p-6">
+    <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-4 lg:p-6">
       <div className="max-w-4xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
           <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
@@ -175,7 +175,7 @@ export default async function TechClientsPage({
           </Link>
         </div>
 
-        <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="text-lg font-semibold">Gestione Clienti e Appartamenti</div>
@@ -193,29 +193,29 @@ export default async function TechClientsPage({
 
           {/* Error Messages */}
           {err === "missing" && (
-            <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-400/20 text-sm">
+            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-sm">
               Compila tutti i campi obbligatori
             </div>
           )}
           {err === "notfound" && (
-            <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-400/20 text-sm">
+            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-sm">
               Cliente non trovato
             </div>
           )}
           {err === "aptnotfound" && (
-            <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-400/20 text-sm">
+            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-sm">
               Appartamento non trovato
             </div>
           )}
           {err && err !== "missing" && err !== "notfound" && err !== "aptnotfound" && err !== "NEXT_REDIRECT" && (
-            <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-400/20 text-sm">
+            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-sm">
               {decodeURIComponent(err)}
             </div>
           )}
 
           {/* Form Create Client */}
           {isCreateClient && (
-            <div className="mb-6 p-4 rounded-xl bg-black/20 border border-white/10">
+            <div className="mb-6 p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)]">
               <div className="text-sm font-semibold mb-4">Crea Nuovo Cliente</div>
               <form action={handleCreateClient} className="space-y-4">
                 <div>
@@ -224,7 +224,7 @@ export default async function TechClientsPage({
                     type="text"
                     name="clientId"
                     required
-                    className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     placeholder="es: company-name"
                   />
                 </div>
@@ -234,10 +234,10 @@ export default async function TechClientsPage({
                     type="text"
                     name="name"
                     required
-                    className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   />
                 </div>
-                <div className="flex gap-3 pt-4 border-t border-white/10">
+                <div className="flex gap-3 pt-4 border-t border-[var(--border-light)]">
                   <button
                     type="submit"
                     className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-6 py-3 font-semibold"
@@ -246,7 +246,7 @@ export default async function TechClientsPage({
                   </button>
                   <Link
                     href="/app/tech/clients"
-                    className="rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-6 py-3 font-semibold"
+                    className="rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-6 py-3 font-semibold"
                   >
                     Annulla
                   </Link>
@@ -257,7 +257,7 @@ export default async function TechClientsPage({
 
           {/* Form Edit Client */}
           {isEditClient && (
-            <div className="mb-6 p-4 rounded-xl bg-black/20 border border-white/10">
+            <div className="mb-6 p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)]">
               <div className="text-sm font-semibold mb-4">Modifica Cliente: {selectedClient!.name}</div>
               <form action={handleUpdateClient} className="space-y-4">
                 <input type="hidden" name="clientId" value={selectedClient!.clientId} />
@@ -267,7 +267,7 @@ export default async function TechClientsPage({
                     type="text"
                     value={selectedClient!.clientId}
                     disabled
-                    className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2 text-white/60 cursor-not-allowed"
+                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-white/60 cursor-not-allowed"
                   />
                 </div>
                 <div>
@@ -277,10 +277,10 @@ export default async function TechClientsPage({
                     name="name"
                     defaultValue={selectedClient!.name}
                     required
-                    className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   />
                 </div>
-                <div className="flex gap-3 pt-4 border-t border-white/10">
+                <div className="flex gap-3 pt-4 border-t border-[var(--border-light)]">
                   <button
                     type="submit"
                     className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-6 py-3 font-semibold"
@@ -289,7 +289,7 @@ export default async function TechClientsPage({
                   </button>
                   <Link
                     href={`/app/tech/clients?clientId=${selectedClient!.clientId}`}
-                    className="rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-6 py-3 font-semibold"
+                    className="rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-6 py-3 font-semibold"
                   >
                     Annulla
                   </Link>
@@ -300,7 +300,7 @@ export default async function TechClientsPage({
 
           {/* Form Create Apartment */}
           {isCreateApt && (
-            <div className="mb-6 p-4 rounded-xl bg-black/20 border border-white/10">
+            <div className="mb-6 p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)]">
               <div className="text-sm font-semibold mb-4">Crea Nuovo Appartamento per {selectedClient!.name}</div>
               <form action={handleCreateApartment} className="space-y-4">
                 <input type="hidden" name="clientId" value={selectedClient!.clientId} />
@@ -311,7 +311,7 @@ export default async function TechClientsPage({
                       type="text"
                       name="aptId"
                       required
-                      className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                       placeholder="es: 101"
                     />
                   </div>
@@ -320,7 +320,7 @@ export default async function TechClientsPage({
                     <select
                       name="status"
                       defaultValue="ok"
-                      className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     >
                       <option value="ok">OK</option>
                       <option value="warn">Warn</option>
@@ -334,7 +334,7 @@ export default async function TechClientsPage({
                     type="text"
                     name="name"
                     required
-                    className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   />
                 </div>
                 <div>
@@ -342,14 +342,14 @@ export default async function TechClientsPage({
                   <input
                     type="text"
                     name="addressShort"
-                    className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     placeholder="es: Via Demo 12, Milano"
                   />
                 </div>
                 <div className="text-xs opacity-60 mt-2">
                   I dettagli (Wi-Fi, Check-in/out, House Rules, Contatti) possono essere aggiunti successivamente dall'host nella vista appartamento.
                 </div>
-                <div className="flex gap-3 pt-4 border-t border-white/10">
+                <div className="flex gap-3 pt-4 border-t border-[var(--border-light)]">
                   <button
                     type="submit"
                     className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-6 py-3 font-semibold"
@@ -358,7 +358,7 @@ export default async function TechClientsPage({
                   </button>
                   <Link
                     href={`/app/tech/clients?clientId=${selectedClient!.clientId}`}
-                    className="rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-6 py-3 font-semibold"
+                    className="rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-6 py-3 font-semibold"
                   >
                     Annulla
                   </Link>
@@ -369,7 +369,7 @@ export default async function TechClientsPage({
 
           {/* Form Edit Apartment */}
           {isEditApt && (
-            <div className="mb-6 p-4 rounded-xl bg-black/20 border border-white/10">
+            <div className="mb-6 p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)]">
               <div className="text-sm font-semibold mb-4">Modifica Appartamento: {selectedApartment!.name}</div>
               <form action={handleUpdateApartment} className="space-y-4">
                 <input type="hidden" name="aptId" value={selectedApartment!.aptId} />
@@ -380,7 +380,7 @@ export default async function TechClientsPage({
                       type="text"
                       value={selectedApartment!.aptId}
                       disabled
-                      className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-2 text-white/60 cursor-not-allowed"
+                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-white/60 cursor-not-allowed"
                     />
                   </div>
                   <div>
@@ -388,7 +388,7 @@ export default async function TechClientsPage({
                     <select
                       name="status"
                       defaultValue={selectedApartment!.status}
-                      className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     >
                       <option value="ok">OK</option>
                       <option value="warn">Warn</option>
@@ -403,7 +403,7 @@ export default async function TechClientsPage({
                     name="name"
                     defaultValue={selectedApartment!.name}
                     required
-                    className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   />
                 </div>
                 <div>
@@ -412,13 +412,13 @@ export default async function TechClientsPage({
                     type="text"
                     name="addressShort"
                     defaultValue={selectedApartment!.addressShort ?? ""}
-                    className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   />
                 </div>
                 <div className="text-xs opacity-60 mt-2">
                   I dettagli (Wi-Fi, Check-in/out, House Rules, Contatti) possono essere modificati dall'host nella vista appartamento.
                 </div>
-                <div className="flex gap-3 pt-4 border-t border-white/10">
+                <div className="flex gap-3 pt-4 border-t border-[var(--border-light)]">
                   <button
                     type="submit"
                     className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-6 py-3 font-semibold"
@@ -427,7 +427,7 @@ export default async function TechClientsPage({
                   </button>
                   <Link
                     href={`/app/tech/clients?clientId=${selectedApartment!.clientId}`}
-                    className="rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-6 py-3 font-semibold"
+                    className="rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-6 py-3 font-semibold"
                   >
                     Annulla
                   </Link>
@@ -439,7 +439,7 @@ export default async function TechClientsPage({
           {/* Client Detail View */}
           {isClientDetail && (
             <>
-              <div className="mb-6 p-4 rounded-xl bg-black/20 border border-white/10">
+              <div className="mb-6 p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)]">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <div className="text-lg font-semibold">{selectedClient!.name}</div>
@@ -481,12 +481,12 @@ export default async function TechClientsPage({
                 ) : (
                   listApartmentsByClient(selectedClient!.clientId).map((apt) => {
                     const statusColors = {
-                      ok: "bg-emerald-500/10 border-emerald-400/20 text-emerald-200",
-                      warn: "bg-amber-500/10 border-amber-400/20 text-amber-200",
-                      crit: "bg-red-500/10 border-red-400/20 text-red-200",
+                      ok: "bg-emerald-50 border-emerald-200 text-emerald-700",
+                      warn: "bg-amber-50 border-amber-200 text-amber-700",
+                      crit: "bg-red-50 border-red-200 text-red-700",
                     };
                     return (
-                      <div key={apt.aptId} className="flex items-center justify-between gap-3 rounded-xl bg-black/20 border border-white/10 p-3">
+                      <div key={apt.aptId} className="flex items-center justify-between gap-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <div className="text-sm font-semibold">{apt.name}</div>
@@ -534,7 +534,7 @@ export default async function TechClientsPage({
                   <Link
                     key={client.clientId}
                     href={`/app/tech/clients?clientId=${client.clientId}`}
-                    className="flex items-center justify-between gap-3 rounded-xl bg-black/20 border border-white/10 p-4 hover:bg-black/30 transition"
+                    className="flex items-center justify-between gap-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-4 hover:bg-[var(--bg-secondary)] transition"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold">{client.name}</div>

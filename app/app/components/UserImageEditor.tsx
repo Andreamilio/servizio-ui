@@ -80,8 +80,8 @@ export function UserImageEditor({ userId, username, currentImageUrl }: UserImage
   const hasUnsavedChanges = profileImage !== currentImageUrl;
 
   return (
-    <div className="space-y-3">
-      <div className="text-sm font-medium mb-2">Immagine Profilo</div>
+    <div className="space-y-4">
+      <div className="text-sm font-semibold text-[var(--text-primary)]">Immagine Profilo</div>
       
       <div className="flex items-center gap-4">
         <div className="relative">
@@ -89,11 +89,11 @@ export function UserImageEditor({ userId, username, currentImageUrl }: UserImage
             <img
               src={profileImage}
               alt="Profile"
-              className="w-20 h-20 rounded-full object-cover border-2 border-white/20"
+              className="w-20 h-20 rounded-full object-cover border-2 border-[var(--border-light)]"
             />
           ) : (
-            <div className="w-20 h-20 rounded-full bg-cyan-500/20 border-2 border-cyan-400/30 flex items-center justify-center">
-              <span className="text-xl font-semibold text-cyan-200">
+            <div className="w-20 h-20 rounded-full bg-[var(--pastel-blue)] border-2 border-[var(--border-light)] flex items-center justify-center">
+              <span className="text-xl font-semibold text-[var(--accent-primary)]">
                 {getInitials(username)}
               </span>
             </div>
@@ -111,7 +111,7 @@ export function UserImageEditor({ userId, username, currentImageUrl }: UserImage
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="block w-full rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 text-sm font-semibold"
+            className="block w-full rounded-xl bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition-colors"
           >
             {profileImage ? "Cambia immagine" : "Carica immagine"}
           </button>
@@ -121,7 +121,7 @@ export function UserImageEditor({ userId, username, currentImageUrl }: UserImage
               type="button"
               onClick={handleSaveImage}
               disabled={savingImage}
-              className="block w-full rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-4 py-2 text-sm font-semibold disabled:opacity-50"
+              className="block w-full rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white px-4 py-2 text-sm font-semibold disabled:opacity-50 transition-colors"
             >
               {savingImage ? "Salvataggio..." : "Salva immagine"}
             </button>
@@ -132,7 +132,7 @@ export function UserImageEditor({ userId, username, currentImageUrl }: UserImage
               type="button"
               onClick={handleRemoveImage}
               disabled={removingImage || savingImage}
-              className="block w-full rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 px-4 py-2 text-sm font-semibold disabled:opacity-50"
+              className="block w-full rounded-xl bg-[var(--accent-error)] hover:opacity-90 text-white px-4 py-2 text-sm font-semibold disabled:opacity-50 transition-colors"
             >
               {removingImage ? "Rimozione..." : "Rimuovi immagine"}
             </button>

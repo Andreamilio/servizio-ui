@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { updateProfileImage, removeProfileImage } from "./userProfileActions";
 
@@ -147,29 +147,54 @@ export function UserProfileModal({
 
   const roleLabel = role === "host" ? "Host" : "Tech";
 
+  // Disabilita lo scroll del body quando la modale è aperta
+  useEffect(() => {
+    // Su iOS, usare solo overflow hidden senza position fixed
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/60 z-[100] lg:flex lg:items-center lg:justify-center lg:p-4" onClick={onClose}>
       <div
-        className="bg-[#0a0d12] border border-white/10 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+        className="bg-[var(--bg-card)] lg:h-auto lg:max-h-[90vh] lg:max-w-md lg:w-full lg:rounded-2xl lg:border lg:border-[var(--border-light)] lg:shadow-2xl flex flex-col"
+        style={{
+          height: '100svh',
+          maxHeight: '100svh'
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <div className="text-lg font-semibold">Profilo Utente</div>
-              <div className="text-sm opacity-70">{username} • {roleLabel}</div>
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-white/60 hover:text-white transition"
-            >
-              ✕
-            </button>
+        {/* Header fisso */}
+        <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-[var(--border-light)] lg:rounded-t-2xl">
+          <div>
+            <div className="text-lg font-semibold">Profilo Utente</div>
+            <div className="text-sm opacity-70">{username} • {roleLabel}</div>
           </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-[var(--text-primary)]/60 hover:text-[var(--text-primary)] transition p-2"
+          >
+            ✕
+          </button>
+        </div>
 
-          {/* Profile Image Section */}
-          <div className="mb-6 pb-6 border-b border-white/10">
+        {/* Contenuto scrollabile */}
+        <div 
+          className="flex-1 overflow-y-auto"
+          style={{
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y',
+            overscrollBehavior: 'contain'
+          } as React.CSSProperties}
+        >
+          <div className="p-4 sm:p-6 pb-32 lg:pb-6" style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}>
+            {/* Profile Image Section */}
+            <div className="mb-6 pb-6 border-b border-[var(--border-light)]">
             <div className="text-sm font-medium mb-3">Immagine Profilo</div>
             <div className="flex items-center gap-4">
               <div className="relative">
@@ -198,7 +223,7 @@ export function UserProfileModal({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="block w-full rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 text-sm font-semibold"
+                  className="block w-full rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-4 py-2 text-sm font-semibold"
                 >
                   Cambia immagine
                 </button>
@@ -224,10 +249,10 @@ export function UserProfileModal({
                 )}
               </div>
             </div>
-          </div>
+            </div>
 
-          {/* User Info (Read-only) */}
-          <div className="mb-6 pb-6 border-b border-white/10">
+            {/* User Info (Read-only) */}
+            <div className="mb-6 pb-6 border-b border-[var(--border-light)]">
             <div className="text-sm font-medium mb-3">Informazioni Utente</div>
             <div className="space-y-2">
               <div>
@@ -239,10 +264,10 @@ export function UserProfileModal({
                 <div className="text-sm opacity-90">{roleLabel}</div>
               </div>
             </div>
-          </div>
+            </div>
 
-          {/* Change Password Section */}
-          <div>
+            {/* Change Password Section */}
+            <div>
             <div className="text-sm font-medium mb-3">Cambia Password</div>
             <form onSubmit={handleChangePassword} className="space-y-4">
               {passwordError && (
@@ -263,7 +288,7 @@ export function UserProfileModal({
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   required
-                  className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-base text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 />
               </div>
 
@@ -275,7 +300,7 @@ export function UserProfileModal({
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
                   minLength={6}
-                  className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-base text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 />
               </div>
 
@@ -287,7 +312,7 @@ export function UserProfileModal({
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   minLength={6}
-                  className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-base text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 />
               </div>
 
@@ -295,7 +320,7 @@ export function UserProfileModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 text-sm font-semibold"
+                  className="flex-1 rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-4 py-2 text-sm font-semibold"
                 >
                   Chiudi
                 </button>
@@ -308,6 +333,7 @@ export function UserProfileModal({
                 </button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       </div>

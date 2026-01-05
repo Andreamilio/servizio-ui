@@ -8,6 +8,7 @@ import * as Store from '@/app/lib/store';
 import { listJobsByApt } from '@/app/lib/cleaningstore';
 import { listClients, listApartmentsByClient, getApartment, updateApartment } from '@/app/lib/clientStore';
 import { getUser } from '@/app/lib/userStore';
+import { AppLayout } from '@/app/components/layouts/AppLayout';
 import { UserProfile } from '../components/UserProfile';
 
 import { cleaners_getCfg, cleaners_setDuration, cleaners_add, cleaners_remove, cleaners_normName, cleaners_setTimeRanges } from '@/app/lib/domain/cleanersDomain';
@@ -312,8 +313,15 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
         }
 
         return (
-            <main className='min-h-screen bg-[#0a0d12] text-white p-6'>
-                <div className='max-w-3xl mx-auto space-y-5'>
+            <AppLayout 
+                role="host"
+                userInfo={hostUser ? {
+                    userId: hostUser.userId,
+                    username: hostUser.username,
+                    profileImageUrl: hostUser.profileImageUrl,
+                } : undefined}
+            >
+                <div className='max-w-3xl mx-auto space-y-5 p-4 sm:p-6'>
                     <div className='flex items-start justify-between gap-3'>
                         <div>
                             <div className='text-xs opacity-60'>Host • Dettaglio appartamento</div>
@@ -321,27 +329,13 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                         </div>
 
                         <div className='flex flex-wrap items-center justify-end gap-2 sm:gap-3'>
-                            <Link className='whitespace-nowrap text-sm opacity-70 hover:opacity-100' href={clientId ? `/app/host?client=${encodeURIComponent(clientId)}` : '/app/host'}>
+                            <Link className='whitespace-normal sm:whitespace-nowrap text-sm opacity-70 hover:opacity-100' href={clientId ? `/app/host?client=${encodeURIComponent(clientId)}` : '/app/host'}>
                                 ← Dashboard
                             </Link>
-
-                            {hostUser && (
-                                <UserProfile
-                                    key={`${hostUser.userId}-${hostUser.profileImageUrl || 'no-image'}`}
-                                    userId={hostUser.userId}
-                                    username={hostUser.username}
-                                    role={hostUser.role}
-                                    profileImageUrl={hostUser.profileImageUrl}
-                                />
-                            )}
-
-                            <form action='/api/auth/logout' method='post'>
-                                <button className='whitespace-nowrap text-sm opacity-70 hover:opacity-100'>Esci</button>
-                            </form>
                         </div>
                     </div>
 
-                    <section className='rounded-2xl bg-white/5 border border-white/10 p-4'>
+                    <section className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
                         <div className='flex items-center justify-between gap-3'>
                             <div>
                                 <div className='text-sm opacity-70'>Stato operativo</div>
@@ -351,10 +345,10 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                 <div
                                     className={`mt-1 inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold ${
                                         doorUi.tone === 'open'
-                                            ? 'bg-emerald-500/10 border-emerald-400/20 text-emerald-200'
+                                            ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
                                             : doorUi.tone === 'closed'
-                                            ? 'bg-white/5 border-white/10 text-white/80'
-                                            : 'bg-yellow-500/10 border-yellow-400/20 text-yellow-200'
+                                            ? 'bg-[var(--bg-card)] border-[var(--border-light)] text-[var(--text-primary)]'
+                                            : 'bg-yellow-50 border-yellow-200 text-yellow-700'
                                     }`}>
                                     <span className={`h-2 w-2 rounded-full ${doorUi.tone === 'open' ? 'bg-emerald-400' : doorUi.tone === 'closed' ? 'bg-white/40' : 'bg-yellow-400'}`} />
                                     {doorUi.label}
@@ -395,14 +389,14 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                     ? `/app/host/support?client=${encodeURIComponent(clientId)}`
                                     : '/app/host/support'
                                 }
-                                className='rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-sm opacity-90'>
+                                className='rounded-xl bg-[var(--bg-card)] border border-[var(--border-light)] px-4 py-2 text-sm opacity-90'>
                                 Supporto
                             </Link>
                         </div>
                     </section>
 
                     {/* Dettagli Appartamento */}
-                    <section className='rounded-2xl bg-white/5 border border-white/10 p-4'>
+                    <section className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
                         <div className='text-sm font-semibold mb-4'>Dettagli Appartamento</div>
                         <form
                             action={async (formData: FormData) => {
@@ -440,7 +434,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                         type='text'
                                         name='wifiSsid'
                                         defaultValue={apartmentDetails?.wifiSsid ?? ''}
-                                        className='w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500'
+                                        className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500'
                                         placeholder='Nome rete Wi-Fi'
                                     />
                                 </div>
@@ -450,7 +444,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                         type='text'
                                         name='wifiPass'
                                         defaultValue={apartmentDetails?.wifiPass ?? ''}
-                                        className='w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500'
+                                        className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500'
                                         placeholder='Password Wi-Fi'
                                     />
                                 </div>
@@ -463,7 +457,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                         type='time'
                                         name='checkIn'
                                         defaultValue={apartmentDetails?.checkIn ?? ''}
-                                        className='w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500'
+                                        className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500'
                                     />
                                 </div>
                                 <div>
@@ -472,7 +466,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                         type='time'
                                         name='checkOut'
                                         defaultValue={apartmentDetails?.checkOut ?? ''}
-                                        className='w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500'
+                                        className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500'
                                     />
                                 </div>
                             </div>
@@ -483,7 +477,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                     name='rules'
                                     rows={4}
                                     defaultValue={apartmentDetails?.rules?.join('\n') ?? ''}
-                                    className='w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500'
+                                    className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500'
                                     placeholder='No smoking&#10;Silenzio dopo le 22:30'
                                 />
                             </div>
@@ -494,12 +488,12 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                     name='supportContacts'
                                     rows={2}
                                     defaultValue={apartmentDetails?.supportContacts ?? ''}
-                                    className='w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500'
+                                    className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500'
                                     placeholder='Telefono, email, ecc.'
                                 />
                             </div>
 
-                            <div className='flex gap-3 pt-2 border-t border-white/10'>
+                            <div className='flex gap-3 pt-2 border-t border-[var(--border-light)]'>
                                 <button
                                     type='submit'
                                     className='rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-6 py-3 font-semibold text-sm'>
@@ -510,7 +504,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                     </section>
 
                     {/* Device Status */}
-                    <section className='rounded-2xl bg-white/5 border border-white/10 p-4'>
+                    <section className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
                         <div className='text-sm font-semibold mb-4'>Device</div>
                         {(() => {
                             const enabledDevices = getAllEnabledDevices(aptId);
@@ -534,7 +528,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                         return (
                                             <div
                                                 key={deviceType}
-                                                className='flex items-center justify-between gap-3 rounded-xl bg-black/20 border border-white/10 p-3'>
+                                                className='flex items-center justify-between gap-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3'>
                                                 <div className='flex-1 min-w-0'>
                                                     <div className='text-sm font-semibold'>{label}</div>
                                                     <div className='text-xs opacity-60 mt-0.5'>{deviceType}</div>
@@ -543,8 +537,8 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                                     <div
                                                         className={`text-xs px-3 py-1 rounded-lg border ${
                                                             isOnline
-                                                                ? 'bg-emerald-500/10 border-emerald-400/20 text-emerald-200'
-                                                                : 'bg-red-500/10 border-red-400/20 text-red-200'
+                                                                ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                                                : 'bg-red-50 border-red-200 text-red-700'
                                                         }`}>
                                                         {state.toUpperCase()}
                                                     </div>
@@ -558,7 +552,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                     </section>
 
                     {/* Cleaner config */}
-                    <section className='rounded-2xl bg-white/5 border border-white/10 p-4'>
+                    <section className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
                         <div>
                             <div className='text-sm font-semibold'>Cleaner (per appartamento)</div>
                             <div className='mt-1 text-xs opacity-60'>Configura durata standard pulizia e censisci i cleaner per questo appartamento.</div>
@@ -580,15 +574,15 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                         className='space-y-2'>
                                         <input type='hidden' name='aptId' value={aptId} />
                                         <div className='text-[11px] opacity-60'>Durata pulizia default</div>
-                                        <div className='flex gap-2'>
-                                            <select name='durationMin' defaultValue={String(cfg.durationMin)} className='flex-1 rounded-xl bg-black/40 border border-white/10 p-2'>
+                                        <div className='flex flex-col sm:flex-row gap-2'>
+                                            <select name='durationMin' defaultValue={String(cfg.durationMin)} className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2'>
                                                 {[30, 45, 60, 90, 120, 180, 240].map((m) => (
                                                     <option key={m} value={String(m)}>
                                                         {m} min
                                                     </option>
                                                 ))}
                                             </select>
-                                            <button type='submit' className='rounded-xl bg-white/10 border border-white/15 px-4 text-sm font-semibold'>
+                                            <button type='submit' className='rounded-xl bg-white/10 border border-white/15 px-4 py-2 text-sm font-semibold whitespace-nowrap'>
                                                 Salva
                                             </button>
                                         </div>
@@ -607,10 +601,10 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                         className='space-y-2'>
                                         <input type='hidden' name='aptId' value={aptId} />
                                         <div className='text-[11px] opacity-60'>Aggiungi cleaner</div>
-                                        <div className='flex gap-2'>
-                                            <input name='cleanerName' placeholder='Es. Mario Rossi' required className='flex-1 rounded-xl bg-black/40 border border-white/10 p-2' />
-                                            <input name='cleanerPhone' type='tel' placeholder='Telefono' required className='flex-1 rounded-xl bg-black/40 border border-white/10 p-2' />
-                                            <button type='submit' className='rounded-xl bg-cyan-500/30 border border-cyan-400/30 px-4 text-sm font-semibold'>
+                                        <div className='flex flex-col sm:flex-row gap-2'>
+                                            <input name='cleanerName' placeholder='Es. Mario Rossi' required className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2' />
+                                            <input name='cleanerPhone' type='tel' placeholder='Telefono' required className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2' />
+                                            <button type='submit' className='rounded-xl bg-cyan-500/30 border border-cyan-400/30 px-4 py-2 text-sm font-semibold whitespace-nowrap'>
                                                 Aggiungi
                                             </button>
                                         </div>
@@ -653,27 +647,27 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
 
                                                                         redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
                                                                     }}
-                                                                    className='flex gap-2 items-center'>
+                                                                    className='flex flex-col sm:flex-row gap-2 items-stretch sm:items-center'>
                                                                     <input type='hidden' name='aptId' value={aptId} />
                                                                     <input type='hidden' name='rangeIndex' value={idx} />
                                                                     <input
                                                                         type='time'
                                                                         defaultValue={range.from}
                                                                         placeholder='09:00'
-                                                                        className='flex-1 rounded-xl bg-black/40 border border-white/10 p-2 opacity-60'
+                                                                        className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2 opacity-60'
                                                                         disabled
                                                                     />
-                                                                    <span className='text-xs opacity-60'>→</span>
+                                                                    <span className='text-xs opacity-60 hidden sm:inline'>→</span>
                                                                     <input
                                                                         type='time'
                                                                         defaultValue={range.to}
                                                                         placeholder='18:00'
-                                                                        className='flex-1 rounded-xl bg-black/40 border border-white/10 p-2 opacity-60'
+                                                                        className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2 opacity-60'
                                                                         disabled
                                                                     />
                                                                     <button
                                                                         type='submit'
-                                                                        className='text-xs px-3 py-2 rounded-lg bg-red-500/20 border border-red-500/30 hover:bg-red-500/30 whitespace-nowrap'>
+                                                                        className='text-xs px-3 py-2 rounded-lg bg-red-500/20 border border-red-500/30 hover:bg-red-500/30 whitespace-normal sm:whitespace-nowrap'>
                                                                         Rimuovi
                                                                     </button>
                                                                 </form>
@@ -737,24 +731,51 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                                             const isFirst = idx === 0;
                                                             const isLast = idx === rangesWithEmpty.length - 1;
                                                             const isRemovable = !isFirst && !isLast && ranges.length > 1;
+                                                            const isEmpty = !range.from && !range.to;
 
                                                             if (!isRemovable) {
+                                                                if (isLast && isEmpty) {
+                                                                    // Range vuoto per aggiungere nuovo
+                                                                    return (
+                                                                        <div key={idx} className='space-y-2 pt-2 border-t border-[var(--border-light)]'>
+                                                                            <div className='text-[10px] opacity-70 font-medium'>+ Aggiungi nuovo range</div>
+                                                                            <div className='flex flex-col sm:flex-row gap-2 items-stretch sm:items-center'>
+                                                                                <input
+                                                                                    type='time'
+                                                                                    name={`rangeFrom_${idx}`}
+                                                                                    defaultValue={range.from}
+                                                                                    placeholder='09:00'
+                                                                                    className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border-2 border-dashed border-[var(--border-strong)] p-2'
+                                                                                />
+                                                                                <span className='text-xs opacity-60 hidden sm:inline'>→</span>
+                                                                                <input
+                                                                                    type='time'
+                                                                                    name={`rangeTo_${idx}`}
+                                                                                    defaultValue={range.to}
+                                                                                    placeholder='18:00'
+                                                                                    className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border-2 border-dashed border-[var(--border-strong)] p-2'
+                                                                                />
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                }
+                                                                // Primo range (sempre presente)
                                                                 return (
-                                                                    <div key={idx} className='flex gap-2 items-center'>
+                                                                    <div key={idx} className='flex flex-col sm:flex-row gap-2 items-stretch sm:items-center'>
                                                                         <input
                                                                             type='time'
                                                                             name={`rangeFrom_${idx}`}
                                                                             defaultValue={range.from}
                                                                             placeholder='09:00'
-                                                                            className='flex-1 rounded-xl bg-black/40 border border-white/10 p-2'
+                                                                            className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2'
                                                                         />
-                                                                        <span className='text-xs opacity-60'>→</span>
+                                                                        <span className='text-xs opacity-60 hidden sm:inline'>→</span>
                                                                         <input
                                                                             type='time'
                                                                             name={`rangeTo_${idx}`}
                                                                             defaultValue={range.to}
                                                                             placeholder='18:00'
-                                                                            className='flex-1 rounded-xl bg-black/40 border border-white/10 p-2'
+                                                                            className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2'
                                                                         />
                                                                     </div>
                                                                 );
@@ -777,7 +798,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                         ) : (
                                             <div className='space-y-2'>
                                                 {cfg.cleaners.map((cleaner) => (
-                                                    <div key={cleaner.name} className='flex items-center justify-between rounded-xl bg-black/30 border border-white/10 p-3'>
+                                                    <div key={cleaner.name} className='flex items-center justify-between rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3'>
                                                         <div>
                                                             <div className='text-sm font-semibold'>{cleaner.name}</div>
                                                             <div className='text-xs opacity-60'>{cleaner.phone}</div>
@@ -808,7 +829,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                     </section>
 
                     {/* Stay list widget */}
-                    <section className='rounded-2xl bg-white/5 border border-white/10 p-4'>
+                    <section className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
                         <div className='flex items-center justify-between gap-3 mb-3'>
                             <div className='text-sm opacity-70'>Soggiorni</div>
                             <div className='text-xs opacity-50'>{stays.length} stay</div>
@@ -828,7 +849,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                         <Link
                                             key={sid}
                                             href={`/app/host/stay/${encodeURIComponent(sid)}?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`}
-                                            className='block rounded-xl bg-black/30 border border-white/10 p-3 hover:border-white/20 transition-colors'>
+                                            className='block rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3 hover:border-white/20 transition-colors'>
                                             <div className='flex items-center justify-between gap-3'>
                                                 <div className='min-w-0 flex-1'>
                                                     <div className='font-semibold text-sm font-mono truncate'>{sid}</div>
@@ -845,7 +866,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                             </div>
                         )}
 
-                        <div className='rounded-xl bg-black/20 border border-white/10 p-4'>
+                        <div className='rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-4'>
                             <div className='text-sm font-semibold mb-3'>Crea nuovo soggiorno</div>
                             <form action={createStay} className='space-y-3'>
                                 <input type='hidden' name='aptId' value={aptId} />
@@ -853,18 +874,18 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                 <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
                                     <div>
                                         <div className='text-[11px] opacity-60 mb-1'>Check-in (data + ora)</div>
-                                        <input type='datetime-local' name='checkin' className='w-full rounded-xl bg-black/40 border border-white/10 p-2' />
+                                        <input type='datetime-local' name='checkin' className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2' />
                                     </div>
 
                                     <div>
                                         <div className='text-[11px] opacity-60 mb-1'>Check-out (data + ora)</div>
-                                        <input type='datetime-local' name='checkout' className='w-full rounded-xl bg-black/40 border border-white/10 p-2' />
+                                        <input type='datetime-local' name='checkout' className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2' />
                                     </div>
                                 </div>
 
                                 <div>
                                     <div className='text-[11px] opacity-60 mb-1'>Numero ospiti</div>
-                                    <select name='guests' id='guestsCount' defaultValue='2' className='w-full rounded-xl bg-black/40 border border-white/10 p-2'>
+                                    <select name='guests' id='guestsCount' defaultValue='2' className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2'>
                                         {Array.from({ length: 10 }).map((_, i) => (
                                             <option key={i + 1} value={String(i + 1)}>
                                                 {i + 1}
@@ -888,7 +909,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                     {(() => {
                                         const cfg = cleaners_getCfg(aptId);
                                         return (
-                                            <select name='cleaner' required className='w-full rounded-xl bg-black/40 border border-white/10 p-2'>
+                                            <select name='cleaner' required className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2'>
                                                 <option value=''>— Seleziona cleaner —</option>
                                                 {cfg.cleaners.map((cleaner) => (
                                                     <option key={cleaner.name} value={cleaner.name}>
@@ -908,7 +929,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                         </div>
                     </section>
 
-                    <section className='rounded-2xl bg-white/5 border border-white/10 p-4'>
+                    <section className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
                         <div className='flex items-center justify-between gap-3 mb-3'>
                             <div className='text-sm opacity-70'>Attività recente (Access log)</div>
                             <div className='text-xs opacity-50'>Ultimi 20 eventi</div>
@@ -919,7 +940,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                         ) : (
                             <div className='space-y-2'>
                                 {accessEvents.map((e: any) => (
-                                    <div key={String(e.id)} className='rounded-xl bg-black/30 border border-white/10 p-3'>
+                                    <div key={String(e.id)} className='rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3'>
                                         <div className='flex items-center justify-between'>
                                             <div className='text-xs opacity-60'>{fmtDT(e.ts)}</div>
                                             <div className='text-[11px] opacity-60 font-mono'>{e.type}</div>
@@ -931,7 +952,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                         )}
                     </section>
                 </div>
-            </main>
+            </AppLayout>
         );
     }
 
@@ -939,8 +960,15 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
     // Dashboard Host (overview)
     // -------------------------
     return (
-        <main className='min-h-screen bg-[#0a0d12] text-white p-6'>
-            <div className='max-w-5xl mx-auto space-y-5'>
+        <AppLayout 
+            role="host"
+            userInfo={hostUser ? {
+                userId: hostUser.userId,
+                username: hostUser.username,
+                profileImageUrl: hostUser.profileImageUrl,
+            } : undefined}
+        >
+            <div className='max-w-5xl mx-auto space-y-5 p-4 sm:p-6'>
                 <div className='flex flex-col gap-3 md:flex-row md:items-end md:justify-between'>
                     <div>
                         <div className='text-xs opacity-60'>Host • Dashboard</div>
@@ -957,47 +985,33 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                 name='q'
                                 defaultValue={q}
                                 placeholder='Cerca appartamento…'
-                                className='w-56 rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm outline-none focus:border-cyan-400/60'
+                                className='w-full sm:w-56 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-3 py-2 text-sm outline-none focus:border-cyan-400/60'
                             />
-                            <button className='rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm opacity-90'>Cerca</button>
-                        </form>
-
-                        {hostUser && (
-                            <UserProfile
-                                key={`${hostUser.userId}-${hostUser.profileImageUrl || 'no-image'}`}
-                                userId={hostUser.userId}
-                                username={hostUser.username}
-                                role={hostUser.role}
-                                profileImageUrl={hostUser.profileImageUrl}
-                            />
-                        )}
-
-                        <form action='/api/auth/logout' method='post'>
-                            <button className='rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-sm opacity-90'>Logout</button>
+                            <button className='rounded-xl bg-[var(--bg-card)] border border-[var(--border-light)] px-3 py-2 text-sm opacity-90'>Cerca</button>
                         </form>
                     </div>
                 </div>
 
                 <div className='grid grid-cols-2 md:grid-cols-4 gap-3'>
-                    <div className='rounded-2xl bg-white/5 border border-white/10 p-4'>
+                    <div className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
                         <div className='text-xs opacity-60'>Totali</div>
                         <div className='mt-1 text-2xl font-semibold'>{total}</div>
                     </div>
-                    <div className='rounded-2xl bg-white/5 border border-white/10 p-4'>
+                    <div className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
                         <div className='text-xs opacity-60'>OK</div>
                         <div className='mt-1 text-2xl font-semibold'>{ok}</div>
                     </div>
-                    <div className='rounded-2xl bg-white/5 border border-white/10 p-4'>
+                    <div className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
                         <div className='text-xs opacity-60'>Attenzione</div>
                         <div className='mt-1 text-2xl font-semibold'>{warn}</div>
                     </div>
-                    <div className='rounded-2xl bg-white/5 border border-white/10 p-4'>
+                    <div className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
                         <div className='text-xs opacity-60'>Problema</div>
                         <div className='mt-1 text-2xl font-semibold'>{crit}</div>
                     </div>
                 </div>
 
-                <section className='rounded-2xl bg-white/5 border border-white/10 p-4'>
+                <section className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
                     <div className='flex items-center justify-between gap-3'>
                         <div className='text-sm opacity-70'>🔴 Problemi (critical first)</div>
                         <div className='text-xs opacity-50'>Mostra max 5</div>
@@ -1011,7 +1025,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                 <Link
                                     key={a.aptId}
                                     href={`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(a.aptId)}`}
-                                    className='block rounded-xl bg-black/30 border border-white/10 p-3 hover:border-white/20'>
+                                    className='block rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3 hover:border-white/20'>
                                     <div className='flex items-center justify-between'>
                                         <div className='font-semibold'>{a.name}</div>
                                         <div className='text-xs opacity-70'>{a.readiness}</div>
@@ -1023,7 +1037,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                     )}
                 </section>
 
-                <section className='rounded-2xl bg-white/5 border border-white/10 p-4'>
+                <section className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
                     <div className='flex items-center justify-between gap-3'>
                         <div className='text-sm opacity-70'>Appartamenti</div>
                         <div className='text-xs opacity-50'>Vista compatta</div>
@@ -1034,7 +1048,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                             <Link
                                 key={a.aptId}
                                 href={`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(a.aptId)}`}
-                                className='block rounded-xl bg-black/30 border border-white/10 p-4 hover:border-white/20'>
+                                className='block rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-4 hover:border-white/20'>
                                 <div className='flex items-center justify-between gap-3'>
                                     <div>
                                         <div className='font-semibold'>{a.name}</div>
@@ -1058,6 +1072,6 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                     </div>
                 </section>
             </div>
-        </main>
+        </AppLayout>
     );
 }

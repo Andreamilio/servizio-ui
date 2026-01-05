@@ -54,14 +54,15 @@ function getControllerOptions(deviceType: DeviceType): Array<{ value: DeviceCont
 
 export function DeviceTable({ deviceTypes, allDevices }: DeviceTableProps) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
+    <div className="relative">
+      <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-[var(--border-light)] scrollbar-track-transparent">
+        <table className="w-full min-w-[600px]">
         <thead>
-          <tr className="border-b border-white/10">
-            <th className="text-left py-3 px-4 text-sm font-semibold">Device</th>
-            <th className="text-center py-3 px-4 text-sm font-semibold">Presente</th>
-            <th className="text-center py-3 px-4 text-sm font-semibold">Controllabile</th>
-            <th className="text-center py-3 px-4 text-sm font-semibold">Controller</th>
+          <tr className="border-b border-[var(--border-light)]">
+            <th className="text-left py-3 px-4 text-sm font-semibold text-[var(--text-primary)]">Device</th>
+            <th className="text-center py-3 px-4 text-sm font-semibold text-[var(--text-primary)]">Presente</th>
+            <th className="text-center py-3 px-4 text-sm font-semibold text-[var(--text-primary)]">Controllabile</th>
+            <th className="text-center py-3 px-4 text-sm font-semibold text-[var(--text-primary)]">Controller</th>
           </tr>
         </thead>
         <tbody>
@@ -77,7 +78,7 @@ export function DeviceTable({ deviceTypes, allDevices }: DeviceTableProps) {
             const isUps = deviceType === "ups";
 
             return (
-              <tr key={deviceType} className="border-b border-white/5 hover:bg-white/5">
+              <tr key={deviceType} className="border-b border-white/5 hover:bg-[var(--bg-card)]">
                 <td className="py-3 px-4">
                   <div className="text-sm font-medium">{getDeviceLabel(deviceType)}</div>
                   <div className="text-xs opacity-60 mt-0.5">{deviceType}</div>
@@ -88,7 +89,7 @@ export function DeviceTable({ deviceTypes, allDevices }: DeviceTableProps) {
                     id={enabledId}
                     name={enabledId}
                     defaultChecked={enabled}
-                    className="w-4 h-4 rounded border-white/20 bg-black/40 text-cyan-500 focus:ring-cyan-500 focus:ring-2"
+                    className="w-4 h-4 rounded border-white/20 bg-[var(--bg-secondary)] text-cyan-500 focus:ring-cyan-500 focus:ring-2"
                     onChange={(e) => {
                       if (!isUps) {
                         const controllableCheckbox = document.getElementById(controllableId) as HTMLInputElement;
@@ -118,7 +119,7 @@ export function DeviceTable({ deviceTypes, allDevices }: DeviceTableProps) {
                         name={`device_${deviceType}_controllable`}
                         defaultChecked={controllable}
                         disabled={!enabled}
-                        className={`w-4 h-4 rounded border-white/20 bg-black/40 text-cyan-500 focus:ring-cyan-500 focus:ring-2 ${
+                        className={`w-4 h-4 rounded border-white/20 bg-[var(--bg-secondary)] text-cyan-500 focus:ring-cyan-500 focus:ring-2 ${
                           !enabled ? "opacity-50 cursor-not-allowed" : ""
                         }`}
                       />
@@ -129,8 +130,8 @@ export function DeviceTable({ deviceTypes, allDevices }: DeviceTableProps) {
                         name={controllerId}
                         defaultValue={controller}
                         disabled={!enabled}
-                        className={`text-xs rounded-lg bg-black/40 border border-white/10 px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
-                          !enabled ? "opacity-50 cursor-not-allowed" : ""
+                        className={`text-xs rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-light)] px-3 py-1.5 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all cursor-pointer hover:border-cyan-400/50 hover:bg-[var(--bg-tertiary)] ${
+                          !enabled ? "opacity-50 cursor-not-allowed hover:border-[var(--border-light)] hover:bg-[var(--bg-secondary)]" : ""
                         }`}
                       >
                         {controllerOptions.map((opt) => (
@@ -148,6 +149,11 @@ export function DeviceTable({ deviceTypes, allDevices }: DeviceTableProps) {
           })}
         </tbody>
       </table>
+      </div>
+      {/* Indicatore scroll su mobile */}
+      <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-16 bg-gradient-to-l from-[var(--bg-card)] via-[var(--bg-card)]/80 to-transparent lg:hidden flex items-center justify-end pr-2">
+        <div className="text-xs text-[var(--text-secondary)] opacity-60">→</div>
+      </div>
     </div>
   );
 }

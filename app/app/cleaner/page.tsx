@@ -5,6 +5,11 @@ import { readSession, validateSessionUser } from "@/app/lib/session";
 import { listJobsByApt, listJobsByStay } from "@/app/lib/cleaningstore";
 import { listStaysByApt } from "@/app/lib/staysStore";
 import { listPinsByApt } from "@/app/lib/store";
+import { Card, CardBody, CardHeader } from "@/app/components/ui/Card";
+import { Button } from "@/app/components/ui/Button";
+import { Badge } from "@/app/components/ui/Badge";
+import { AppLayout } from "@/app/components/layouts/AppLayout";
+import { Sparkles } from "lucide-react";
 
 export default async function CleanerHome() {
   const cookieStore = await cookies();
@@ -14,7 +19,7 @@ export default async function CleanerHome() {
 
   if (!me || me.role !== "cleaner") {
     redirect("/?err=session_expired");
-    return <div className="p-6 text-white">Non autorizzato</div>;
+    return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
   }
 
   // Trova tutti i PIN del cleaner per questo aptId
@@ -52,58 +57,66 @@ export default async function CleanerHome() {
   };
   jobs.sort((a, b) => rank[a.status] - rank[b.status]);
 
+  const getStatusVariant = (status: string) => {
+    if (status === "todo") return "default";
+    if (status === "in_progress") return "warning";
+    if (status === "problem") return "error";
+    if (status === "done") return "success";
+    return "default";
+  };
+
+  const getStatusLabel = (status: string) => {
+    if (status === "todo") return "Da fare";
+    if (status === "in_progress") return "In corso";
+    if (status === "done") return "Completato";
+    if (status === "problem") return "Problema";
+    return status;
+  };
+
   return (
-    <main className="min-h-screen bg-[#0a0d12] text-white p-6">
-      <div className="max-w-3xl mx-auto space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <h1 className="text-lg font-semibold">Pulizie — Apt {me.aptId}</h1>
-
-          <div className="flex items-center gap-3">
-            <Link className="text-sm opacity-70 hover:opacity-100" href="/app/host">
-              ← Host
-            </Link>
-
-            <form action="/api/auth/logout" method="post">
-              <button type="submit" className="text-sm opacity-70 hover:opacity-100">
-                Esci
-              </button>
-            </form>
-          </div>
+    <AppLayout role="cleaner">
+      <div className="mx-auto w-full max-w-4xl p-4 sm:p-6 lg:p-8">
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold text-[var(--text-primary)]">Pulizie</h1>
+          <p className="text-sm text-[var(--text-secondary)] mt-1">Appartamento {me.aptId}</p>
         </div>
 
-        <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
-          <div className="text-sm opacity-70 mb-3">Job assegnati</div>
-
-          {jobs.length === 0 ? (
-            <div className="text-sm opacity-70">Nessun job disponibile.</div>
-          ) : (
-            <div className="space-y-3">
-              {jobs.map((j) => (
-                <Link
-                  key={j.id}
-                  href={`/app/cleaner/${j.id}`}
-                  className="block rounded-xl bg-black/30 border border-white/10 p-4 hover:border-white/20"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="font-semibold">{j.aptName}</div>
-                    <span className="text-xs opacity-70">{j.windowLabel}</span>
-                  </div>
-
-                  <div className="mt-2 text-sm opacity-80">
-                    Stato:{" "}
-                    <span className="font-semibold">
-                      {j.status === "todo" && "Da fare"}
-                      {j.status === "in_progress" && "In corso"}
-                      {j.status === "done" && "Completato"}
-                      {j.status === "problem" && "Problema"}
-                    </span>
-                  </div>
-                </Link>
-              ))}
+        <Card variant="elevated">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-[var(--text-primary)]" />
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Job assegnati</h2>
             </div>
-          )}
-        </div>
+          </CardHeader>
+          <CardBody>
+            {jobs.length === 0 ? (
+              <div className="text-sm text-[var(--text-secondary)] text-center py-8">
+                Nessun job disponibile
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {jobs.map((j) => (
+                  <Link
+                    key={j.id}
+                    href={`/app/cleaner/${j.id}`}
+                    className="block p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] hover:border-[var(--border-medium)] transition-colors"
+                  >
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <div className="font-semibold text-[var(--text-primary)]">{j.aptName}</div>
+                      <Badge variant={getStatusVariant(j.status)} size="sm">
+                        {getStatusLabel(j.status)}
+                      </Badge>
+                    </div>
+                    {j.windowLabel && (
+                      <div className="text-xs text-[var(--text-secondary)]">{j.windowLabel}</div>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardBody>
+        </Card>
       </div>
-    </main>
+    </AppLayout>
   );
 }

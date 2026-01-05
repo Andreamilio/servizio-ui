@@ -33,7 +33,7 @@ export default async function TechDevicesPage({
   const me = readSession(sess);
 
   if (!me || me.role !== "tech") {
-    return <div className="p-6 text-white">Non autorizzato</div>;
+    return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
   }
 
   const p = await Promise.resolve(params);
@@ -41,7 +41,7 @@ export default async function TechDevicesPage({
 
   if (!aptId) {
     return (
-      <main className="min-h-screen bg-[#0a0d12] text-white p-4 lg:p-6">
+      <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-4 lg:p-6">
         <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
           ← Back
         </Link>
@@ -53,7 +53,7 @@ export default async function TechDevicesPage({
   const apt = getApt(aptId);
   if (!apt) {
     return (
-      <main className="min-h-screen bg-[#0a0d12] text-white p-4 lg:p-6">
+      <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-4 lg:p-6">
         <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
           ← Back
         </Link>
@@ -112,7 +112,7 @@ export default async function TechDevicesPage({
     const enabledDevices = getAllEnabledDevices(aptId);
 
     return (
-      <main className="min-h-screen bg-[#0a0d12] text-white p-4 lg:p-6">
+      <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-4 lg:p-6">
         <div className="max-w-4xl mx-auto space-y-4">
           <div className="lg:hidden">
             <Link className="text-sm opacity-70 hover:opacity-100" href={`/app/tech/apt/${aptId}`}>
@@ -124,10 +124,10 @@ export default async function TechDevicesPage({
             ← Torna a {apt.aptName}
           </Link>
 
-          <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <div className="text-lg font-semibold">Device Package</div>
+                <div className="text-lg font-semibold text-[var(--text-primary)]">Device Package</div>
                 <div className="text-sm opacity-70">{apt.aptName}</div>
               </div>
               <Link
@@ -153,7 +153,7 @@ export default async function TechDevicesPage({
                   return (
                     <div
                       key={deviceType}
-                      className="flex items-center justify-between gap-3 rounded-xl bg-black/20 border border-white/10 p-3"
+                      className="flex items-center justify-between gap-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3"
                     >
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-semibold">{label}</div>
@@ -163,13 +163,13 @@ export default async function TechDevicesPage({
                         <div
                           className={`text-xs px-3 py-1 rounded-lg border ${
                             isOnline
-                              ? "bg-emerald-500/10 border-emerald-400/20 text-emerald-200"
-                              : "bg-red-500/10 border-red-400/20 text-red-200"
+                              ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                              : "bg-red-50 border-red-200 text-red-700"
                           }`}
                         >
                           {state.toUpperCase()}
                         </div>
-                        <div className="text-xs px-3 py-1 rounded-lg bg-white/5 border border-white/10">
+                        <div className="text-xs px-3 py-1 rounded-lg bg-[var(--bg-card)] border border-[var(--border-light)]">
                           {controllable ? "Controllabile" : "Solo lettura"}
                         </div>
                       </div>
@@ -186,7 +186,7 @@ export default async function TechDevicesPage({
 
   // Modalità edit: form completo
   return (
-    <main className="min-h-screen bg-[#0a0d12] text-white p-4 lg:p-6">
+    <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-4 lg:p-6">
       <div className="max-w-4xl mx-auto space-y-4">
         <div className="lg:hidden">
           <Link className="text-sm opacity-70 hover:opacity-100" href={`/app/tech/apt/${aptId}`}>
@@ -198,16 +198,16 @@ export default async function TechDevicesPage({
           ← Torna a {apt.aptName}
         </Link>
 
-        <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
           <div className="mb-4">
-            <div className="text-lg font-semibold">Device Package</div>
-            <div className="text-sm opacity-70">{apt.aptName}</div>
+            <div className="text-lg font-semibold text-[var(--text-primary)]">Device Package</div>
+            <div className="text-sm opacity-70 text-[var(--text-secondary)]">{apt.aptName}</div>
           </div>
 
           <form action={updateDevicePackage} className="space-y-4">
             <DeviceTable deviceTypes={deviceTypes} allDevices={allDevices} />
 
-            <div className="flex gap-3 pt-4 border-t border-white/10">
+            <div className="flex gap-3 pt-4 border-t border-[var(--border-light)]">
               <button
                 type="submit"
                 className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-6 py-3 font-semibold"
@@ -216,7 +216,7 @@ export default async function TechDevicesPage({
               </button>
               <Link
                 href={`/app/tech/apt/${aptId}/devices`}
-                className="rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-6 py-3 font-semibold"
+                className="rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-6 py-3 font-semibold"
               >
                 Annulla
               </Link>

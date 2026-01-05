@@ -1,134 +1,63 @@
 import Link from "next/link";
+import { Input } from "@/app/components/ui/Input";
+import { Button } from "@/app/components/ui/Button";
+import { Card, CardBody } from "@/app/components/ui/Card";
+import { KeyRound } from "lucide-react";
 
 export default function LoginPage({ searchParams }: any) {
   const next = typeof searchParams?.next === "string" ? searchParams.next : "";
   const err = typeof searchParams?.err === "string" ? searchParams.err : "";
 
   return (
-    <main className="min-h-screen bg-[#0a0d12] text-white p-6">
-      <div className="max-w-md mx-auto space-y-4">
-        <h1 className="text-xl font-semibold">Accesso Guest / Cleaner</h1>
+    <main className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center p-4 sm:p-6">
+      <div className="w-full max-w-md">
+        <Card variant="elevated" className="w-full">
+          <CardBody className="space-y-6">
+            <div className="text-center space-y-2">
+              <div className="flex justify-center">
+                <div className="p-3 rounded-2xl bg-[var(--pastel-blue)]">
+                  <KeyRound className="w-8 h-8 text-[var(--accent-primary)]" />
+                </div>
+              </div>
+              <h1 className="text-2xl font-semibold text-[var(--text-primary)]">Accesso Guest / Cleaner</h1>
+              <p className="text-sm text-[var(--text-secondary)]">Inserisci il tuo PIN per accedere</p>
+            </div>
 
-        {err === "pin" && (
-          <div className="rounded-xl bg-red-500/15 border border-red-500/20 p-3 text-sm">
-            PIN non valido o scaduto
-          </div>
-        )}
+            {err === "pin" && (
+              <div className="rounded-xl bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 p-4">
+                <p className="text-sm text-red-600 dark:text-red-400 font-medium">PIN non valido o scaduto</p>
+              </div>
+            )}
 
-        <form action="/api/auth/pin" method="post" className="space-y-3">
-          <input type="hidden" name="next" value={next} />
+            <form action="/api/auth/pin" method="post" className="space-y-4">
+              <input type="hidden" name="next" value={next} />
 
-          <input
-            name="pin"
-            inputMode="numeric"
-            placeholder="Inserisci PIN"
-            className="w-full rounded-xl bg-black/40 border border-white/10 p-3"
-          />
+              <Input
+                name="pin"
+                type="text"
+                inputMode="numeric"
+                placeholder="Inserisci PIN"
+                required
+                autoFocus
+                className="text-center text-2xl tracking-widest font-mono"
+              />
 
-          <button className="w-full rounded-xl bg-cyan-500/30 border border-cyan-400/30 p-3 font-semibold">
-            Entra
-          </button>
-        </form>
+              <Button type="submit" variant="primary" size="lg" fullWidth>
+                Entra
+              </Button>
+            </form>
 
-        <div className="text-xs opacity-60 text-center pt-4 border-t border-white/10">
-          <div>Host/Tech? <Link href="/loginhost-tech" className="text-cyan-400 hover:text-cyan-300 underline">Accedi qui</Link></div>
-        </div>
+            <div className="pt-4 border-t border-[var(--border-light)]">
+              <p className="text-center text-sm text-[var(--text-secondary)]">
+                Host/Tech?{" "}
+                <Link href="/loginhost-tech" className="text-[var(--accent-primary)] hover:underline font-medium">
+                  Accedi qui
+                </Link>
+              </p>
+            </div>
+          </CardBody>
+        </Card>
       </div>
     </main>
   );
-}
-
-import { NextResponse } from "next/server";
-import { consumePin } from "@/app/lib/store";
-import { createSession } from "@/app/lib/session";
-
-function safeNextPath(input: unknown) {
-  const next = typeof input === "string" ? input : "";
-  // allow only internal app paths
-  if (!next.startsWith("/")) return "/app";
-  if (!next.startsWith("/app")) return "/app";
-  return next;
-}
-
-// Helper per costruire URL assoluti usando gli header della richiesta
-function getAbsoluteUrl(req: Request, path: string): string {
-  try {
-    // NON usare req.url perché su Render contiene l'URL interno (localhost:10000)
-    // Usa sempre gli header per costruire l'URL pubblico corretto
-    
-    // Preferisci x-forwarded-host (set da proxy/reverse proxy come Render)
-    const xForwardedHost = req.headers.get('x-forwarded-host');
-    const hostHeader = req.headers.get('host');
-    const host = xForwardedHost || hostHeader;
-    
-    if (!host) {
-      throw new Error('No host header available');
-    }
-    
-    // Se l'host è localhost o 127.0.0.1, preferisci sempre x-forwarded-host
-    // (su Render potrebbe esserci un problema di configurazione)
-    if ((host.includes('localhost') || host.includes('127.0.0.1')) && !xForwardedHost) {
-      console.warn('[getAbsoluteUrl] Host è localhost ma x-forwarded-host non disponibile:', { host, reqUrl: req.url });
-    }
-    
-    // Preferisci x-forwarded-proto, poi assumi https in produzione (Render usa sempre https)
-    const xForwardedProto = req.headers.get('x-forwarded-proto');
-    const protocol = xForwardedProto || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
-    
-    const cleanPath = path.startsWith('/') ? path : `/${path}`;
-    const absoluteUrl = `${protocol}://${host}${cleanPath}`;
-    
-    new URL(absoluteUrl);
-    return absoluteUrl;
-  } catch (error) {
-    console.error('[getAbsoluteUrl] Error constructing URL:', { 
-      error, path, 
-      host: req.headers.get('host'),
-      xForwardedHost: req.headers.get('x-forwarded-host'),
-      xForwardedProto: req.headers.get('x-forwarded-proto'),
-      nodeEnv: process.env.NODE_ENV,
-      reqUrl: req.url
-    });
-    return path.startsWith('/') ? path : `/${path}`;
-  }
-}
-
-export async function POST(req: Request) {
-  const ct = req.headers.get("content-type") || "";
-
-  let pin = "";
-  let next = "/app";
-
-  if (ct.includes("application/json")) {
-    const body = await req.json().catch(() => null);
-    pin = (body?.pin ?? "").toString().trim();
-    next = safeNextPath(body?.next);
-  } else {
-    // Handles HTML <form method=\"post\"> submissions
-    const form = await req.formData().catch(() => null);
-    pin = (form?.get("pin") ?? "").toString().trim();
-    next = safeNextPath(form?.get("next"));
-  }
-
-  const rec = consumePin(pin);
-  if (!rec) {
-    // Costruisci URL assoluto per il redirect
-    const redirectPath = next ? `/?err=pin&next=${encodeURIComponent(next)}` : "/?err=pin";
-    return NextResponse.redirect(getAbsoluteUrl(req, redirectPath));
-  }
-
-  const session = createSession(
-    { role: rec.role, aptId: rec.aptId, pin: pin },
-    60 * 60 * 6 // 6 ore
-  );
-
-  // Costruisci URL assoluto per il redirect (Next.js richiede URL assoluti)
-  const res = NextResponse.redirect(getAbsoluteUrl(req, next));
-  res.cookies.set("sess", session, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-  });
-
-  return res;
 }

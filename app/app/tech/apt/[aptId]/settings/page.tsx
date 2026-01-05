@@ -31,7 +31,7 @@ export default async function TechSettingsPage({
   const me = readSession(sess);
 
   if (!me || me.role !== "tech") {
-    return <div className="p-6 text-white">Non autorizzato</div>;
+    return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
   }
 
   const p = await Promise.resolve(params);
@@ -39,7 +39,7 @@ export default async function TechSettingsPage({
 
   if (!aptId) {
     return (
-      <main className="min-h-screen bg-[#0a0d12] text-white p-4 lg:p-6">
+      <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-4 lg:p-6">
         <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
           ← Back
         </Link>
@@ -51,7 +51,7 @@ export default async function TechSettingsPage({
   const apt = getApt(aptId);
   if (!apt) {
     return (
-      <main className="min-h-screen bg-[#0a0d12] text-white p-4 lg:p-6">
+      <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-4 lg:p-6">
         <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
           ← Back
         </Link>
@@ -169,7 +169,7 @@ export default async function TechSettingsPage({
   const tabs = allTabs.filter((tab) => requiredTabs.includes(tab.id as any));
 
   return (
-    <main className="min-h-screen bg-[#0a0d12] text-white p-4 lg:p-6">
+    <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-4 lg:p-6">
       <div className="max-w-4xl mx-auto space-y-4">
         <div className="lg:hidden">
           <Link className="text-sm opacity-70 hover:opacity-100" href={`/app/tech/apt/${aptId}`}>
@@ -181,10 +181,10 @@ export default async function TechSettingsPage({
           ← Torna a {apt.aptName}
         </Link>
 
-        <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
           <div className="mb-4">
-            <div className="text-lg font-semibold">Technical Settings</div>
-            <div className="text-sm opacity-70">{apt.aptName}</div>
+            <div className="text-lg font-semibold text-[var(--text-primary)]">Technical Settings</div>
+            <div className="text-sm opacity-70 text-[var(--text-secondary)]">{apt.aptName}</div>
           </div>
 
           {enabledDevices.length === 0 && (
@@ -207,9 +207,9 @@ export default async function TechSettingsPage({
           saveDeviceApi={updateDeviceApi}
         />
 
-        <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
           {/* Tabs */}
-              <div className="flex gap-2 mb-6 border-b border-white/10">
+              <div className="flex gap-2 mb-6 border-b border-[var(--border-light)]">
             {tabs.map((tab) => (
               <Link
                 key={tab.id}
@@ -235,7 +235,7 @@ export default async function TechSettingsPage({
                   name="baseUrl"
                   defaultValue={settings.homeAssistant.baseUrl}
                   placeholder="http://homeassistant.local:8123"
-                  className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 />
               </div>
 
@@ -246,7 +246,7 @@ export default async function TechSettingsPage({
                   name="token"
                   defaultValue={settings.homeAssistant.token}
                   placeholder="Token"
-                  className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 />
               </div>
 
@@ -259,14 +259,14 @@ export default async function TechSettingsPage({
                     .join("\n")}
                   placeholder="switch.shelly_gate=relay_gate&#10;lock.tedee_101=smart_lock"
                   rows={6}
-                  className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500 font-mono text-sm"
+                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500 font-mono text-sm"
                 />
                 <div className="text-xs opacity-60 mt-1">
                   Formato: entity_id=device_type (es. switch.shelly_gate=relay_gate)
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-4 border-t border-white/10">
+              <div className="flex gap-3 pt-4 border-t border-[var(--border-light)]">
                 <button
                   type="submit"
                   className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-6 py-3 font-semibold"
@@ -286,7 +286,7 @@ export default async function TechSettingsPage({
                   name="wireguardEndpoint"
                   defaultValue={settings.network.wireguardEndpoint}
                   placeholder="wg.example.com:51820"
-                  className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 />
               </div>
 
@@ -297,7 +297,7 @@ export default async function TechSettingsPage({
                   name="cloudflareEndpoint"
                   defaultValue={settings.network.cloudflareEndpoint}
                   placeholder="https://tunnel.example.com"
-                  className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 />
               </div>
 
@@ -308,11 +308,11 @@ export default async function TechSettingsPage({
                   name="healthCheckUrl"
                   defaultValue={settings.network.healthCheckUrl}
                   placeholder="https://health.example.com/check"
-                  className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 />
               </div>
 
-              <div className="flex gap-3 pt-4 border-t border-white/10">
+              <div className="flex gap-3 pt-4 border-t border-[var(--border-light)]">
                 <button
                   type="submit"
                   className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-6 py-3 font-semibold"
@@ -393,7 +393,7 @@ export default async function TechSettingsPage({
                     {settings.diagnostics.lastErrors.slice(0, 10).map((error, idx) => (
                       <div
                         key={idx}
-                        className="rounded-xl bg-red-500/10 border border-red-400/20 p-3"
+                        className="rounded-xl bg-red-50 border border-red-200 p-3"
                       >
                         <div className="flex items-center justify-between mb-1">
                           <div className="text-xs font-semibold capitalize">{error.source.replace("_", " ")}</div>

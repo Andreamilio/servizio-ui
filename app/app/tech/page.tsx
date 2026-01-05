@@ -5,18 +5,19 @@ import { readSession, validateSessionUser } from "@/app/lib/session";
 import { getAccessLog, getIncidents, listApts, techStore } from "@/app/lib/techstore";
 import { listClients } from "@/app/lib/clientStore";
 import { getUser } from "@/app/lib/userStore";
+import { AppLayout } from "@/app/components/layouts/AppLayout";
 import { UserProfile } from "../components/UserProfile";
 
 function pillStatus(s: "online" | "offline") {
   return s === "online"
-    ? { dot: "bg-emerald-400", text: "ONLINE", box: "bg-emerald-500/10 border-emerald-400/20 text-emerald-200" }
-    : { dot: "bg-red-400", text: "OFFLINE", box: "bg-red-500/10 border-red-400/20 text-red-200" };
+    ? { dot: "bg-emerald-500", text: "ONLINE", box: "bg-emerald-50 border-emerald-200 text-emerald-700" }
+    : { dot: "bg-red-500", text: "OFFLINE", box: "bg-red-50 border-red-200 text-red-700" };
 }
 
 function pillNet(n: "main" | "backup") {
   return n === "main"
-    ? { text: "MAIN WAN", box: "bg-white/5 border-white/10 text-white/80" }
-    : { text: "BACKUP WAN", box: "bg-white/5 border-white/10 text-white/80" };
+    ? { text: "MAIN WAN", box: "bg-[var(--bg-card)] border-[var(--border-light)] text-[var(--text-primary)]" }
+    : { text: "BACKUP WAN", box: "bg-[var(--bg-card)] border-[var(--border-light)] text-[var(--text-primary)]" };
 }
 
 export default async function TechPage({
@@ -34,7 +35,7 @@ export default async function TechPage({
     if (session && session.userId && session.role === "tech") {
       redirect("/api/auth/logout");
     }
-    return <div className="p-6 text-white">Non autorizzato</div>;
+    return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
   }
 
   const apts = listApts();
@@ -54,117 +55,23 @@ export default async function TechPage({
   const techUser = me.userId ? getUser(me.userId) : null;
 
   return (
-    <main className="min-h-screen bg-[#0a0d12] text-white">
-      <div className="lg:hidden px-4 pt-4 pb-2 flex items-center justify-between">
-        <div>
-          <div className="text-xs opacity-60">TECH</div>
-          <div className="text-sm font-semibold">{techStore.clientName}</div>
-        </div>
-        <div className="flex items-center gap-2">
-          {techUser && (
-            <UserProfile
-              key={`${techUser.userId}-${techUser.profileImageUrl || 'no-image'}`}
-              userId={techUser.userId}
-              username={techUser.username}
-              role={techUser.role}
-              profileImageUrl={techUser.profileImageUrl}
-            />
-          )}
-          <form action="/api/auth/logout" method="post">
-            <button className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm">
-              Logout
-            </button>
-          </form>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_360px] gap-4 lg:gap-6 p-4 lg:p-6">
-        {/* SIDEBAR */}
-        <aside className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
-          <div className="p-4 border-b border-white/10 space-y-2">
-            <div className="text-xs opacity-60">CLIENTS</div>
-            <Link
-              href="/app/tech/users"
-              className="block text-sm opacity-70 hover:opacity-100 hover:text-cyan-200 transition"
-            >
-              👥 Gestione Utenti
-            </Link>
-            <Link
-              href="/app/tech/clients"
-              className="block text-sm opacity-70 hover:opacity-100 hover:text-cyan-200 transition"
-            >
-              🏢 Gestione Clienti
-            </Link>
-          </div>
-
-          <div className="p-4">
-            {/* Header cliente (NO dropdown) */}
-            <div className="px-3 py-2">
-              <div className="text-sm font-semibold">{techStore.clientName}</div>
-              <div className="text-xs opacity-60 mt-0.5">
-                {clientsCount} {clientsCount === 1 ? 'cliente' : 'clienti'} • {apts.length} {apts.length === 1 ? 'appartamento' : 'appartamenti'}
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <div className="text-xs opacity-60 mb-3">APARTMENTS CLIENT</div>
-
-              <div className="space-y-2 max-h-[50vh] lg:max-h-[70vh] overflow-auto pr-1">
-                {groups.map((g) => {
-                  const inGroup = apts.filter((a) => a.group === g);
-                  return (
-                    <details
-                      key={g}
-                      className="group/apt rounded-xl bg-black/20 border border-white/10 overflow-hidden"
-                    >
-                      <summary className="list-none cursor-pointer select-none px-3 py-2 hover:bg-black/25">
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm font-semibold">{g}</div>
-                          <div className="flex items-center gap-2">
-                            <div className="text-xs opacity-60">{inGroup.length}</div>
-                            <div className="text-xs opacity-60 transition-transform group-open/apt:rotate-180">▾</div>
-                          </div>
-                        </div>
-                      </summary>
-
-                      <div className="p-2 pt-0 space-y-2">
-                        {inGroup.map((a) => (
-                          <Link
-                            key={a.aptId}
-                            href={`/app/tech/apt/${a.aptId}`}
-                            className="flex items-center justify-between rounded-xl bg-black/20 border border-white/10 px-3 py-2 hover:border-white/20"
-                          >
-                            <div className="text-sm">
-                              <div className="font-semibold">{a.aptName}</div>
-                              <div className="text-xs opacity-60">Apt {a.aptId}</div>
-                            </div>
-                            <div
-                              className={`h-2 w-2 rounded-full ${
-                                a.status === "online" ? "bg-emerald-400" : "bg-red-400"
-                              }`}
-                            />
-                          </Link>
-                        ))}
-                      </div>
-                    </details>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4 border-t border-white/10 text-xs opacity-60">
-            TECH • monitoring
-          </div>
-        </aside>
-
+    <AppLayout 
+      role="tech" 
+      userInfo={techUser ? {
+        userId: techUser.userId,
+        username: techUser.username,
+        profileImageUrl: techUser.profileImageUrl,
+      } : undefined}
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 lg:gap-6 p-4 lg:p-6">
         {/* CENTER */}
         <section className="space-y-4">
-          <div className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
-            <div className="p-4 border-b border-white/10">
+          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] overflow-hidden">
+            <div className="p-4 border-b border-[var(--border-light)]">
               <div className="text-lg font-semibold">Status</div>
             </div>
 
-            <div className="grid grid-cols-[1.2fr_1fr_1fr_1fr] gap-2 p-4 text-xs uppercase tracking-wider opacity-60">
+            <div className="hidden sm:grid grid-cols-[1.2fr_1fr_1fr_1fr] gap-2 p-4 text-xs uppercase tracking-wider opacity-60">
               <div>Apartment</div>
               <div>Status</div>
               <div>Network</div>
@@ -180,7 +87,7 @@ export default async function TechPage({
                   <Link
                     key={a.aptId}
                     href={`/app/tech/apt/${a.aptId}`}
-                    className="grid grid-cols-1 sm:grid-cols-[1.2fr_1fr_1fr_1fr] gap-2 items-start sm:items-center rounded-xl bg-black/20 border border-white/10 px-4 py-3 hover:border-white/20 active:scale-[.99] transition"
+                    className="grid grid-cols-1 sm:grid-cols-[1.2fr_1fr_1fr_1fr] gap-2 items-start sm:items-center rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-3 hover:border-white/20 active:scale-[.99] transition"
                   >
                     <div className="font-semibold">{a.aptName}</div>
 
@@ -203,8 +110,8 @@ export default async function TechPage({
 
         {/* RIGHT */}
         <aside className="space-y-4">
-          <div className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
-            <div className="p-4 border-b border-white/10 flex items-center justify-between">
+          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] overflow-hidden">
+            <div className="p-4 border-b border-[var(--border-light)] flex items-center justify-between">
               <div>
                 <div className="text-sm font-semibold">LIVE ACCESS LOG</div>
                 <div className="text-xs opacity-60">
@@ -228,7 +135,7 @@ export default async function TechPage({
                 <div className="text-sm opacity-60">Nessun evento.</div>
               ) : (
                 accessLog.map((e) => (
-                  <div key={e.id} className="rounded-xl bg-black/20 border border-white/10 p-3">
+                  <div key={e.id} className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3">
                     <div className="text-xs opacity-60">{e.tsLabel}</div>
                     <div className="mt-1 text-sm">
                       <span className="font-semibold">Apt {e.aptId}</span>{" "}
@@ -242,14 +149,14 @@ export default async function TechPage({
             </div>
           </div>
 
-          <div className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
-            <div className="p-4 border-b border-white/10">
+          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] overflow-hidden">
+            <div className="p-4 border-b border-[var(--border-light)]">
               <div className="text-sm font-semibold">INCIDENTS</div>
             </div>
 
             <div className="p-4 space-y-2">
               {incidents.map((i) => (
-                <div key={i.id} className="flex items-center justify-between rounded-xl bg-black/20 border border-white/10 px-3 py-3">
+                <div key={i.id} className="flex items-center justify-between rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-3 py-3">
                   <div className="flex items-center gap-3">
                     <div className="text-lg">
                       {i.type === "tamper" && "⚠️"}
@@ -265,24 +172,8 @@ export default async function TechPage({
               ))}
             </div>
           </div>
-
-          <div className="hidden lg:block space-y-2">
-            {techUser && (
-              <UserProfile
-                userId={techUser.userId}
-                username={techUser.username}
-                role={techUser.role}
-                profileImageUrl={techUser.profileImageUrl}
-              />
-            )}
-            <form action="/api/auth/logout" method="post">
-              <button className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3">
-                Logout
-              </button>
-            </form>
-          </div>
         </aside>
       </div>
-    </main>
+    </AppLayout>
   );
 }

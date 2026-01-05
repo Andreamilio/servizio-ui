@@ -33,15 +33,15 @@ export function UserProfile({ userId, username, role, profileImageUrl }: UserPro
   // Durante SSR, renderizza solo un placeholder per evitare mismatch
   if (!mounted) {
     return (
-      <div className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-3 py-2">
-        <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-400/30 flex items-center justify-center">
-          <span className="text-xs font-semibold text-cyan-200">
+      <div className="flex items-center gap-2 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-3 py-2">
+        <div className="w-8 h-8 rounded-full bg-[var(--pastel-blue)] border border-[var(--border-light)] flex items-center justify-center">
+          <span className="text-xs font-semibold text-[var(--accent-primary)]">
             {getInitials(username)}
           </span>
         </div>
         <div className="text-left hidden sm:block">
-          <div className="text-xs font-semibold">{username}</div>
-          <div className="text-[10px] opacity-60">{roleLabel}</div>
+          <div className="text-xs font-semibold text-[var(--text-primary)]">{username}</div>
+          <div className="text-[10px] text-[var(--text-secondary)]">{roleLabel}</div>
         </div>
       </div>
     );
@@ -51,24 +51,24 @@ export function UserProfile({ userId, username, role, profileImageUrl }: UserPro
     <>
       <button
         onClick={() => setIsModalOpen(true)}
-        className="flex items-center gap-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 transition"
+        className="flex items-center gap-2 rounded-xl bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-3 py-2 transition-colors"
       >
         {profileImageUrl ? (
           <img
             src={profileImageUrl}
             alt={username}
-            className="w-8 h-8 rounded-full object-cover border border-white/20"
+            className="w-8 h-8 rounded-full object-cover border border-[var(--border-light)]"
           />
         ) : (
-          <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-400/30 flex items-center justify-center">
-            <span className="text-xs font-semibold text-cyan-200">
+          <div className="w-8 h-8 rounded-full bg-[var(--pastel-blue)] border border-[var(--border-light)] flex items-center justify-center">
+            <span className="text-xs font-semibold text-[var(--accent-primary)]">
               {getInitials(username)}
             </span>
           </div>
         )}
         <div className="text-left hidden sm:block">
-          <div className="text-xs font-semibold">{username}</div>
-          <div className="text-[10px] opacity-60">{roleLabel}</div>
+          <div className="text-xs font-semibold text-[var(--text-primary)]">{username}</div>
+          <div className="text-[10px] text-[var(--text-secondary)]">{roleLabel}</div>
         </div>
       </button>
 

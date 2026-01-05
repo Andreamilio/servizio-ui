@@ -83,7 +83,7 @@ export default async function TechPage() {
   const offline = totalApts - online;
 
   return (
-    <main className="min-h-screen bg-[#0a0d12] text-white">
+    <main className="min-h-screen bg-[var(--bg-primary)] text-white">
       {/* MOBILE HEADER */}
       <div className="p-4 md:hidden">
         <div className="text-xs opacity-60">TECH • monitoring</div>

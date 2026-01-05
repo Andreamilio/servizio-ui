@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { getDeviceLabel, type DeviceType } from "@/app/lib/devicePackageTypes";
 import type { DeviceApiSettings } from "@/app/lib/technicalSettingsStore";
+import { Modal } from "@/app/components/ui/Modal";
+import { Input } from "@/app/components/ui/Input";
+import { Button } from "@/app/components/ui/Button";
 
 type DeviceApiModalProps = {
   deviceType: DeviceType;
@@ -43,77 +46,62 @@ export function DeviceApiModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-[#0a0d12] border border-white/10 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <div className="text-lg font-semibold">Configurazione API</div>
-              <div className="text-sm opacity-70">{getDeviceLabel(deviceType)}</div>
-            </div>
-            <button
-              onClick={onClose}
-              className="text-white/60 hover:text-white transition"
-            >
-              ✕
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Endpoint</label>
-              <input
-                type="text"
-                value={endpoint}
-                onChange={(e) => setEndpoint(e.target.value)}
-                placeholder="https://api.example.com"
-                className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Token / API Key</label>
-              <input
-                type="password"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                placeholder="API token"
-                className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Device ID</label>
-              <input
-                type="text"
-                value={deviceId}
-                onChange={(e) => setDeviceId(e.target.value)}
-                placeholder="ID del device nell'API esterna"
-                className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              />
-            </div>
-
-            <div className="flex gap-3 pt-4 border-t border-white/10">
-              <button
-                type="submit"
-                disabled={saving}
-                className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-6 py-3 font-semibold disabled:opacity-50"
-              >
-                {saving ? "Salvataggio..." : "Salva configurazione"}
-              </button>
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-6 py-3 font-semibold"
-              >
-                Annulla
-              </button>
-            </div>
-          </form>
-        </div>
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title="Configurazione API"
+      size="lg"
+    >
+      <div className="mb-4">
+        <p className="text-sm text-[var(--text-secondary)]">{getDeviceLabel(deviceType)}</p>
       </div>
-    </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input
+          label="Endpoint"
+          type="text"
+          value={endpoint}
+          onChange={(e) => setEndpoint(e.target.value)}
+          placeholder="https://api.example.com"
+          required
+        />
+
+        <Input
+          label="Token / API Key"
+          type="password"
+          value={token}
+          onChange={(e) => setToken(e.target.value)}
+          placeholder="API token"
+        />
+
+        <Input
+          label="Device ID"
+          type="text"
+          value={deviceId}
+          onChange={(e) => setDeviceId(e.target.value)}
+          placeholder="ID del device nell'API esterna"
+        />
+
+        <div className="flex gap-3 pt-4 border-t border-[var(--border-light)]">
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={saving}
+            fullWidth
+          >
+            {saving ? "Salvataggio..." : "Salva configurazione"}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            fullWidth
+          >
+            Annulla
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }
 

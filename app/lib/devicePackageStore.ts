@@ -25,7 +25,7 @@ function createEmptyDevicePackage(aptId: string): DevicePackage {
   getAllDeviceTypes().forEach((deviceType) => {
     devices.set(deviceType, {
       enabled: false,
-      controllable: deviceType !== "ups", // UPS non è mai controllabile
+      controllable: false, // Di default non controllabile (può essere attivato solo se enabled è true)
       controller: deviceType !== "ups" ? "home_assistant" : "home_assistant", // Default, ma UPS non lo usa realmente
     });
   });

@@ -84,7 +84,7 @@ export default async function StayDetailPage({
   const me = readSession(sess);
 
   if (!me || me.role !== "host") {
-    return <div className="p-6 text-white">Non autorizzato</div>;
+    return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
   }
 
   const stayObj = stays_get(stayId);
@@ -268,7 +268,7 @@ export default async function StayDetailPage({
   }
 
   return (
-    <main className="min-h-screen bg-[#0a0d12] text-white p-6">
+    <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-6">
       <div className="max-w-3xl mx-auto space-y-5">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -315,7 +315,7 @@ export default async function StayDetailPage({
         </div>
 
         {/* Stay info */}
-        <section className="rounded-2xl bg-white/5 border border-white/10 p-4">
+        <section className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
           <div className="text-sm opacity-70 mb-3">Informazioni soggiorno</div>
           
           {(() => {
@@ -373,7 +373,7 @@ export default async function StayDetailPage({
                         name="checkin"
                         defaultValue={stayCheckin ?? ""}
                         required
-                        className="w-full rounded-xl bg-black/40 border border-white/10 p-2"
+                        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2"
                       />
                     </div>
                     <div>
@@ -385,7 +385,7 @@ export default async function StayDetailPage({
                         name="checkout"
                         defaultValue={stayCheckout ?? ""}
                         required
-                        className="w-full rounded-xl bg-black/40 border border-white/10 p-2"
+                        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2"
                       />
                     </div>
                   </div>
@@ -527,7 +527,7 @@ export default async function StayDetailPage({
                   const cleanersList = cfg.cleaners ?? [];
 
                   return (
-                    <div className="mt-4 pt-4 border-t border-white/10">
+                    <div className="mt-4 pt-4 border-t border-[var(--border-light)]">
                       <div className="text-sm opacity-70 mb-3">Cleaner assegnato</div>
                       <form action={updateCleaner} className="space-y-3">
                         <input type="hidden" name="stayId" value={stayId} />
@@ -540,7 +540,7 @@ export default async function StayDetailPage({
                             name="cleaner"
                             required
                             defaultValue={stayObj.cleanerName ?? ""}
-                            className="w-full rounded-xl bg-black/40 border border-white/10 p-2">
+                            className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2">
                             <option value="">— Seleziona cleaner —</option>
                             {cleanersList.map((cleaner) => (
                               <option key={cleaner.name} value={cleaner.name}>
@@ -568,7 +568,7 @@ export default async function StayDetailPage({
         </section>
 
         {/* Guests management */}
-        <section className="rounded-2xl bg-white/5 border border-white/10 p-4">
+        <section className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
           <div className="text-sm opacity-70 mb-3">Ospiti</div>
 
           {stayObj.guests.length === 0 ? (
@@ -669,7 +669,7 @@ export default async function StayDetailPage({
                 const canRemove = stayObj.guests.length > 1;
 
                 return (
-                  <div key={guest.guestId} className="rounded-xl bg-black/30 border border-white/10 p-4">
+                  <div key={guest.guestId} className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-4">
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div>
                         <div className="text-sm font-semibold">
@@ -708,7 +708,7 @@ export default async function StayDetailPage({
                             name="firstName"
                             defaultValue={guest.firstName ?? guest.name.split(" ")[0] ?? ""}
                             required
-                            className="w-full rounded-xl bg-black/40 border border-white/10 p-2 text-sm"
+                            className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2 text-sm"
                           />
                         </div>
                         <div>
@@ -718,7 +718,7 @@ export default async function StayDetailPage({
                             name="lastName"
                             defaultValue={guest.lastName ?? guest.name.split(" ").slice(1).join(" ") ?? ""}
                             required
-                            className="w-full rounded-xl bg-black/40 border border-white/10 p-2 text-sm"
+                            className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2 text-sm"
                           />
                         </div>
                       </div>
@@ -730,7 +730,7 @@ export default async function StayDetailPage({
                             name="phone"
                             defaultValue={guest.phone ?? ""}
                             required
-                            className="w-full rounded-xl bg-black/40 border border-white/10 p-2 text-sm"
+                            className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2 text-sm"
                           />
                         </div>
                         <div>
@@ -739,7 +739,7 @@ export default async function StayDetailPage({
                             type="email"
                             name="email"
                             defaultValue={guest.email ?? ""}
-                            className="w-full rounded-xl bg-black/40 border border-white/10 p-2 text-sm"
+                            className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2 text-sm"
                           />
                         </div>
                       </div>
@@ -751,7 +751,7 @@ export default async function StayDetailPage({
                       </button>
                     </form>
 
-                    <div className="mt-4 pt-4 border-t border-white/10">
+                    <div className="mt-4 pt-4 border-t border-[var(--border-light)]">
                       <div className="text-xs opacity-60 mb-2">PIN di accesso</div>
                       {guestPins.length === 0 ? (
                         <div className="text-xs opacity-50 mb-2">Nessun PIN attivo</div>
@@ -762,7 +762,7 @@ export default async function StayDetailPage({
                             return (
                               <div
                                 key={p.pin}
-                                className="flex items-center justify-between rounded-lg bg-black/40 border border-white/10 px-3 py-2"
+                                className="flex items-center justify-between rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-light)] px-3 py-2"
                               >
                                 <div>
                                   <div className="text-xs font-mono font-semibold">{p.pin}</div>
@@ -815,7 +815,7 @@ export default async function StayDetailPage({
           )}
 
           {/* Form per aggiungere nuovo ospite */}
-          <div className="mt-4 pt-4 border-t border-white/10">
+          <div className="mt-4 pt-4 border-t border-[var(--border-light)]">
             <div className="text-sm font-semibold mb-3">Aggiungi nuovo ospite</div>
             {(() => {
               async function addGuest(formData: FormData) {
@@ -879,7 +879,7 @@ export default async function StayDetailPage({
                         name="firstName"
                         required
                         placeholder="Nome"
-                        className="w-full rounded-xl bg-black/40 border border-white/10 p-2 text-sm"
+                        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2 text-sm"
                       />
                     </div>
                     <div>
@@ -891,7 +891,7 @@ export default async function StayDetailPage({
                         name="lastName"
                         required
                         placeholder="Cognome"
-                        className="w-full rounded-xl bg-black/40 border border-white/10 p-2 text-sm"
+                        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2 text-sm"
                       />
                     </div>
                   </div>
@@ -905,7 +905,7 @@ export default async function StayDetailPage({
                         name="phone"
                         required
                         placeholder="+39 123 456 7890"
-                        className="w-full rounded-xl bg-black/40 border border-white/10 p-2 text-sm"
+                        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2 text-sm"
                       />
                     </div>
                     <div>
@@ -914,7 +914,7 @@ export default async function StayDetailPage({
                         type="email"
                         name="email"
                         placeholder="email@example.com"
-                        className="w-full rounded-xl bg-black/40 border border-white/10 p-2 text-sm"
+                        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2 text-sm"
                       />
                     </div>
                   </div>
@@ -933,7 +933,7 @@ export default async function StayDetailPage({
         </section>
 
         {/* Cleaner PINs section */}
-        <section className="rounded-2xl bg-white/5 border border-white/10 p-4">
+        <section className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
           <div className="text-sm opacity-70 mb-3">PIN Cleaner</div>
           {(() => {
             const cleanerPins = pins.filter((p: any) => p.role === "cleaner" && p.stayId === stayId);
@@ -1021,7 +1021,7 @@ export default async function StayDetailPage({
                       const vTo = p.validTo ?? p.expiresAt;
 
                       return (
-                        <div key={p.pin} className="rounded-xl bg-black/30 border border-white/10 p-3">
+                        <div key={p.pin} className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3">
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0 flex-1">
                               <div className="font-semibold tracking-widest text-sm">{p.pin}</div>
@@ -1050,14 +1050,14 @@ export default async function StayDetailPage({
 
                 {/* Form per creare nuovo PIN */}
                 {assignedCleaner ? (
-                  <div className="rounded-xl bg-black/20 border border-white/10 p-4">
+                  <div className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-4">
                     <div className="text-sm font-semibold mb-3">Crea nuovo PIN cleaner</div>
                     <form action={createCleanerPin} className="space-y-3">
                       <input type="hidden" name="stayId" value={stayId} />
 
                       <div>
                         <div className="text-[11px] opacity-60 mb-1">Cleaner assegnato</div>
-                        <div className="w-full rounded-xl bg-black/40 border border-white/10 p-2 text-sm font-semibold">
+                        <div className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2 text-sm font-semibold">
                           {assignedCleaner}
                         </div>
                         <div className="mt-1 text-xs opacity-50">Il cleaner è stato assegnato automaticamente alla creazione del soggiorno.</div>
@@ -1070,7 +1070,7 @@ export default async function StayDetailPage({
                           type="datetime-local"
                           name="validFrom"
                           required
-                          className="w-full rounded-xl bg-black/40 border border-white/10 p-2"
+                          className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2"
                         />
                       </div>
                       <div>
@@ -1079,7 +1079,7 @@ export default async function StayDetailPage({
                           type="datetime-local"
                           name="validTo"
                           required
-                          className="w-full rounded-xl bg-black/40 border border-white/10 p-2"
+                          className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2"
                         />
                       </div>
                     </div>
@@ -1090,7 +1090,7 @@ export default async function StayDetailPage({
                     </form>
                   </div>
                 ) : (
-                  <div className="rounded-xl bg-black/20 border border-white/10 p-4">
+                  <div className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-4">
                     <div className="text-sm opacity-60">Nessun cleaner assegnato a questo soggiorno.</div>
                   </div>
                 )}
@@ -1100,7 +1100,7 @@ export default async function StayDetailPage({
         </section>
 
         {/* PIN list */}
-        <section className="rounded-2xl bg-white/5 border border-white/10 p-4">
+        <section className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
           <div className="text-sm opacity-70 mb-3">PIN attivi</div>
 
           {pins.length === 0 ? (
@@ -1114,7 +1114,7 @@ export default async function StayDetailPage({
                 return (
                   <details
                     key={p.pin}
-                    className="rounded-xl bg-black/30 border border-white/10 px-3 py-2"
+                    className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-3 py-2"
                   >
                     <summary className="cursor-pointer list-none flex items-center justify-between gap-3">
                       <div className="min-w-0">
@@ -1164,7 +1164,7 @@ export default async function StayDetailPage({
         </section>
 
         {/* Cleaning Jobs section */}
-        <section className="rounded-2xl bg-white/5 border border-white/10 p-4">
+        <section className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
           <div className="text-sm opacity-70 mb-3">Jobs di pulizia</div>
 
           {jobs.length === 0 ? (
@@ -1173,10 +1173,10 @@ export default async function StayDetailPage({
             <div className="space-y-3">
               {jobs.map((job: CleaningJob) => {
                 const statusColors: Record<CleaningStatus, string> = {
-                  todo: "bg-yellow-500/20 border-yellow-500/30 text-yellow-200",
-                  in_progress: "bg-blue-500/20 border-blue-500/30 text-blue-200",
-                  done: "bg-green-500/20 border-green-500/30 text-green-200",
-                  problem: "bg-red-500/20 border-red-500/30 text-red-200",
+                  todo: "bg-yellow-50 border-yellow-200 text-yellow-700",
+                  in_progress: "bg-blue-50 border-blue-200 text-blue-700",
+                  done: "bg-green-50 border-green-200 text-green-700",
+                  problem: "bg-red-50 border-red-200 text-red-700",
                 };
 
                 const statusLabels: Record<CleaningStatus, string> = {
@@ -1187,7 +1187,7 @@ export default async function StayDetailPage({
                 };
 
                 return (
-                  <div key={job.id} className="rounded-xl bg-black/30 border border-white/10 p-4">
+                  <div key={job.id} className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-4">
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-semibold">{job.aptName}</div>
@@ -1222,7 +1222,7 @@ export default async function StayDetailPage({
                     )}
 
                     {job.checklist && job.checklist.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-white/10">
+                      <div className="mt-3 pt-3 border-t border-[var(--border-light)]">
                         <div className="text-xs opacity-60 mb-2">Checklist</div>
                         <div className="space-y-1">
                           {job.checklist.map((item) => (
@@ -1230,7 +1230,7 @@ export default async function StayDetailPage({
                               <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
                                 item.done 
                                   ? "bg-green-500/30 border-green-500/50" 
-                                  : "bg-black/40 border-white/20"
+                                  : "bg-[var(--bg-secondary)] border-white/20"
                               }`}>
                                 {item.done && (
                                   <svg className="w-3 h-3 text-green-300" fill="currentColor" viewBox="0 0 20 20">
@@ -1247,7 +1247,7 @@ export default async function StayDetailPage({
                       </div>
                     )}
 
-                    <div className="mt-3 pt-3 border-t border-white/10">
+                    <div className="mt-3 pt-3 border-t border-[var(--border-light)]">
                       <Link
                         href={`/app/host/job/${encodeURIComponent(job.id)}`}
                         className="text-xs px-3 py-2 rounded-lg bg-white/10 border border-white/15 hover:bg-white/15 inline-block">

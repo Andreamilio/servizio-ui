@@ -43,7 +43,7 @@ export default async function TechUsersPage({
     if (session && session.userId && session.role === "tech") {
       redirect("/api/auth/logout");
     }
-    return <div className="p-6 text-white">Non autorizzato</div>;
+    return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
   }
 
   const sp = await Promise.resolve(searchParams ?? {});
@@ -141,7 +141,7 @@ export default async function TechUsersPage({
   const isCreateMode = action === "create";
 
   return (
-    <main className="min-h-screen bg-[#0a0d12] text-white p-4 lg:p-6">
+    <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-4 lg:p-6">
       <div className="max-w-4xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
           <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
@@ -149,7 +149,7 @@ export default async function TechUsersPage({
           </Link>
         </div>
 
-        <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="text-lg font-semibold">Gestione Utenti</div>
@@ -166,20 +166,20 @@ export default async function TechUsersPage({
           </div>
 
           {err === "missing" && (
-            <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-400/20 text-sm">
+            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-sm">
               Username e password sono obbligatori
             </div>
           )}
 
           {err === "exists" && (
-            <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-400/20 text-sm">
+            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-sm">
               Username già esistente
             </div>
           )}
 
           {/* Form Create/Edit */}
           {(isCreateMode || isEditMode) && (
-            <div className="mb-6 p-4 rounded-xl bg-black/20 border border-white/10">
+            <div className="mb-6 p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)]">
               <div className="text-sm font-semibold mb-4">
                 {isCreateMode ? "Crea Nuovo Utente" : `Modifica: ${selectedUser?.username}`}
               </div>
@@ -192,7 +192,7 @@ export default async function TechUsersPage({
                       type="text"
                       name="username"
                       required
-                      className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     />
                   </div>
 
@@ -202,7 +202,7 @@ export default async function TechUsersPage({
                       type="password"
                       name="password"
                       required
-                      className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     />
                   </div>
 
@@ -211,7 +211,7 @@ export default async function TechUsersPage({
                     <select
                       name="role"
                       defaultValue="tech"
-                      className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     >
                       <option value="tech">Tech</option>
                       <option value="host">Host</option>
@@ -222,7 +222,7 @@ export default async function TechUsersPage({
                     <label className="block text-sm font-medium mb-2">Client (solo per Host, opzionale)</label>
                     <select
                       name="clientId"
-                      className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     >
                       <option value="">Nessuno (accesso a tutti i client)</option>
                       {clients.map((c) => (
@@ -233,7 +233,7 @@ export default async function TechUsersPage({
                     </select>
                   </div>
 
-                  <div className="flex gap-3 pt-4 border-t border-white/10">
+                  <div className="flex gap-3 pt-4 border-t border-[var(--border-light)]">
                     <button
                       type="submit"
                       className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-6 py-3 font-semibold"
@@ -242,7 +242,7 @@ export default async function TechUsersPage({
                     </button>
                     <Link
                       href="/app/tech/users"
-                      className="rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-6 py-3 font-semibold"
+                      className="rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-6 py-3 font-semibold"
                     >
                       Annulla
                     </Link>
@@ -260,7 +260,7 @@ export default async function TechUsersPage({
                         name="username"
                         defaultValue={selectedUser!.username}
                         required
-                        className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                       />
                     </div>
 
@@ -269,7 +269,7 @@ export default async function TechUsersPage({
                       <select
                         name="role"
                         defaultValue={selectedUser!.role}
-                        className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                       >
                         <option value="tech">Tech</option>
                         <option value="host">Host</option>
@@ -281,7 +281,7 @@ export default async function TechUsersPage({
                       <select
                         name="clientId"
                         defaultValue={selectedUser!.clientId || ""}
-                        className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                       >
                         <option value="">Nessuno (accesso a tutti i client)</option>
                         {clients.map((c) => (
@@ -292,7 +292,7 @@ export default async function TechUsersPage({
                       </select>
                     </div>
 
-                    <div className="pt-4 border-t border-white/10">
+                    <div className="pt-4 border-t border-[var(--border-light)]">
                       <UserImageEditor
                         userId={selectedUser!.userId}
                         username={selectedUser!.username}
@@ -300,7 +300,7 @@ export default async function TechUsersPage({
                       />
                     </div>
 
-                    <div className="flex gap-3 pt-4 border-t border-white/10">
+                    <div className="flex gap-3 pt-4 border-t border-[var(--border-light)]">
                       <button
                         type="submit"
                         className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-6 py-3 font-semibold"
@@ -309,7 +309,7 @@ export default async function TechUsersPage({
                       </button>
                       <Link
                         href="/app/tech/users"
-                        className="rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-6 py-3 font-semibold"
+                        className="rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-6 py-3 font-semibold"
                       >
                         Annulla
                       </Link>
@@ -326,7 +326,7 @@ export default async function TechUsersPage({
                         type="password"
                         name="newPassword"
                         required
-                        className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                       />
                     </div>
 
@@ -351,7 +351,7 @@ export default async function TechUsersPage({
                 users.map((user) => (
                   <div
                     key={user.userId}
-                    className="flex items-center justify-between gap-3 rounded-xl bg-black/20 border border-white/10 p-3"
+                    className="flex items-center justify-between gap-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       {user.profileImageUrl ? (
@@ -380,7 +380,7 @@ export default async function TechUsersPage({
                           {user.role.toUpperCase()}
                         </div>
                         {!user.enabled && (
-                          <div className="text-xs px-2 py-0.5 rounded bg-red-500/10 border border-red-400/20 text-red-200">
+                          <div className="text-xs px-2 py-0.5 rounded bg-red-50 border border-red-200 text-red-200">
                             DISABILITATO
                           </div>
                         )}
@@ -395,7 +395,7 @@ export default async function TechUsersPage({
                     <div className="flex items-center gap-2">
                       <Link
                         href={`/app/tech/users?action=edit&userId=${user.userId}`}
-                        className="rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 font-semibold text-xs"
+                        className="rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-3 py-1.5 font-semibold text-xs"
                       >
                         Modifica
                       </Link>

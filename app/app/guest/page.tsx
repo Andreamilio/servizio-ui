@@ -17,12 +17,17 @@ import {
 import * as Store from "@/app/lib/store";
 import { events_listByApt, events_log } from "@/app/lib/domain/eventsDomain";
 import { door_getStateFromLog } from "@/app/lib/domain/doorStore";
+import { Button } from "@/app/components/ui/Button";
+import { Card, CardBody, CardHeader } from "@/app/components/ui/Card";
+import { Badge } from "@/app/components/ui/Badge";
+import { AppLayout } from "@/app/components/layouts/AppLayout";
+import { DoorOpen, DoorClosed, Fence, Wifi, Clock, Activity, Home, HelpCircle } from "lucide-react";
 
 function badge(outcome: "ok" | "retrying" | "fail" | null) {
-  if (outcome === "ok") return { t: "Accesso disponibile", c: "bg-emerald-500/15 border-emerald-400/20 text-emerald-200" };
-  if (outcome === "fail") return { t: "Problema accesso", c: "bg-red-500/15 border-red-400/20 text-red-200" };
-  if (outcome === "retrying") return { t: "In corso…", c: "bg-yellow-500/15 border-yellow-400/20 text-yellow-200" };
-  return { t: "Pronto", c: "bg-white/5 border-white/10 text-white/80" };
+  if (outcome === "ok") return { t: "Accesso disponibile", variant: "success" as const };
+  if (outcome === "fail") return { t: "Problema accesso", variant: "error" as const };
+  if (outcome === "retrying") return { t: "In corso…", variant: "warning" as const };
+  return { t: "Pronto", variant: "default" as const };
 }
 
 function fmtDT(ts?: number | null) {
@@ -57,11 +62,12 @@ export default async function GuestPage({
   const state = getGuestState(aptId);
   const allEvents = events_listByApt(Store, aptId, 20);
   // Filtra eventi: il guest vede solo eventi relativi a porta e portone
+  // Limita a 5 eventi per la visualizzazione
   const events = allEvents.filter((e) => 
     e.type === 'door_opened' || 
     e.type === 'door_closed' || 
     e.type === 'gate_opened'
-  );
+  ).slice(0, 5);
   const b = badge(state.lastOutcome);
   // Leggi stato porta da Store.accessLog (single source of truth) invece che da gueststore locale
   const doorState = door_getStateFromLog(Store, aptId);
@@ -149,139 +155,139 @@ export default async function GuestPage({
 
 
   return (
-    <main className="min-h-screen bg-[#0a0d12] text-white">
-      <div className="mx-auto w-full max-w-md p-5 space-y-4">
-        {/* Top bar */}
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="text-xs opacity-60">GUEST</div>
-            <div className="text-lg font-semibold">{state.apt.aptName}</div>
-            <div className="text-xs opacity-60">{state.apt.addressShort}</div>
+    <AppLayout role="guest">
+      <div className="mx-auto w-full max-w-4xl p-4 sm:p-6 lg:p-8">
+        {/* Header */}
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <Badge variant="default" size="sm">GUEST</Badge>
+            <h1 className="text-2xl lg:text-3xl font-semibold text-[var(--text-primary)]">{state.apt.aptName}</h1>
+            <p className="text-sm text-[var(--text-secondary)]">{state.apt.addressShort}</p>
           </div>
-
-          <form action="/api/auth/logout" method="post">
-            <button className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-xs">
-              Logout
-            </button>
-          </form>
         </div>
 
         {/* Toast */}
         {toast && (
-          <div
-            className={`rounded-2xl border p-3 text-sm ${
-              toast.endsWith("_ok")
-                ? "bg-emerald-500/10 border-emerald-400/20 text-emerald-200"
-                : "bg-red-500/10 border-red-400/20 text-red-200"
-            }`}
-          >
-            {toast === "open_ok" && "Porta sbloccata ✅"}
-            {toast === "close_ok" && "Porta chiusa ✅"}
-            {toast === "open_fail" &&
-              "Non riesco ad aprire. Prova ancora o contatta supporto."}
-            {toast === "close_fail" &&
-              "Non riesco a chiudere. Prova ancora o contatta supporto."}
-            {toast === "gate_open_ok" && "Portone sbloccato ✅"}
-            {toast === "gate_open_fail" &&
-              "Non riesco ad aprire il portone. Prova ancora o contatta supporto."}
-          </div>
+          <Card className={`mb-6 ${
+            toast.endsWith("_ok")
+              ? "bg-green-500/10 dark:bg-green-500/20 border-2 border-green-500/30 dark:border-green-500/40"
+              : "bg-red-500/10 dark:bg-red-500/20 border-2 border-red-500/30 dark:border-red-500/40"
+          }`}>
+            <CardBody>
+              <p className={`text-sm font-semibold ${
+                toast.endsWith("_ok")
+                  ? "text-green-900 dark:text-green-300"
+                  : "text-red-900 dark:text-red-300"
+              }`}>
+                {toast === "open_ok" && "Porta sbloccata ✅"}
+                {toast === "close_ok" && "Porta chiusa ✅"}
+                {toast === "open_fail" &&
+                  "Non riesco ad aprire. Prova ancora o contatta supporto."}
+                {toast === "close_fail" &&
+                  "Non riesco a chiudere. Prova ancora o contatta supporto."}
+                {toast === "gate_open_ok" && "Portone sbloccato ✅"}
+                {toast === "gate_open_fail" &&
+                  "Non riesco ad aprire il portone. Prova ancora o contatta supporto."}
+              </p>
+            </CardBody>
+          </Card>
         )}
 
-        {/* Status + CTA */}
-        <div className="rounded-2xl bg-white/5 border border-white/10 p-4 space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <div
-              className={`inline-flex items-center rounded-xl border px-3 py-2 text-xs font-semibold ${b.c}`}
-            >
-              {b.t}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div
-                className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold ${
-                  doorIsOpen
-                    ? "bg-emerald-500/10 border-emerald-400/20 text-emerald-200"
-                    : "bg-white/5 border-white/10 text-white/80"
-                }`}
-              >
-                <span
-                  className={`h-2 w-2 rounded-full ${
-                    doorIsOpen ? "bg-emerald-400" : "bg-white/40"
-                  }`}
-                />
-                {doorIsOpen ? "PORTA SBLOCCATA" : "PORTA CHIUSA"}
-              </div>
-
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            {doorIsOpen ? (
-              <form action={actCloseDoor}>
-                <button className="w-full rounded-2xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 py-4 text-base font-semibold">
-                  Chiudi porta
-                </button>
-              </form>
-            ) : (
-              <form action={actOpenDoor}>
-                <button className="w-full rounded-2xl bg-cyan-500/25 hover:bg-cyan-500/35 border border-cyan-400/30 py-4 text-base font-semibold">
-                  Apri porta
-                </button>
-              </form>
-            )}
-            <form action={actOpenGate}>
-              <button className="w-full rounded-2xl bg-cyan-500/25 hover:bg-cyan-500/35 border border-cyan-400/30 py-4 text-base font-semibold">
-                Apri portone
-              </button>
-            </form>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="rounded-xl bg-black/20 border border-white/10 p-3">
-              <div className="text-xs opacity-60">Wi-Fi</div>
-              <div className="font-semibold">{state.apt.wifiSsid}</div>
-              <div className="text-xs opacity-70">Pass: {state.apt.wifiPass}</div>
-            </div>
-            <div className="rounded-xl bg-black/20 border border-white/10 p-3">
-              <div className="text-xs opacity-60">Orari</div>
-              <div className="text-xs opacity-80">Check-in: <span className="font-semibold">{state.apt.checkIn}</span></div>
-              <div className="text-xs opacity-80">Check-out: <span className="font-semibold">{state.apt.checkOut}</span></div>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <Link className="flex-1 rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-center text-sm" href="/app/guest/apartment">
-              Dettagli appartamento
-            </Link>
-            <Link className="flex-1 rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-center text-sm" href="/app/guest/support">
-              Supporto
-            </Link>
-          </div>
-        </div>
-
-        {/* Live events */}
-        <div className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
-          <div className="p-4 border-b border-white/10">
-            <div className="text-sm font-semibold">Attività recente</div>
-          </div>
-          <div className="p-4 space-y-2">
-            {events.length === 0 ? (
-              <div className="text-sm opacity-60 py-4 text-center">Nessuna attività recente</div>
-            ) : (
-              events.map((e) => (
-                <div key={e.id} className="rounded-xl bg-black/20 border border-white/10 p-3">
-                  <div className="text-xs opacity-60">{fmtDT(e.ts)}</div>
-                  <div className="mt-1 text-sm font-semibold">{e.label}</div>
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Main Actions - Left Column (full width on mobile) */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Status + Door Actions */}
+            <Card variant="elevated">
+              <CardBody className="space-y-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <Badge variant={b.variant} size="md">{b.t}</Badge>
+                  <Badge variant={doorIsOpen ? "success" : "default"} size="md">
+                    <span className={`inline-block w-2 h-2 rounded-full mr-2 ${
+                      doorIsOpen ? "bg-green-500" : "bg-gray-400"
+                    }`} />
+                    {doorIsOpen ? "PORTA SBLOCCATA" : "PORTA CHIUSA"}
+                  </Badge>
                 </div>
-              ))
-            )}
-          </div>
-        </div>
 
-        <div className="text-[11px] opacity-50 text-center">
-          Prototipo: nessun servizio reale. Tutto mock.
+                <div className="space-y-3">
+                  {doorIsOpen ? (
+                    <form action={actCloseDoor}>
+                      <Button variant="success" size="lg" fullWidth icon={DoorClosed} iconPosition="left">
+                        Chiudi porta
+                      </Button>
+                    </form>
+                  ) : (
+                    <form action={actOpenDoor}>
+                      <Button variant="primary" size="lg" fullWidth icon={DoorOpen} iconPosition="left">
+                        Apri porta
+                      </Button>
+                    </form>
+                  )}
+                  <form action={actOpenGate}>
+                    <Button variant="secondary" size="lg" fullWidth icon={Fence} iconPosition="left">
+                      Apri portone
+                    </Button>
+                  </form>
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* Quick Info */}
+            <Card>
+              <CardBody>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)]">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Wifi className="w-4 h-4 text-[var(--text-secondary)]" />
+                      <div className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">Wi-Fi</div>
+                    </div>
+                    <div className="font-semibold text-[var(--text-primary)]">{state.apt.wifiSsid}</div>
+                    <div className="text-xs text-[var(--text-secondary)] mt-1">Password: {state.apt.wifiPass}</div>
+                  </div>
+                  <div className="p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)]">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Clock className="w-4 h-4 text-[var(--text-secondary)]" />
+                      <div className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">Orari</div>
+                    </div>
+                    <div className="text-sm text-[var(--text-primary)]">
+                      <div>Check-in: <span className="font-semibold">{state.apt.checkIn}</span></div>
+                      <div className="mt-1">Check-out: <span className="font-semibold">{state.apt.checkOut}</span></div>
+                    </div>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+
+          {/* Right Column - Activity */}
+          <div className="lg:col-span-1">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-[var(--text-primary)]" />
+                  <h2 className="text-lg font-semibold text-[var(--text-primary)]">Attività recente</h2>
+                </div>
+              </CardHeader>
+              <CardBody>
+                <div className="space-y-3">
+                  {events.length === 0 ? (
+                    <div className="text-sm text-[var(--text-secondary)] py-8 text-center">
+                      Nessuna attività recente
+                    </div>
+                  ) : (
+                    events.map((e) => (
+                      <div key={e.id} className="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)]">
+                        <div className="text-xs text-[var(--text-tertiary)] mb-1">{fmtDT(e.ts)}</div>
+                        <div className="text-sm font-medium text-[var(--text-primary)]">{e.label}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardBody>
+            </Card>
+          </div>
         </div>
       </div>
-    </main>
+    </AppLayout>
   );
 }

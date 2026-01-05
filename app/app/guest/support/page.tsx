@@ -2,6 +2,10 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { readSession, validateSessionUser } from "@/app/lib/session";
+import { Card, CardBody, CardHeader } from "@/app/components/ui/Card";
+import { Button } from "@/app/components/ui/Button";
+import { AppLayout } from "@/app/components/layouts/AppLayout";
+import { ArrowLeft, MessageCircle, Ticket, AlertCircle } from "lucide-react";
 
 export default async function GuestSupportPage() {
   const cookieStore = await cookies();
@@ -10,36 +14,49 @@ export default async function GuestSupportPage() {
 
   if (!me || me.role !== "guest") {
     redirect("/?err=session_expired");
-    return <div className="p-6 text-white">Non autorizzato</div>;
+    return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
   }
 
   return (
-    <main className="min-h-screen bg-[#0a0d12] text-white">
-      <div className="mx-auto w-full max-w-md p-5 space-y-4">
-        <Link className="text-sm opacity-70 hover:opacity-100" href="/app/guest">
-          ← Indietro
-        </Link>
-
-        <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
-          <div className="text-lg font-semibold">Supporto</div>
-          <div className="text-sm opacity-70 mt-1">
-            Questa è una versione mock: nel prodotto reale qui apri un ticket o chatti con supporto.
-          </div>
-
-          <div className="mt-4 space-y-3">
-            <button className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm">
-              Apri chat (mock)
-            </button>
-            <button className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm">
-              Apri ticket (mock)
-            </button>
-          </div>
-
-          <div className="mt-4 text-xs opacity-50">
-            Emergenza: nel prototipo non chiami nessuno. Nel reale: numeri/istruzioni.
-          </div>
+    <AppLayout role="guest">
+      <div className="mx-auto w-full max-w-2xl p-4 sm:p-6 lg:p-8">
+        <div className="mb-6">
+          <Link href="/app/guest">
+            <Button variant="ghost" size="sm" icon={ArrowLeft} iconPosition="left">
+              Indietro
+            </Button>
+          </Link>
         </div>
+
+        <Card variant="elevated">
+          <CardHeader>
+            <h1 className="text-2xl font-semibold text-[var(--text-primary)]">Supporto</h1>
+            <p className="text-sm text-[var(--text-secondary)]">
+              Questa è una versione mock: nel prodotto reale qui apri un ticket o chatti con supporto.
+            </p>
+          </CardHeader>
+          <CardBody className="space-y-4">
+            <div className="space-y-3">
+              <Button variant="secondary" size="lg" fullWidth icon={MessageCircle} iconPosition="left">
+                Apri chat (mock)
+              </Button>
+              <Button variant="secondary" size="lg" fullWidth icon={Ticket} iconPosition="left">
+                Apri ticket (mock)
+              </Button>
+            </div>
+
+            <div className="p-4 rounded-xl bg-yellow-500/10 dark:bg-yellow-500/20 border-2 border-yellow-500/30 dark:border-yellow-500/40">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-yellow-700 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <div className="font-semibold mb-1 text-yellow-900 dark:text-yellow-300">Emergenza</div>
+                  <div className="text-gray-900 dark:text-[var(--text-primary)]">Nel prototipo non chiami nessuno. Nel reale: numeri/istruzioni.</div>
+                </div>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
       </div>
-    </main>
+    </AppLayout>
   );
 }

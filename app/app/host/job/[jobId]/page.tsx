@@ -49,7 +49,7 @@ export default async function HostJobDetailPage({
   const me = readSession(sess);
 
   if (!me || me.role !== "host") {
-    return <div className="p-6 text-white">Non autorizzato</div>;
+    return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
   }
 
   const resolvedParams = await Promise.resolve(params);
@@ -59,7 +59,7 @@ export default async function HostJobDetailPage({
 
   if (!job) {
     return (
-      <main className="min-h-screen bg-[#0a0d12] text-white p-6">
+      <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-6">
         <div className="max-w-3xl mx-auto space-y-4">
           <Link className="text-sm opacity-70 hover:opacity-100" href="/app/host">
             ← Torna alla dashboard
@@ -100,10 +100,10 @@ export default async function HostJobDetailPage({
   }
 
   const statusColors: Record<string, string> = {
-    todo: "bg-yellow-500/20 border-yellow-500/30 text-yellow-300",
-    in_progress: "bg-blue-500/20 border-blue-500/30 text-blue-300",
-    done: "bg-green-500/20 border-green-500/30 text-green-300",
-    problem: "bg-red-500/20 border-red-500/30 text-red-300",
+    todo: "bg-yellow-50 border-yellow-200 text-yellow-700",
+    in_progress: "bg-blue-50 border-blue-200 text-blue-700",
+    done: "bg-green-50 border-green-200 text-green-700",
+    problem: "bg-red-50 border-red-200 text-red-700",
   };
 
   const statusLabels: Record<string, string> = {
@@ -119,7 +119,7 @@ export default async function HostJobDetailPage({
     : null;
 
   return (
-    <main className="min-h-screen bg-[#0a0d12] text-white p-6">
+    <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-6">
       <div className="max-w-3xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
           <Link
@@ -136,7 +136,7 @@ export default async function HostJobDetailPage({
         </div>
 
         {/* Header con informazioni principali */}
-        <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               <div className="text-lg font-semibold">{aptName}</div>
@@ -153,7 +153,7 @@ export default async function HostJobDetailPage({
 
         {/* Informazioni sullo stay associato */}
         {associatedStay && (
-          <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
             <div className="text-sm opacity-70 mb-3">Soggiorno associato</div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -180,7 +180,7 @@ export default async function HostJobDetailPage({
                   <div className="text-sm">{associatedStay.guests.length} ospite/i</div>
                 </div>
               )}
-              <div className="mt-3 pt-3 border-t border-white/10">
+              <div className="mt-3 pt-3 border-t border-[var(--border-light)]">
                 <Link
                   href={`/app/host/stay/${encodeURIComponent(associatedStay.stayId)}?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(job.aptId)}`}
                   className="text-xs px-3 py-2 rounded-lg bg-cyan-500/20 border border-cyan-500/30 hover:bg-cyan-500/30 inline-block">
@@ -193,11 +193,11 @@ export default async function HostJobDetailPage({
 
         {/* Foto finali */}
         {job.finalPhotos && job.finalPhotos.length > 0 && (
-          <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
             <div className="text-sm opacity-70 mb-3">Foto finali</div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {job.finalPhotos.map((photo, idx) => (
-                <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-white/10">
+                <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-[var(--border-light)]">
                   <img src={photo} alt={`Foto finale ${idx + 1}`} className="w-full h-full object-cover" />
                 </div>
               ))}
@@ -248,7 +248,7 @@ export default async function HostJobDetailPage({
         )}
 
         {/* Checklist */}
-        <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
           <div className="text-sm opacity-70 mb-3">Checklist</div>
           <div className="space-y-2">
             {job.checklist && job.checklist.length > 0 ? (
@@ -256,12 +256,12 @@ export default async function HostJobDetailPage({
                 const completedCount = job.checklist.filter((i) => i.done).length;
                 const totalCount = job.checklist.length;
                 return (
-                  <div key={item.id} className="flex items-center gap-3 rounded-xl bg-black/20 border border-white/10 p-3">
+                  <div key={item.id} className="flex items-center gap-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3">
                     <div
                       className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
                         item.done
                           ? "bg-green-500/30 border-green-500/50"
-                          : "bg-black/40 border-white/20"
+                          : "bg-[var(--bg-secondary)] border-white/20"
                       }`}>
                       {item.done && (
                         <svg className="w-3 h-3 text-green-300" fill="currentColor" viewBox="0 0 20 20">
@@ -284,7 +284,7 @@ export default async function HostJobDetailPage({
             )}
           </div>
           {job.checklist && job.checklist.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-white/10">
+            <div className="mt-3 pt-3 border-t border-[var(--border-light)]">
               <div className="text-xs opacity-60">
                 Completati: {job.checklist.filter((i) => i.done).length} / {job.checklist.length}
               </div>
@@ -293,7 +293,7 @@ export default async function HostJobDetailPage({
         </div>
 
         {/* Timestamp e durata */}
-        <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
           <div className="text-sm opacity-70 mb-3">Cronologia</div>
           <div className="space-y-2">
             {job.startedAt && (
