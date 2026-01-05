@@ -92,7 +92,7 @@ export function HeaderNav({ role, userInfo }: HeaderNavProps) {
           {/* Right Side Actions */}
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            {userInfo && userInfo.userId && (
+            {userInfo && userInfo.userId && (role === "host" || role === "tech") && (
               <UserProfile
                 userId={userInfo.userId}
                 username={userInfo.username || ""}
