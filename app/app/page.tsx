@@ -12,19 +12,19 @@ function pillStatus(s: "online" | "offline") {
     ? {
         dot: "bg-emerald-400",
         text: "ONLINE",
-        box: "bg-emerald-500/10 border-emerald-400/20 text-emerald-200",
+        box: "bg-[var(--pastel-green)] border-[var(--border-light)] text-[var(--accent-success)] dark:bg-emerald-500/20 dark:border-emerald-400/30 dark:text-emerald-200",
       }
     : {
         dot: "bg-red-400",
         text: "OFFLINE",
-        box: "bg-red-500/10 border-red-400/20 text-red-200",
+        box: "bg-red-100 border-[var(--border-light)] text-[var(--accent-error)] dark:bg-red-500/10 dark:border-red-400/20 dark:text-red-200",
       };
 }
 
 function pillNet(n: "main" | "backup") {
   return n === "main"
-    ? { text: "MAIN WAN", box: "bg-white/5 border-white/10 text-white/80" }
-    : { text: "BACKUP WAN", box: "bg-white/5 border-white/10 text-white/80" };
+    ? { text: "MAIN WAN", box: "bg-[var(--bg-secondary)] border-[var(--border-light)] text-[var(--text-primary)]" }
+    : { text: "BACKUP WAN", box: "bg-[var(--bg-secondary)] border-[var(--border-light)] text-[var(--text-primary)]" };
 }
 
 export default async function TechPage() {
@@ -33,7 +33,7 @@ export default async function TechPage() {
   const me = readSession(sess);
 
   if (!me || me.role !== "tech") {
-    return <div className="p-6 text-white">Non autorizzato</div>;
+    return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
   }
 
   const apts = listApts();
@@ -83,7 +83,7 @@ export default async function TechPage() {
   const offline = totalApts - online;
 
   return (
-    <main className="min-h-screen bg-[var(--bg-primary)] text-white">
+    <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
       {/* MOBILE HEADER */}
       <div className="p-4 md:hidden">
         <div className="text-xs opacity-60">TECH • monitoring</div>
@@ -96,8 +96,8 @@ export default async function TechPage() {
       {/* DESKTOP GRID / MOBILE STACK */}
       <div className="p-4 md:p-6 md:grid md:grid-cols-[280px_1fr_360px] md:gap-6 space-y-4 md:space-y-0">
         {/* SIDEBAR (mobile collapsible) */}
-        <aside className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
-          <div className="p-4 border-b border-white/10">
+        <aside className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] overflow-hidden">
+          <div className="p-4 border-b border-[var(--border-light)]">
             <div className="text-xs opacity-60">CLIENT</div>
             <div className="mt-2 font-semibold">{techStore.clientName}</div>
             <div className="mt-1 text-xs opacity-60">
@@ -113,7 +113,7 @@ export default async function TechPage() {
                 <Link
                   key={a.aptId}
                   href={`/app/tech/apt/${a.aptId}`}
-                  className="flex items-center justify-between rounded-xl bg-black/20 border border-white/10 px-3 py-2 hover:border-white/20"
+                  className="flex items-center justify-between rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-3 py-2 hover:border-[var(--border-medium)]"
                 >
                   <div className="text-sm">
                     <div className="font-semibold">{a.aptName}</div>
@@ -129,15 +129,15 @@ export default async function TechPage() {
             </div>
           </div>
 
-          <div className="p-4 border-t border-white/10 text-xs opacity-60">
+          <div className="p-4 border-t border-[var(--border-light)] text-xs opacity-60">
             TECH • monitoring
           </div>
         </aside>
 
         {/* CENTER */}
         <section className="space-y-4">
-          <div className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
-            <div className="p-4 border-b border-white/10 flex items-center justify-between">
+          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] overflow-hidden">
+            <div className="p-4 border-b border-[var(--border-light)] flex items-center justify-between">
               <div>
                 <div className="text-lg font-semibold">Status</div>
                 <div className="text-xs opacity-60 hidden md:block">
@@ -163,7 +163,7 @@ export default async function TechPage() {
                   <Link
                     key={a.aptId}
                     href={`/app/tech/apt/${a.aptId}`}
-                    className="block rounded-xl bg-black/20 border border-white/10 hover:border-white/20"
+                    className="block rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] hover:border-[var(--border-medium)]"
                   >
                     <div className="p-4 grid grid-cols-1 gap-3 md:grid-cols-[1.2fr_1fr_1fr_1fr] md:items-center md:gap-2">
                       <div>
@@ -189,7 +189,7 @@ export default async function TechPage() {
                       </div>
 
                       <div>
-                        <div className="text-xs opacity-80 rounded-lg border border-white/10 bg-white/5 px-3 py-2 md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-sm md:opacity-90">
+                        <div className="text-xs opacity-80 rounded-lg border border-[var(--border-light)] bg-[var(--bg-secondary)] px-3 py-2 md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-sm md:opacity-90">
                           Last Access: <span className="opacity-100">{a.lastAccessLabel}</span>
                         </div>
                       </div>
@@ -203,8 +203,8 @@ export default async function TechPage() {
 
         {/* RIGHT */}
         <aside className="space-y-4">
-          <div className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
-            <div className="p-4 border-b border-white/10 flex items-center justify-between">
+          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] overflow-hidden">
+            <div className="p-4 border-b border-[var(--border-light)] flex items-center justify-between">
               <div className="text-sm font-semibold">LIVE ACCESS LOG</div>
               <Link href="/app/tech/log" className="text-xs opacity-60 hover:opacity-100">
                 Mostra di più
@@ -213,7 +213,7 @@ export default async function TechPage() {
 
             <div className="p-4 space-y-3">
               {accessLog.map((e) => (
-                <div key={e.id} className="rounded-xl bg-black/20 border border-white/10 p-3">
+                <div key={e.id} className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3">
                   <div className="text-xs opacity-60">{e.tsLabel}</div>
                   <div className="mt-1 text-sm">
                     <span className="font-semibold">Apt {e.aptId}</span> <span className="opacity-70">|</span>{" "}
@@ -229,8 +229,8 @@ export default async function TechPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
-            <div className="p-4 border-b border-white/10">
+          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] overflow-hidden">
+            <div className="p-4 border-b border-[var(--border-light)]">
               <div className="text-sm font-semibold">INCIDENTS</div>
             </div>
 
@@ -241,7 +241,7 @@ export default async function TechPage() {
                 incidents.map((i) => (
                   <div
                     key={i.id}
-                    className="flex items-center justify-between rounded-xl bg-black/20 border border-white/10 px-3 py-3"
+                    className="flex items-center justify-between rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-3 py-3"
                   >
                     <div className="flex items-center gap-3">
                       <div className="text-lg">
@@ -263,7 +263,7 @@ export default async function TechPage() {
           </div>
 
           <form action="/api/auth/logout" method="post">
-            <button className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3">
+            <button className="w-full rounded-xl bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-4 py-3">
               Logout
             </button>
           </form>

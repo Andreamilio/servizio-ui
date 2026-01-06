@@ -9,14 +9,10 @@ import { listJobsByApt } from '@/app/lib/cleaningstore';
 import { listClients, listApartmentsByClient, getApartment, updateApartment } from '@/app/lib/clientStore';
 import { getUser } from '@/app/lib/userStore';
 import { AppLayout } from '@/app/components/layouts/AppLayout';
+import { ApartmentSearchForm } from './components/ApartmentSearchForm';
 import { UserProfile } from '../components/UserProfile';
 
-import { cleaners_getCfg, cleaners_setDuration, cleaners_add, cleaners_remove, cleaners_normName, cleaners_setTimeRanges } from '@/app/lib/domain/cleanersDomain';
-
-import { stays_listByApt } from '@/app/lib/domain/staysDomain';
-
-import { stays_createWithOptionalCleaner, stays_createWithGuestsAndCleaner } from '@/app/lib/domain/pinsDomain';
-import { GuestFields } from './components/GuestFields';
+import { stays_createWithOptionalCleaner } from '@/app/lib/domain/pinsDomain';
 import { getAllEnabledDevices, getDeviceState, getDeviceLabel } from '@/app/lib/devicePackageStore';
 
 export const dynamic = 'force-dynamic';
@@ -107,7 +103,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
         if (session && session.userId && session.role === 'host') {
             redirect('/api/auth/logout');
         }
-        return <div className='p-6 text-white'>Non autorizzato</div>;
+        return <div className='p-6 text-[var(--text-primary)]'>Non autorizzato</div>;
     }
 
     const clients = (listClients() as any[]) ?? [];
@@ -163,8 +159,6 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
         const health = apt ? computeHealth(aptId, apt.name) : null;
         const apartmentDetails = getApartment(aptId);
 
-        const stays = stays_listByApt(aptId) ?? [];
-
         const doorUi = getDoorUi(aptId);
         const allAccessEvents = Store.listAccessLogByApt(aptId, 20) ?? [];
         // Filtra eventi WAN/VPN: visibili solo nella vista Tech
@@ -192,125 +186,6 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
         }
 
 
-        async function createStay(formData: FormData) {
-            'use server';
-            const aptId = formData.get('aptId')?.toString() ?? '';
-            if (!aptId) return;
-
-            const checkin = (formData.get('checkin')?.toString() ?? '').trim();
-            const checkout = (formData.get('checkout')?.toString() ?? '').trim();
-            const guestsCount = Math.max(1, Math.min(10, Number(formData.get('guests')?.toString() ?? '2') || 2));
-
-            const selectedCleaner = cleaners_normName(formData.get('cleaner')?.toString() ?? '');
-
-            // Validazione: cleaner obbligatorio
-            if (!selectedCleaner) {
-                redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
-                return;
-            }
-
-            const ci = parseDateTimeLocal(checkin);
-            const co = parseDateTimeLocal(checkout);
-
-            if (!ci || !co || co.getTime() <= ci.getTime()) {
-                redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
-                return;
-            }
-
-            // Raccogli i dati degli ospiti
-            const guests: Array<{ firstName: string; lastName: string; phone: string; email?: string }> = [];
-
-            // Prova prima a cercare dinamicamente i campi inviati
-            const allKeys = Array.from(formData.keys());
-            const guestIndices = new Set<number>();
-
-            for (const key of allKeys) {
-                const match = key.match(/^guest_(\d+)_firstName$/);
-                if (match) {
-                    guestIndices.add(parseInt(match[1], 10));
-                }
-            }
-
-            // Se non trova campi dinamicamente, usa il numero dal select
-            const indicesToCheck = guestIndices.size > 0 ? Array.from(guestIndices).sort((a, b) => a - b) : Array.from({ length: guestsCount }, (_, i) => i + 1);
-
-            for (const i of indicesToCheck) {
-                const firstName = (formData.get(`guest_${i}_firstName`)?.toString() ?? '').trim();
-                const lastName = (formData.get(`guest_${i}_lastName`)?.toString() ?? '').trim();
-                const phone = (formData.get(`guest_${i}_phone`)?.toString() ?? '').trim();
-                const email = (formData.get(`guest_${i}_email`)?.toString() ?? '').trim();
-
-                // Se tutti i campi sono vuoti, salta questo ospite (potrebbe essere nascosto o disabilitato)
-                if (!firstName && !lastName && !phone) {
-                    continue;
-                }
-
-                // Validazione: nome, cognome e telefono obbligatori per ogni ospite
-                // Se almeno un campo è presente ma mancano altri, è un errore
-                if ((firstName || lastName || phone) && (!firstName || !lastName || !phone)) {
-                    // Se mancano dati obbligatori, redirect senza creare lo stay
-                    redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
-                    return;
-                }
-
-                // Se tutti i campi obbligatori sono presenti, aggiungi l'ospite
-                if (firstName && lastName && phone) {
-                    guests.push({
-                        firstName,
-                        lastName,
-                        phone,
-                        email: email || undefined,
-                    });
-                }
-            }
-
-            // Validazione: deve esserci almeno un ospite
-            if (guests.length === 0) {
-                // Log per debug: verifica cosa è stato inviato
-                console.error('Nessun ospite valido trovato', {
-                    guestsCount,
-                    allKeys: Array.from(formData.keys()),
-                    guestIndices: Array.from(guestIndices),
-                    indicesToCheck,
-                });
-                redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
-                return;
-            }
-
-            const vf = ci.getTime();
-            const vt = co.getTime();
-
-            // Crea lo stay
-            let st;
-            try {
-                st = stays_createWithGuestsAndCleaner(Store, {
-                    aptId,
-                    checkInAt: vf,
-                    checkOutAt: vt,
-                    guests,
-                    cleanerName: selectedCleaner,
-                });
-            } catch (error) {
-                console.error('Errore nella creazione dello stay:', error);
-                redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
-                return;
-            }
-
-            if (!st || !st.stayId) {
-                console.error('Stay non creato correttamente:', { st, guests, aptId, vf, vt, selectedCleaner });
-                redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
-                return;
-            }
-
-            // Verifica che lo stay sia stato salvato
-            const verifyStay = stays_listByApt(aptId).find((s: any) => s.stayId === st.stayId);
-            if (!verifyStay) {
-                console.error('Stay creato ma non trovato nella lista:', st.stayId);
-            }
-
-            // Redirect alla pagina di dettaglio dello stay
-            redirect(`/app/host/stay/${encodeURIComponent(st.stayId)}?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
-        }
 
         return (
             <AppLayout 
@@ -350,7 +225,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                             ? 'bg-[var(--bg-card)] border-[var(--border-light)] text-[var(--text-primary)]'
                                             : 'bg-yellow-50 border-yellow-200 text-yellow-700'
                                     }`}>
-                                    <span className={`h-2 w-2 rounded-full ${doorUi.tone === 'open' ? 'bg-emerald-400' : doorUi.tone === 'closed' ? 'bg-white/40' : 'bg-yellow-400'}`} />
+                                    <span className={`h-2 w-2 rounded-full ${doorUi.tone === 'open' ? 'bg-emerald-400' : doorUi.tone === 'closed' ? 'bg-[var(--text-tertiary)]' : 'bg-yellow-400'}`} />
                                     {doorUi.label}
                                 </div>
 
@@ -367,7 +242,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                     <button
                                         type='submit'
                                         className={`rounded-xl px-4 py-2 text-sm font-semibold ${
-                                            doorUi.tone === 'open' ? 'bg-white/10 hover:bg-white/15 border border-white/15' : 'bg-emerald-500/25 hover:bg-emerald-500/35 border border-emerald-400/30'
+                                            doorUi.tone === 'open' ? 'bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)]' : 'bg-emerald-500/25 hover:bg-emerald-500/35 border border-emerald-400/30'
                                         }`}>
                                         {doorUi.tone === 'open' ? 'Chiudi porta' : 'Apri porta'}
                                     </button>
@@ -406,8 +281,6 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
 
                                 const wifiSsid = (formData.get('wifiSsid')?.toString() ?? '').trim() || undefined;
                                 const wifiPass = (formData.get('wifiPass')?.toString() ?? '').trim() || undefined;
-                                const checkIn = (formData.get('checkIn')?.toString() ?? '').trim() || undefined;
-                                const checkOut = (formData.get('checkOut')?.toString() ?? '').trim() || undefined;
                                 const rulesText = (formData.get('rules')?.toString() ?? '').trim();
                                 const rules = rulesText ? rulesText.split('\n').filter((r) => r.trim().length > 0) : undefined;
                                 const supportContacts = (formData.get('supportContacts')?.toString() ?? '').trim() || undefined;
@@ -415,8 +288,6 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                 updateApartment(aptId, {
                                     wifiSsid,
                                     wifiPass,
-                                    checkIn,
-                                    checkOut,
                                     rules,
                                     supportContacts,
                                 });
@@ -446,27 +317,6 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                         defaultValue={apartmentDetails?.wifiPass ?? ''}
                                         className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500'
                                         placeholder='Password Wi-Fi'
-                                    />
-                                </div>
-                            </div>
-
-                            <div className='grid grid-cols-2 gap-4'>
-                                <div>
-                                    <label className='block text-sm font-medium mb-2'>Check-in (HH:mm)</label>
-                                    <input
-                                        type='time'
-                                        name='checkIn'
-                                        defaultValue={apartmentDetails?.checkIn ?? ''}
-                                        className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500'
-                                    />
-                                </div>
-                                <div>
-                                    <label className='block text-sm font-medium mb-2'>Check-out (HH:mm)</label>
-                                    <input
-                                        type='time'
-                                        name='checkOut'
-                                        defaultValue={apartmentDetails?.checkOut ?? ''}
-                                        className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500'
                                     />
                                 </div>
                             </div>
@@ -551,383 +401,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                         })()}
                     </section>
 
-                    {/* Cleaner config */}
-                    <section className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
-                        <div>
-                            <div className='text-sm font-semibold'>Cleaner (per appartamento)</div>
-                            <div className='mt-1 text-xs opacity-60'>Configura durata standard pulizia e censisci i cleaner per questo appartamento.</div>
-                        </div>
 
-                        {(() => {
-                            const cfg = cleaners_getCfg(aptId);
-                            return (
-                                <div className='mt-4 space-y-4'>
-                                    <form
-                                        action={async (fd: FormData) => {
-                                            'use server';
-                                            const aptId = (fd.get('aptId')?.toString() ?? '').trim();
-                                            if (!aptId) return;
-                                            const durationMin = Math.max(15, Math.min(24 * 60, Number(fd.get('durationMin')?.toString() ?? '60') || 60));
-                                            cleaners_setDuration(aptId, durationMin);
-                                            redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
-                                        }}
-                                        className='space-y-2'>
-                                        <input type='hidden' name='aptId' value={aptId} />
-                                        <div className='text-[11px] opacity-60'>Durata pulizia default</div>
-                                        <div className='flex flex-col sm:flex-row gap-2'>
-                                            <select name='durationMin' defaultValue={String(cfg.durationMin)} className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2'>
-                                                {[30, 45, 60, 90, 120, 180, 240].map((m) => (
-                                                    <option key={m} value={String(m)}>
-                                                        {m} min
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <button type='submit' className='rounded-xl bg-white/10 border border-white/15 px-4 py-2 text-sm font-semibold whitespace-nowrap'>
-                                                Salva
-                                            </button>
-                                        </div>
-                                    </form>
-
-                                    <form
-                                        action={async (fd: FormData) => {
-                                            'use server';
-                                            const aptId = (fd.get('aptId')?.toString() ?? '').trim();
-                                            const name = fd.get('cleanerName')?.toString() ?? '';
-                                            const phone = fd.get('cleanerPhone')?.toString() ?? '';
-                                            if (!aptId) return;
-                                            cleaners_add(aptId, name, phone);
-                                            redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
-                                        }}
-                                        className='space-y-2'>
-                                        <input type='hidden' name='aptId' value={aptId} />
-                                        <div className='text-[11px] opacity-60'>Aggiungi cleaner</div>
-                                        <div className='flex flex-col sm:flex-row gap-2'>
-                                            <input name='cleanerName' placeholder='Es. Mario Rossi' required className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2' />
-                                            <input name='cleanerPhone' type='tel' placeholder='Telefono' required className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2' />
-                                            <button type='submit' className='rounded-xl bg-cyan-500/30 border border-cyan-400/30 px-4 py-2 text-sm font-semibold whitespace-nowrap'>
-                                                Aggiungi
-                                            </button>
-                                        </div>
-                                    </form>
-
-                                    <div>
-                                        <div className='text-[11px] opacity-60 mb-2'>Range orari pulizie</div>
-                                        <div className='text-xs opacity-50 mb-2'>I job di pulizia verranno schedulati nel primo range disponibile dopo il check-out.</div>
-                                        {(() => {
-                                            const ranges = cfg.cleaningTimeRanges ?? [{ from: '09:00', to: '18:00' }];
-                                            // Aggiungi sempre un range vuoto alla fine per permettere di aggiungerne uno nuovo
-                                            const rangesWithEmpty = [...ranges, { from: '', to: '' }];
-
-                                            return (
-                                                <div className='space-y-2'>
-                                                    {/* Range rimovibili - form separati */}
-                                                    {rangesWithEmpty.map((range, idx) => {
-                                                        const isFirst = idx === 0;
-                                                        const isLast = idx === rangesWithEmpty.length - 1;
-                                                        const isRemovable = !isFirst && !isLast && ranges.length > 1;
-
-                                                        if (isRemovable) {
-                                                            return (
-                                                                <form
-                                                                    key={idx}
-                                                                    action={async (fd: FormData) => {
-                                                                        'use server';
-                                                                        const aptId = (fd.get('aptId')?.toString() ?? '').trim();
-                                                                        const rangeIndex = parseInt(fd.get('rangeIndex')?.toString() ?? '0', 10);
-                                                                        if (!aptId || isNaN(rangeIndex)) return;
-
-                                                                        const currentCfg = cleaners_getCfg(aptId);
-                                                                        const currentRanges = currentCfg.cleaningTimeRanges ?? [{ from: '09:00', to: '18:00' }];
-
-                                                                        // Rimuovi il range all'indice specificato, ma mantieni sempre almeno uno
-                                                                        if (currentRanges.length > 1 && rangeIndex >= 0 && rangeIndex < currentRanges.length) {
-                                                                            const newRanges = currentRanges.filter((_, i) => i !== rangeIndex);
-                                                                            cleaners_setTimeRanges(aptId, newRanges);
-                                                                        }
-
-                                                                        redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
-                                                                    }}
-                                                                    className='flex flex-col sm:flex-row gap-2 items-stretch sm:items-center'>
-                                                                    <input type='hidden' name='aptId' value={aptId} />
-                                                                    <input type='hidden' name='rangeIndex' value={idx} />
-                                                                    <input
-                                                                        type='time'
-                                                                        defaultValue={range.from}
-                                                                        placeholder='09:00'
-                                                                        className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2 opacity-60'
-                                                                        disabled
-                                                                    />
-                                                                    <span className='text-xs opacity-60 hidden sm:inline'>→</span>
-                                                                    <input
-                                                                        type='time'
-                                                                        defaultValue={range.to}
-                                                                        placeholder='18:00'
-                                                                        className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2 opacity-60'
-                                                                        disabled
-                                                                    />
-                                                                    <button
-                                                                        type='submit'
-                                                                        className='text-xs px-3 py-2 rounded-lg bg-red-500/20 border border-red-500/30 hover:bg-red-500/30 whitespace-normal sm:whitespace-nowrap'>
-                                                                        Rimuovi
-                                                                    </button>
-                                                                </form>
-                                                            );
-                                                        }
-                                                        return null;
-                                                    })}
-
-                                                    {/* Form principale per range editabili */}
-                                                    <form
-                                                        action={async (fd: FormData) => {
-                                                            'use server';
-                                                            const aptId = (fd.get('aptId')?.toString() ?? '').trim();
-                                                            if (!aptId) return;
-
-                                                            // Leggi tutti i range dal form (filtra quelli vuoti)
-                                                            const ranges: Array<{ from: string; to: string }> = [];
-                                                            let idx = 0;
-                                                            while (true) {
-                                                                const from = fd.get(`rangeFrom_${idx}`)?.toString()?.trim();
-                                                                const to = fd.get(`rangeTo_${idx}`)?.toString()?.trim();
-                                                                if (!from || !to) break;
-                                                                // Valida che from < to
-                                                                const fromParts = from.split(':');
-                                                                const toParts = to.split(':');
-                                                                if (fromParts.length === 2 && toParts.length === 2) {
-                                                                    const fromMin = parseInt(fromParts[0], 10) * 60 + parseInt(fromParts[1], 10);
-                                                                    const toMin = parseInt(toParts[0], 10) * 60 + parseInt(toParts[1], 10);
-                                                                    if (fromMin < toMin) {
-                                                                        ranges.push({ from, to });
-                                                                    }
-                                                                }
-                                                                idx++;
-                                                            }
-
-                                                            // Se non ci sono range validi, usa il default
-                                                            if (ranges.length === 0) {
-                                                                ranges.push({ from: '09:00', to: '18:00' });
-                                                            }
-
-                                                            cleaners_setTimeRanges(aptId, ranges);
-                                                            redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
-                                                        }}
-                                                        className='space-y-2'>
-                                                        <input type='hidden' name='aptId' value={aptId} />
-                                                        {/* Include hidden inputs per i range rimovibili */}
-                                                        {ranges.map((r, idx) => {
-                                                            if (idx > 0 && idx < ranges.length) {
-                                                                return <input key={`from_${idx}`} type='hidden' name={`rangeFrom_${idx}`} value={r.from} />;
-                                                            }
-                                                            return null;
-                                                        })}
-                                                        {ranges.map((r, idx) => {
-                                                            if (idx > 0 && idx < ranges.length) {
-                                                                return <input key={`to_${idx}`} type='hidden' name={`rangeTo_${idx}`} value={r.to} />;
-                                                            }
-                                                            return null;
-                                                        })}
-                                                        {/* Range editabili (primo e ultimo vuoto) */}
-                                                        {rangesWithEmpty.map((range, idx) => {
-                                                            const isFirst = idx === 0;
-                                                            const isLast = idx === rangesWithEmpty.length - 1;
-                                                            const isRemovable = !isFirst && !isLast && ranges.length > 1;
-                                                            const isEmpty = !range.from && !range.to;
-
-                                                            if (!isRemovable) {
-                                                                if (isLast && isEmpty) {
-                                                                    // Range vuoto per aggiungere nuovo
-                                                                    return (
-                                                                        <div key={idx} className='space-y-2 pt-2 border-t border-[var(--border-light)]'>
-                                                                            <div className='text-[10px] opacity-70 font-medium'>+ Aggiungi nuovo range</div>
-                                                                            <div className='flex flex-col sm:flex-row gap-2 items-stretch sm:items-center'>
-                                                                                <input
-                                                                                    type='time'
-                                                                                    name={`rangeFrom_${idx}`}
-                                                                                    defaultValue={range.from}
-                                                                                    placeholder='09:00'
-                                                                                    className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border-2 border-dashed border-[var(--border-strong)] p-2'
-                                                                                />
-                                                                                <span className='text-xs opacity-60 hidden sm:inline'>→</span>
-                                                                                <input
-                                                                                    type='time'
-                                                                                    name={`rangeTo_${idx}`}
-                                                                                    defaultValue={range.to}
-                                                                                    placeholder='18:00'
-                                                                                    className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border-2 border-dashed border-[var(--border-strong)] p-2'
-                                                                                />
-                                                                            </div>
-                                                                        </div>
-                                                                    );
-                                                                }
-                                                                // Primo range (sempre presente)
-                                                                return (
-                                                                    <div key={idx} className='flex flex-col sm:flex-row gap-2 items-stretch sm:items-center'>
-                                                                        <input
-                                                                            type='time'
-                                                                            name={`rangeFrom_${idx}`}
-                                                                            defaultValue={range.from}
-                                                                            placeholder='09:00'
-                                                                            className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2'
-                                                                        />
-                                                                        <span className='text-xs opacity-60 hidden sm:inline'>→</span>
-                                                                        <input
-                                                                            type='time'
-                                                                            name={`rangeTo_${idx}`}
-                                                                            defaultValue={range.to}
-                                                                            placeholder='18:00'
-                                                                            className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2'
-                                                                        />
-                                                                    </div>
-                                                                );
-                                                            }
-                                                            return null;
-                                                        })}
-                                                        <button type='submit' className='w-full rounded-xl bg-white/10 border border-white/15 px-4 py-2 text-sm font-semibold'>
-                                                            Salva range orari
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            );
-                                        })()}
-                                    </div>
-
-                                    <div>
-                                        <div className='text-[11px] opacity-60 mb-2'>Cleaner censiti</div>
-                                        {cfg.cleaners.length === 0 ? (
-                                            <div className='text-sm opacity-50'>Nessun cleaner censito.</div>
-                                        ) : (
-                                            <div className='space-y-2'>
-                                                {cfg.cleaners.map((cleaner) => (
-                                                    <div key={cleaner.name} className='flex items-center justify-between rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3'>
-                                                        <div>
-                                                            <div className='text-sm font-semibold'>{cleaner.name}</div>
-                                                            <div className='text-xs opacity-60'>{cleaner.phone}</div>
-                                                        </div>
-                                                        <form
-                                                            action={async (fd: FormData) => {
-                                                                'use server';
-                                                                const aptId = (fd.get('aptId')?.toString() ?? '').trim();
-                                                                const name = (fd.get('name')?.toString() ?? '').trim();
-                                                                if (!aptId) return;
-                                                                cleaners_remove(aptId, name);
-                                                                redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
-                                                            }}>
-                                                            <input type='hidden' name='aptId' value={aptId} />
-                                                            <input type='hidden' name='name' value={cleaner.name} />
-                                                            <button type='submit' className='text-xs px-3 py-2 rounded-lg bg-red-500/20 border border-red-500/30'>
-                                                                Rimuovi
-                                                            </button>
-                                                        </form>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })()}
-                    </section>
-
-                    {/* Stay list widget */}
-                    <section className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
-                        <div className='flex items-center justify-between gap-3 mb-3'>
-                            <div className='text-sm opacity-70'>Soggiorni</div>
-                            <div className='text-xs opacity-50'>{stays.length} stay</div>
-                        </div>
-
-                        {stays.length === 0 ? (
-                            <div className='text-sm opacity-60 mb-4'>Nessun soggiorno registrato.</div>
-                        ) : (
-                            <div className='space-y-2 mb-4'>
-                                {stays.map((st: any) => {
-                                    const sid = String(st?.stayId ?? '');
-                                    const g = Array.isArray(st?.guests) ? st.guests.length : 0;
-                                    const checkin = st?.checkInAt ? fmtDT(st.checkInAt) : '—';
-                                    const checkout = st?.checkOutAt ? fmtDT(st.checkOutAt) : '—';
-
-                                    return (
-                                        <Link
-                                            key={sid}
-                                            href={`/app/host/stay/${encodeURIComponent(sid)}?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`}
-                                            className='block rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3 hover:border-white/20 transition-colors'>
-                                            <div className='flex items-center justify-between gap-3'>
-                                                <div className='min-w-0 flex-1'>
-                                                    <div className='font-semibold text-sm font-mono truncate'>{sid}</div>
-                                                    <div className='mt-1 text-xs opacity-60'>
-                                                        {checkin} → {checkout}
-                                                    </div>
-                                                    {g > 0 && <div className='mt-1 text-xs opacity-50'>{g} ospiti</div>}
-                                                </div>
-                                                <div className='text-xs opacity-50'>→</div>
-                                            </div>
-                                        </Link>
-                                    );
-                                })}
-                            </div>
-                        )}
-
-                        <div className='rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-4'>
-                            <div className='text-sm font-semibold mb-3'>Crea nuovo soggiorno</div>
-                            <form action={createStay} className='space-y-3'>
-                                <input type='hidden' name='aptId' value={aptId} />
-
-                                <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
-                                    <div>
-                                        <div className='text-[11px] opacity-60 mb-1'>Check-in (data + ora)</div>
-                                        <input type='datetime-local' name='checkin' className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2' />
-                                    </div>
-
-                                    <div>
-                                        <div className='text-[11px] opacity-60 mb-1'>Check-out (data + ora)</div>
-                                        <input type='datetime-local' name='checkout' className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2' />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <div className='text-[11px] opacity-60 mb-1'>Numero ospiti</div>
-                                    <select name='guests' id='guestsCount' defaultValue='2' className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2'>
-                                        {Array.from({ length: 10 }).map((_, i) => (
-                                            <option key={i + 1} value={String(i + 1)}>
-                                                {i + 1}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <div className='text-[11px] opacity-60 mb-2'>
-                                        Dati ospiti <span className='text-red-400'>*</span>
-                                    </div>
-                                    <GuestFields maxGuests={10} />
-                                    <div className='mt-2 text-[11px] opacity-50'>I PIN di accesso verranno creati automaticamente per tutti gli ospiti.</div>
-                                </div>
-
-                                <div>
-                                    <div className='text-[11px] opacity-60 mb-1'>
-                                        Cleaner <span className='text-red-400'>*</span>
-                                    </div>
-                                    {(() => {
-                                        const cfg = cleaners_getCfg(aptId);
-                                        return (
-                                            <select name='cleaner' required className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2'>
-                                                <option value=''>— Seleziona cleaner —</option>
-                                                {cfg.cleaners.map((cleaner) => (
-                                                    <option key={cleaner.name} value={cleaner.name}>
-                                                        {cleaner.name} - {cleaner.phone}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        );
-                                    })()}
-                                    <div className='mt-1 text-[11px] opacity-50'>Il PIN del cleaner viene creato automaticamente (check-out → check-out + durata pulizia).</div>
-                                </div>
-
-                                <button type='submit' className='w-full rounded-xl bg-cyan-500/30 border border-cyan-400/30 p-2 font-semibold'>
-                                    Crea soggiorno
-                                </button>
-                            </form>
-                        </div>
-                    </section>
 
                     <section className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
                         <div className='flex items-center justify-between gap-3 mb-3'>
@@ -977,19 +451,6 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                             <span className='opacity-80'>{apartments.length} appartamenti</span>
                         </div>
                     </div>
-
-                    <div className='flex items-center gap-3'>
-                        <form action='/app/host' method='get' className='flex items-center gap-2'>
-                            <input type='hidden' name='client' value={clientId} />
-                            <input
-                                name='q'
-                                defaultValue={q}
-                                placeholder='Cerca appartamento…'
-                                className='w-full sm:w-56 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-3 py-2 text-sm outline-none focus:border-cyan-400/60'
-                            />
-                            <button className='rounded-xl bg-[var(--bg-card)] border border-[var(--border-light)] px-3 py-2 text-sm opacity-90'>Cerca</button>
-                        </form>
-                    </div>
                 </div>
 
                 <div className='grid grid-cols-2 md:grid-cols-4 gap-3'>
@@ -1025,7 +486,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                 <Link
                                     key={a.aptId}
                                     href={`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(a.aptId)}`}
-                                    className='block rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3 hover:border-white/20'>
+                                    className='block rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3 hover:border-[var(--border-medium)]'>
                                     <div className='flex items-center justify-between'>
                                         <div className='font-semibold'>{a.name}</div>
                                         <div className='text-xs opacity-70'>{a.readiness}</div>
@@ -1036,6 +497,10 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                         </div>
                     )}
                 </section>
+
+                <div className='flex items-center gap-3'>
+                    <ApartmentSearchForm clientId={clientId} initialQuery={q} />
+                </div>
 
                 <section className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
                     <div className='flex items-center justify-between gap-3'>
@@ -1048,7 +513,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                             <Link
                                 key={a.aptId}
                                 href={`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(a.aptId)}`}
-                                className='block rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-4 hover:border-white/20'>
+                                className='block rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-4 hover:border-[var(--border-medium)]'>
                                 <div className='flex items-center justify-between gap-3'>
                                     <div>
                                         <div className='font-semibold'>{a.name}</div>

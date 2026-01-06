@@ -78,7 +78,7 @@ export function DeviceTable({ deviceTypes, allDevices }: DeviceTableProps) {
             const isUps = deviceType === "ups";
 
             return (
-              <tr key={deviceType} className="border-b border-white/5 hover:bg-[var(--bg-card)]">
+              <tr key={deviceType} className="border-b border-[var(--border-light)] hover:bg-[var(--bg-card)]">
                 <td className="py-3 px-4">
                   <div className="text-sm font-medium">{getDeviceLabel(deviceType)}</div>
                   <div className="text-xs opacity-60 mt-0.5">{deviceType}</div>
@@ -89,7 +89,7 @@ export function DeviceTable({ deviceTypes, allDevices }: DeviceTableProps) {
                     id={enabledId}
                     name={enabledId}
                     defaultChecked={enabled}
-                    className="w-4 h-4 rounded border-white/20 bg-[var(--bg-secondary)] text-cyan-500 focus:ring-cyan-500 focus:ring-2"
+                    className="w-4 h-4 rounded border-[var(--border-light)] bg-[var(--bg-secondary)] text-cyan-500 focus:ring-cyan-500 focus:ring-2"
                     onChange={(e) => {
                       if (!isUps) {
                         const controllableCheckbox = document.getElementById(controllableId) as HTMLInputElement;
@@ -119,7 +119,7 @@ export function DeviceTable({ deviceTypes, allDevices }: DeviceTableProps) {
                         name={`device_${deviceType}_controllable`}
                         defaultChecked={controllable}
                         disabled={!enabled}
-                        className={`w-4 h-4 rounded border-white/20 bg-[var(--bg-secondary)] text-cyan-500 focus:ring-cyan-500 focus:ring-2 ${
+                        className={`w-4 h-4 rounded border-[var(--border-light)] bg-[var(--bg-secondary)] text-cyan-500 focus:ring-cyan-500 focus:ring-2 ${
                           !enabled ? "opacity-50 cursor-not-allowed" : ""
                         }`}
                       />

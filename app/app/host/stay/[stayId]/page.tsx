@@ -67,6 +67,22 @@ function fmtDT(ts?: number | null) {
   )}:${pad(d.getMinutes())}`;
 }
 
+function fmtDTMedium(ts?: number | null): string {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function getResponsabileName(guests: any[]): string {
+  if (!guests || guests.length === 0) return 'Nessun ospite';
+  const first = guests[0];
+  if (first.firstName && first.lastName) {
+    return `${first.firstName} ${first.lastName}`;
+  }
+  return first.name || 'Nessun ospite';
+}
+
 export default async function StayDetailPage({
   params,
   searchParams,
@@ -274,7 +290,7 @@ export default async function StayDetailPage({
           <div>
             <div className="text-xs opacity-60">Host • Dettaglio soggiorno</div>
             <h1 className="text-lg font-semibold">
-              Stay: <span className="font-mono text-sm">{stayId}</span>
+              {getResponsabileName(stayObj.guests || [])} - {fmtDTMedium(stayObj.checkInAt)} - {fmtDTMedium(stayObj.checkOutAt)}
             </h1>
             <div className="mt-1 text-sm opacity-70">
               {apt?.name ?? (actualAptId ? `Apt ${actualAptId}` : "Apt")}
@@ -392,7 +408,7 @@ export default async function StayDetailPage({
 
                   <button
                     type="submit"
-                    className="w-full rounded-xl bg-white/10 border border-white/15 px-4 py-2 text-sm font-semibold">
+                    className="w-full rounded-xl bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-4 py-2 text-sm font-semibold">
                     Salva modifiche date
                   </button>
                 </form>
@@ -678,7 +694,7 @@ export default async function StayDetailPage({
                             : guest.name}
                         </div>
                         <div className="mt-1 text-xs opacity-60">
-                          Ospite {idx + 1}
+                          {idx === 0 ? 'Responsabile soggiorno' : `Ospite ${idx + 1}`}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -745,7 +761,7 @@ export default async function StayDetailPage({
                       </div>
                       <button
                         type="submit"
-                        className="w-full rounded-xl bg-white/10 border border-white/15 px-4 py-2 text-sm font-semibold"
+                        className="w-full rounded-xl bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-4 py-2 text-sm font-semibold"
                       >
                         Salva modifiche
                       </button>
@@ -1165,10 +1181,10 @@ export default async function StayDetailPage({
 
         {/* Cleaning Jobs section */}
         <section className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
-          <div className="text-sm opacity-70 mb-3">Jobs di pulizia</div>
+          <div className="text-sm opacity-70 mb-3">Pulizie assegnate</div>
 
           {jobs.length === 0 ? (
-            <div className="text-sm opacity-50">Nessun job di pulizia registrato per questo appartamento.</div>
+            <div className="text-sm opacity-50">Nessuna pulizia assegnata registrata per questo appartamento.</div>
           ) : (
             <div className="space-y-3">
               {jobs.map((job: CleaningJob) => {
@@ -1230,7 +1246,7 @@ export default async function StayDetailPage({
                               <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
                                 item.done 
                                   ? "bg-green-500/30 border-green-500/50" 
-                                  : "bg-[var(--bg-secondary)] border-white/20"
+                                  : "bg-[var(--bg-secondary)] border-[var(--border-light)]"
                               }`}>
                                 {item.done && (
                                   <svg className="w-3 h-3 text-green-300" fill="currentColor" viewBox="0 0 20 20">
@@ -1250,8 +1266,8 @@ export default async function StayDetailPage({
                     <div className="mt-3 pt-3 border-t border-[var(--border-light)]">
                       <Link
                         href={`/app/host/job/${encodeURIComponent(job.id)}`}
-                        className="text-xs px-3 py-2 rounded-lg bg-white/10 border border-white/15 hover:bg-white/15 inline-block">
-                        Vedi dettaglio job →
+                        className="text-xs px-3 py-2 rounded-lg bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] inline-block">
+                        Vedi dettaglio pulizia assegnata →
                       </Link>
                     </div>
                   </div>

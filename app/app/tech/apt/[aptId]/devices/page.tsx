@@ -216,7 +216,7 @@ export default async function TechDevicesPage({
               </button>
               <Link
                 href={`/app/tech/apt/${aptId}/devices`}
-                className="rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-6 py-3 font-semibold"
+                className="rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-6 py-3 font-semibold"
               >
                 Annulla
               </Link>

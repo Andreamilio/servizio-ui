@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 import { updateProfileImage, removeProfileImage } from "./userProfileActions";
 
 type UserProfileModalProps = {
@@ -28,8 +29,26 @@ export function UserProfileModal({
   const [profileImage, setProfileImage] = useState<string | null>(profileImageUrl || null);
   const [savingImage, setSavingImage] = useState(false);
   const [removingImage, setRemovingImage] = useState(false);
+  const [isMobile, setIsMobile] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  // Rileva se siamo su mobile (solo per applicare stili inline)
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    // Imposta immediatamente per evitare flash
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Mount check per portal (necessario per SSR)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   function getInitials(name: string): string {
     return name
@@ -158,13 +177,21 @@ export function UserProfileModal({
     };
   }, []);
 
-  return (
+  // Non renderizzare durante SSR
+  if (!mounted) {
+    return null;
+  }
+
+  const modalContent = (
     <div className="fixed inset-0 bg-black/60 z-[100] lg:flex lg:items-center lg:justify-center lg:p-4" onClick={onClose}>
       <div
         className="bg-[var(--bg-card)] lg:h-auto lg:max-h-[90vh] lg:max-w-md lg:w-full lg:rounded-2xl lg:border lg:border-[var(--border-light)] lg:shadow-2xl flex flex-col"
-        style={{
+        style={isMobile ? {
           height: '100svh',
           maxHeight: '100svh'
+        } : {
+          height: 'auto',
+          maxHeight: '90vh'
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -205,8 +232,8 @@ export function UserProfileModal({
                     className="w-20 h-20 rounded-full object-cover border-2 border-white/20"
                   />
                 ) : (
-                  <div className="w-20 h-20 rounded-full bg-cyan-500/20 border-2 border-cyan-400/30 flex items-center justify-center">
-                    <span className="text-2xl font-semibold text-cyan-200">
+                  <div className="w-20 h-20 rounded-full bg-[var(--pastel-blue)] border-2 border-[var(--border-light)] flex items-center justify-center">
+                    <span className="text-2xl font-semibold text-[var(--accent-primary)]">
                       {getInitials(username)}
                     </span>
                   </div>
@@ -339,5 +366,8 @@ export function UserProfileModal({
       </div>
     </div>
   );
+
+  // Usa portal per renderizzare fuori dalla gerarchia DOM
+  return createPortal(modalContent, document.body);
 }
 

@@ -14,13 +14,13 @@ export function ApiDevicesList({ devicesWithApi, onOpenModal }: ApiDevicesListPr
   }
 
   return (
-    <div className="mb-6 rounded-2xl bg-white/5 border border-white/10 p-4">
+    <div className="mb-6 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
       <div className="text-sm font-semibold mb-3">Device con API diretta</div>
       <div className="space-y-2">
         {devicesWithApi.map(({ deviceType, settings }) => (
           <div
             key={deviceType}
-            className="flex items-center justify-between rounded-xl bg-black/20 border border-white/10 p-3"
+            className="flex items-center justify-between rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3"
           >
             <div>
               <div className="text-sm font-semibold">{getDeviceLabel(deviceType)}</div>

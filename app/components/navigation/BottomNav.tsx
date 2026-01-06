@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Home, Users, Building2, Calendar, Sparkles, HelpCircle, LogOut } from "lucide-react";
 import type { Role } from "@/app/lib/store";
 
@@ -30,26 +30,63 @@ const navItemsByRole: Record<Role, NavItem[]> = {
   ],
 };
 
+// Conditional items that appear based on query params
+const conditionalItemsByRole: Record<Role, (searchParams: URLSearchParams) => NavItem[]> = {
+  tech: () => [],
+  host: (searchParams) => {
+    const apt = searchParams.get('apt');
+    if (!apt) return [];
+    
+    const client = searchParams.get('client');
+    const baseHref = client 
+      ? `?apt=${encodeURIComponent(apt)}&client=${encodeURIComponent(client)}`
+      : `?apt=${encodeURIComponent(apt)}`;
+    
+    return [
+      { href: `/app/host/stays${baseHref}`, label: "Soggiorni", icon: Calendar },
+      { href: `/app/host/cleaners${baseHref}`, label: "Cleaner", icon: Sparkles },
+    ];
+  },
+  guest: () => [],
+  cleaner: () => [],
+};
+
 interface BottomNavProps {
   role: Role;
 }
 
 export function BottomNav({ role }: BottomNavProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const items = navItemsByRole[role] || [];
+  const conditionalItems = conditionalItemsByRole[role]?.(searchParams) || [];
+  const allItems = [...items, ...conditionalItems];
 
-  if (items.length === 0) return null;
+  if (allItems.length === 0) return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-[var(--bg-card)] border-t border-[var(--border-light)] shadow-lg">
       <div className="flex items-center justify-around h-16 px-2">
-        {items.map((item) => {
+        {allItems.map((item) => {
           const Icon = item.icon;
           // Per "/app/guest" (Home), attiva solo se pathname è esattamente "/app/guest"
-          // Per altre route, usa la logica normale
-          const isActive = item.href === "/app/guest" 
-            ? pathname === item.href
-            : pathname === item.href || pathname.startsWith(item.href + "/");
+          // Per "/app/host/stays" e "/app/host/cleaners", attiva solo se l'href corrisponde esattamente
+          // Per altre route, usa la logica normale ma escludi route specifiche
+          let isActive = false;
+          if (item.href === "/app/guest") {
+            isActive = pathname === item.href;
+          } else if (item.href.includes("/app/host/stays")) {
+            // Per "Soggiorni", controlla se siamo sulla route stays
+            isActive = pathname === "/app/host/stays";
+          } else if (item.href.includes("/app/host/cleaners")) {
+            // Per "Cleaner", controlla se siamo sulla route cleaners
+            isActive = pathname === "/app/host/cleaners";
+          } else if (item.href === "/app/host") {
+            // Per "Dashboard", attiva solo se siamo su /app/host e NON su /app/host/stays o /app/host/cleaners
+            isActive = pathname === item.href || (pathname.startsWith(item.href + "/") && !pathname.startsWith("/app/host/stays") && !pathname.startsWith("/app/host/cleaners"));
+          } else {
+            isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+          }
           
           return (
             <Link

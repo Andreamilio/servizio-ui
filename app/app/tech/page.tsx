@@ -7,11 +7,12 @@ import { listClients } from "@/app/lib/clientStore";
 import { getUser } from "@/app/lib/userStore";
 import { AppLayout } from "@/app/components/layouts/AppLayout";
 import { UserProfile } from "../components/UserProfile";
+import { ClientAccordion } from "./components/ClientAccordion";
 
 function pillStatus(s: "online" | "offline") {
   return s === "online"
-    ? { dot: "bg-emerald-500", text: "ONLINE", box: "bg-emerald-50 border-emerald-200 text-emerald-700" }
-    : { dot: "bg-red-500", text: "OFFLINE", box: "bg-red-50 border-red-200 text-red-700" };
+    ? { dot: "bg-emerald-500", text: "ONLINE", box: "bg-[var(--pastel-green)] border-[var(--border-light)] text-[var(--accent-success)] dark:bg-emerald-500/20 dark:border-emerald-500/30 dark:text-emerald-400" }
+    : { dot: "bg-red-500", text: "OFFLINE", box: "bg-red-100 border-[var(--border-light)] text-[var(--accent-error)] dark:bg-red-900/30 dark:border-red-500/30 dark:text-red-400" };
 }
 
 function pillNet(n: "main" | "backup") {
@@ -42,8 +43,15 @@ export default async function TechPage({
   const clients = listClients();
   const clientsCount = clients.length;
 
-  // gruppi (es. "Lakeside Tower") per sidebar espandibile
-  const groups = Array.from(new Set(apts.map((a) => a.group)));
+  // Raggruppare appartamenti per cliente
+  const apartmentsByClient = new Map<string, typeof apts>();
+  apts.forEach((apt) => {
+    const clientName = apt.group; // Il campo group contiene il nome del cliente
+    if (!apartmentsByClient.has(clientName)) {
+      apartmentsByClient.set(clientName, []);
+    }
+    apartmentsByClient.get(clientName)!.push(apt);
+  });
 
   const sp = await Promise.resolve(searchParams ?? {});
   const showAll = sp.all === "1";
@@ -53,6 +61,10 @@ export default async function TechPage({
   const incidents = getIncidents(6);
 
   const techUser = me.userId ? getUser(me.userId) : null;
+
+  const totalApts = apts.length;
+  const online = apts.filter((a) => a.status === "online").length;
+  const offline = totalApts - online;
 
   return (
     <AppLayout 
@@ -69,41 +81,25 @@ export default async function TechPage({
           <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] overflow-hidden">
             <div className="p-4 border-b border-[var(--border-light)]">
               <div className="text-lg font-semibold">Status</div>
+              <div className="text-sm opacity-60 mt-1">
+                {totalApts} appartamenti • {online} online • {offline} offline
+              </div>
             </div>
 
-            <div className="hidden sm:grid grid-cols-[1.2fr_1fr_1fr_1fr] gap-2 p-4 text-xs uppercase tracking-wider opacity-60">
-              <div>Apartment</div>
-              <div>Status</div>
-              <div>Network</div>
-              <div>Last Access</div>
-            </div>
-
-            <div className="px-4 pb-4 space-y-2">
-              {apts.map((a) => {
-                const st = pillStatus(a.status);
-                const net = pillNet(a.network);
-
-                return (
-                  <Link
-                    key={a.aptId}
-                    href={`/app/tech/apt/${a.aptId}`}
-                    className="grid grid-cols-1 sm:grid-cols-[1.2fr_1fr_1fr_1fr] gap-2 items-start sm:items-center rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-3 hover:border-white/20 active:scale-[.99] transition"
-                  >
-                    <div className="font-semibold">{a.aptName}</div>
-
-                    <div className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold ${st.box}`}>
-                      <span className={`h-2 w-2 rounded-full ${st.dot}`} />
-                      {st.text}
-                    </div>
-
-                    <div className={`inline-flex items-center rounded-lg border px-3 py-2 text-xs font-semibold ${net.box}`}>
-                      {net.text}
-                    </div>
-
-                    <div className="text-sm opacity-90 mt-1 sm:mt-0">Last Access: {a.lastAccessLabel}</div>
-                  </Link>
-                );
-              })}
+            <div className="p-4 space-y-3">
+              {Array.from(apartmentsByClient.entries()).map(([clientName, clientApts]) => (
+                <ClientAccordion
+                  key={clientName}
+                  clientName={clientName}
+                  apartments={clientApts.map((a) => ({
+                    aptId: a.aptId,
+                    aptName: a.aptName,
+                    status: a.status,
+                    network: a.network,
+                    lastAccessLabel: a.lastAccessLabel,
+                  }))}
+                />
+              ))}
             </div>
           </div>
         </section>

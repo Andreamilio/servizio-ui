@@ -278,60 +278,68 @@ export default async function TechAptPage({
         </div>
 
         <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
-          <div className="text-sm opacity-70 mb-3">Azioni rapide</div>
+          <div className="text-sm opacity-70 mb-4">Azioni rapide</div>
 
-          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
-            {apt.door === "unlocked" ? (
-              <>
-                <form action={actCloseDoor} className="flex-1">
-                  <button className="w-full sm:w-auto rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-4 py-2 font-semibold">
-                    Chiudi porta
-                  </button>
-                </form>
-                <form action={actOpenDoor} className="flex-1">
-                  <button className="w-full sm:w-auto rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 px-4 py-2 font-semibold">
-                    Apri porta
-                  </button>
-                </form>
-              </>
-            ) : (
-              <>
-                <form action={actOpenDoor} className="flex-1">
-                  <button className="w-full sm:w-auto rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 px-4 py-2 font-semibold">
-                    Apri porta
-                  </button>
-                </form>
-                <form action={actCloseDoor} className="flex-1">
-                  <button className="w-full sm:w-auto rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-4 py-2 font-semibold">
-                    Chiudi porta
-                  </button>
-                </form>
-              </>
-            )}
+          <div className="space-y-4">
+            {/* Azioni principali: Porta e Portone */}
+            <div className="grid grid-cols-2 gap-3">
+              {apt.door === "unlocked" ? (
+                <>
+                  <form action={actCloseDoor}>
+                    <button className="w-full rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-4 py-2 font-semibold text-sm">
+                      Chiudi porta
+                    </button>
+                  </form>
+                  <form action={actOpenDoor}>
+                    <button className="w-full rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 px-4 py-2 font-semibold text-sm">
+                      Apri porta
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <form action={actOpenDoor}>
+                    <button className="w-full rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 px-4 py-2 font-semibold text-sm">
+                      Apri porta
+                    </button>
+                  </form>
+                  <form action={actCloseDoor}>
+                    <button className="w-full rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-4 py-2 font-semibold text-sm">
+                      Chiudi porta
+                    </button>
+                  </form>
+                </>
+              )}
+            </div>
 
-            <form action={actOpenGate} className="flex-1">
-              <button className="w-full sm:w-auto rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 px-4 py-2 font-semibold">
+            <form action={actOpenGate}>
+              <button className="w-full rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 px-4 py-2 font-semibold text-sm">
                 Apri portone
               </button>
             </form>
 
-            <form action={actRevoke}>
-              <button className="w-full sm:w-auto rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 px-4 py-2 font-semibold">
-                Revoca accessi
-              </button>
-            </form>
+            {/* Azioni secondarie */}
+            <div className="pt-2 border-t border-[var(--border-light)]">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <form action={actRevoke}>
+                  <button className="w-full rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 px-4 py-2 font-semibold text-sm">
+                    Revoca accessi
+                  </button>
+                </form>
 
-            <form action={actWan}>
-              <button className="w-full sm:w-auto rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-4 py-2 font-semibold">
-                Switch WAN
-              </button>
-            </form>
+                <form action={actWan}>
+                  <button className="w-full rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-4 py-2 font-semibold text-sm">
+                    Switch WAN
+                  </button>
+                </form>
 
-            <form action={actVpn}>
-              <button className="w-full sm:w-auto rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-4 py-2 font-semibold">
-                Toggle VPN
-              </button>
-            </form>
+                <form action={actVpn}>
+                  <button className="w-full rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-4 py-2 font-semibold text-sm">
+                    Toggle VPN
+                  </button>
+                </form>
+              </div>
+            </div>
           </div>
         </div>
 

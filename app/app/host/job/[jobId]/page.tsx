@@ -64,8 +64,8 @@ export default async function HostJobDetailPage({
           <Link className="text-sm opacity-70 hover:opacity-100" href="/app/host">
             ← Torna alla dashboard
           </Link>
-          <div className="text-lg font-semibold">Job non trovato</div>
-          <div className="text-sm opacity-60">Job richiesto: {jobId}</div>
+          <div className="text-lg font-semibold">Pulizia assegnata non trovata</div>
+          <div className="text-sm opacity-60">Pulizia assegnata richiesta: {jobId}</div>
         </div>
       </main>
     );
@@ -140,7 +140,7 @@ export default async function HostJobDetailPage({
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               <div className="text-lg font-semibold">{aptName}</div>
-              <div className="text-sm opacity-70 mt-1">Job ID: {job.id}</div>
+              <div className="text-sm opacity-70 mt-1">ID pulizia assegnata: {job.id}</div>
               {job.windowLabel && (
                 <div className="text-sm opacity-70 mt-1">Finestra oraria: {job.windowLabel}</div>
               )}
@@ -261,7 +261,7 @@ export default async function HostJobDetailPage({
                       className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
                         item.done
                           ? "bg-green-500/30 border-green-500/50"
-                          : "bg-[var(--bg-secondary)] border-white/20"
+                          : "bg-[var(--bg-secondary)] border-[var(--border-light)]"
                       }`}>
                       {item.done && (
                         <svg className="w-3 h-3 text-green-300" fill="currentColor" viewBox="0 0 20 20">

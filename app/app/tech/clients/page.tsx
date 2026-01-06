@@ -246,7 +246,7 @@ export default async function TechClientsPage({
                   </button>
                   <Link
                     href="/app/tech/clients"
-                    className="rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-6 py-3 font-semibold"
+                    className="rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-6 py-3 font-semibold"
                   >
                     Annulla
                   </Link>
@@ -267,7 +267,7 @@ export default async function TechClientsPage({
                     type="text"
                     value={selectedClient!.clientId}
                     disabled
-                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-white/60 cursor-not-allowed"
+                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-tertiary)] cursor-not-allowed"
                   />
                 </div>
                 <div>
@@ -289,7 +289,7 @@ export default async function TechClientsPage({
                   </button>
                   <Link
                     href={`/app/tech/clients?clientId=${selectedClient!.clientId}`}
-                    className="rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-6 py-3 font-semibold"
+                    className="rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-6 py-3 font-semibold"
                   >
                     Annulla
                   </Link>
@@ -358,7 +358,7 @@ export default async function TechClientsPage({
                   </button>
                   <Link
                     href={`/app/tech/clients?clientId=${selectedClient!.clientId}`}
-                    className="rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-6 py-3 font-semibold"
+                    className="rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-6 py-3 font-semibold"
                   >
                     Annulla
                   </Link>
@@ -380,7 +380,7 @@ export default async function TechClientsPage({
                       type="text"
                       value={selectedApartment!.aptId}
                       disabled
-                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-white/60 cursor-not-allowed"
+                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-tertiary)] cursor-not-allowed"
                     />
                   </div>
                   <div>
@@ -427,7 +427,7 @@ export default async function TechClientsPage({
                   </button>
                   <Link
                     href={`/app/tech/clients?clientId=${selectedApartment!.clientId}`}
-                    className="rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-6 py-3 font-semibold"
+                    className="rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-6 py-3 font-semibold"
                   >
                     Annulla
                   </Link>

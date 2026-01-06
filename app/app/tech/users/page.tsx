@@ -242,7 +242,7 @@ export default async function TechUsersPage({
                     </button>
                     <Link
                       href="/app/tech/users"
-                      className="rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-6 py-3 font-semibold"
+                      className="rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-6 py-3 font-semibold"
                     >
                       Annulla
                     </Link>
@@ -309,7 +309,7 @@ export default async function TechUsersPage({
                       </button>
                       <Link
                         href="/app/tech/users"
-                        className="rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-6 py-3 font-semibold"
+                        className="rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-6 py-3 font-semibold"
                       >
                         Annulla
                       </Link>
@@ -351,51 +351,60 @@ export default async function TechUsersPage({
                 users.map((user) => (
                   <div
                     key={user.userId}
-                    className="flex items-center justify-between gap-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       {user.profileImageUrl ? (
                         <img
                           src={user.profileImageUrl}
                           alt={user.username}
-                          className="w-10 h-10 rounded-full object-cover border border-white/20 flex-shrink-0"
+                          className="w-10 h-10 rounded-full object-cover border border-[var(--border-light)] flex-shrink-0"
                         />
                       ) : (
-                        <div className="w-10 h-10 rounded-full bg-cyan-500/20 border border-cyan-400/30 flex items-center justify-center flex-shrink-0">
-                          <span className="text-xs font-semibold text-cyan-200">
+                        <div className="w-10 h-10 rounded-full bg-[var(--pastel-blue)] border border-[var(--border-light)] flex items-center justify-center flex-shrink-0">
+                          <span className="text-xs font-semibold text-[var(--accent-primary)]">
                             {getInitials(user.username)}
                           </span>
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <div className="text-sm font-semibold">{user.username}</div>
                         <div
                           className={`text-xs px-2 py-0.5 rounded border ${
                             user.role === "tech"
-                              ? "bg-blue-500/10 border-blue-400/20 text-blue-200"
-                              : "bg-purple-500/10 border-purple-400/20 text-purple-200"
+                              ? "bg-[var(--pastel-blue)] border-[var(--border-light)] text-[var(--bg-card)] dark:bg-blue-500/20 dark:border-blue-400/30 dark:text-blue-200"
+                              : "bg-[var(--pastel-purple)] border-[var(--border-light)] text-[var(--bg-card)] dark:bg-purple-500/20 dark:border-purple-400/30 dark:text-purple-200"
                           }`}
+                          style={{ color: "var(--bg-card)" }}
                         >
                           {user.role.toUpperCase()}
                         </div>
                         {!user.enabled && (
-                          <div className="text-xs px-2 py-0.5 rounded bg-red-50 border border-red-200 text-red-200">
+                          <div className="text-xs px-2 py-0.5 rounded bg-red-100 border border-[var(--border-light)] text-[var(--accent-error)] dark:bg-red-900/30 dark:border-red-500/30 dark:text-red-200">
                             DISABILITATO
                           </div>
                         )}
                       </div>
-                        <div className="text-xs opacity-60 mt-1">
-                          {user.clientId && `Client: ${clients.find((c) => c.clientId === user.clientId)?.name || user.clientId}`}
-                          {user.lastLoginAt && ` • Ultimo accesso: ${new Date(user.lastLoginAt).toLocaleString()}`}
+                        <div className="text-xs opacity-60 mt-1.5 space-y-0.5">
+                          {user.clientId && (
+                            <div>
+                              Client: {clients.find((c) => c.clientId === user.clientId)?.name || user.clientId}
+                            </div>
+                          )}
+                          {user.lastLoginAt && (
+                            <div>
+                              Ultimo accesso: {new Date(user.lastLoginAt).toLocaleString()}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                       <Link
                         href={`/app/tech/users?action=edit&userId=${user.userId}`}
-                        className="rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-3 py-1.5 font-semibold text-xs"
+                        className="rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-3 py-1.5 font-semibold text-xs"
                       >
                         Modifica
                       </Link>

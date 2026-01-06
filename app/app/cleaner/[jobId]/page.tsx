@@ -97,8 +97,8 @@ export default async function CleanerJobPage({
           <Link className="text-sm opacity-70 hover:opacity-100" href="/app/cleaner">
             ← Torna a Pulizie
           </Link>
-          <div className="text-lg font-semibold">Job non trovato</div>
-          <div className="text-sm opacity-60">Job richiesto: {jobIdStr}</div>
+          <div className="text-lg font-semibold">Pulizia assegnata non trovata</div>
+          <div className="text-sm opacity-60">Pulizia assegnata richiesta: {jobIdStr}</div>
           <div className="text-xs opacity-50 mt-2">
             Store keys: {Array.from(cleaningStore.keys()).join(", ")}
           </div>
@@ -265,7 +265,7 @@ export default async function CleanerJobPage({
           {job.status === "todo" && (
             <div className="rounded-xl bg-yellow-500/10 border border-yellow-400/20 p-3 mb-2">
               <div className="text-sm text-yellow-200">
-                ⚠️ Avvia il job per poter spuntare gli elementi della checklist
+                ⚠️ Avvia la pulizia assegnata per poter spuntare gli elementi della checklist
               </div>
             </div>
           )}
@@ -290,7 +290,7 @@ export default async function CleanerJobPage({
                       <div className="flex items-center gap-3">
                         <div
                           className={`h-5 w-5 rounded border ${
-                            it.done ? "bg-cyan-500/40 border-cyan-400/40" : "border-white/20"
+                            it.done ? "bg-cyan-500/40 border-cyan-400/40" : "border-[var(--border-light)]"
                           }`}
                         />
                         <div className={`${it.done ? "opacity-60 line-through" : ""}`}>{it.label}</div>
@@ -304,7 +304,7 @@ export default async function CleanerJobPage({
                       <div className="flex items-center gap-3">
                         <div
                           className={`h-5 w-5 rounded border ${
-                            it.done ? "bg-cyan-500/40 border-cyan-400/40" : "border-white/20"
+                            it.done ? "bg-cyan-500/40 border-cyan-400/40" : "border-[var(--border-light)]"
                           }`}
                         />
                         <div className={`${it.done ? "opacity-60 line-through" : ""}`}>{it.label}</div>
@@ -327,51 +327,47 @@ export default async function CleanerJobPage({
         <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4 space-y-3">
           <div className="text-sm opacity-70 mb-2">Controllo accessi</div>
           
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <div className="text-xs opacity-60">Porta</div>
-              <div className="flex items-center gap-2">
-                <div
-                  className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold ${
-                    doorIsOpen
-                      ? "bg-emerald-500/10 border-emerald-400/20 text-emerald-200"
-                      : "bg-[var(--bg-card)] border-[var(--border-light)] text-[var(--text-primary)]/80"
+          <div className="space-y-3">
+            <div>
+              <div className="text-xs opacity-60 mb-2">Porta</div>
+              <div
+                className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold ${
+                  doorIsOpen
+                    ? "bg-emerald-50 dark:bg-emerald-500/20 border-emerald-200 dark:border-emerald-400/30 text-emerald-700 dark:text-emerald-200"
+                    : "bg-[var(--bg-card)] border-[var(--border-light)] text-[var(--text-primary)]"
+                }`}
+              >
+                <span
+                  className={`h-2 w-2 rounded-full flex-shrink-0 ${
+                    doorIsOpen 
+                      ? "bg-emerald-400" 
+                      : "bg-gray-400 dark:bg-[var(--text-tertiary)]"
                   }`}
-                >
-                  <span
-                    className={`h-2 w-2 rounded-full ${
-                      doorIsOpen ? "bg-emerald-400" : "bg-white/40"
-                    }`}
-                  />
-                  {doorIsOpen ? "SBLOCCATA" : "CHIUSA"}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                {doorIsOpen ? (
-                  <form action={actCloseDoor} className="flex-1">
-                    <button className="w-full rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 px-3 py-2 text-xs font-semibold">
-                      Chiudi porta
-                    </button>
-                  </form>
-                ) : (
-                  <form action={actOpenDoor} className="flex-1">
-                    <button className="w-full rounded-xl bg-cyan-500/25 hover:bg-cyan-500/35 border border-cyan-400/30 px-3 py-2 text-xs font-semibold">
-                      Apri porta
-                    </button>
-                  </form>
-                )}
+                />
+                {doorIsOpen ? "SBLOCCATA" : "BLOCCATA"}
               </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="text-xs opacity-60">Portone</div>
-              <div className="flex gap-2">
-                <form action={actOpenGate} className="flex-1">
-                  <button className="w-full rounded-xl bg-cyan-500/25 hover:bg-cyan-500/35 border border-cyan-400/30 px-3 py-2 text-xs font-semibold">
-                    Apri portone
+            <div className="flex flex-wrap gap-2">
+              {doorIsOpen ? (
+                <form action={actCloseDoor}>
+                  <button className="rounded-xl bg-emerald-500/25 hover:bg-emerald-500/35 border border-emerald-400/30 px-4 py-2 text-sm font-semibold">
+                    Chiudi porta
                   </button>
                 </form>
-              </div>
+              ) : (
+                <form action={actOpenDoor}>
+                  <button className="rounded-xl bg-emerald-500/25 hover:bg-emerald-500/35 border border-emerald-400/30 px-4 py-2 text-sm font-semibold">
+                    Apri porta
+                  </button>
+                </form>
+              )}
+
+              <form action={actOpenGate}>
+                <button className="rounded-xl bg-emerald-500/25 hover:bg-emerald-500/35 border border-emerald-400/30 px-4 py-2 text-sm font-semibold">
+                  Apri portone
+                </button>
+              </form>
             </div>
           </div>
         </div>
@@ -391,7 +387,7 @@ export default async function CleanerJobPage({
                   ))}
                 </div>
                 <form action={actUploadFinalPhotos}>
-                  <button type="submit" className="w-full rounded-xl bg-[var(--bg-card)] hover:bg-white/10 border border-[var(--border-light)] px-4 py-2 text-sm font-semibold">
+                  <button type="submit" className="w-full rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-4 py-2 text-sm font-semibold">
                     Sostituisci foto
                   </button>
                 </form>
@@ -433,7 +429,7 @@ export default async function CleanerJobPage({
                     Completa (checklist incompleta)
                   </span>
                   <div className="text-xs text-yellow-300 opacity-80">
-                    ⚠️ Devi completare tutti gli item della checklist prima di completare il job
+                    ⚠️ Devi completare tutti gli item della checklist prima di completare la pulizia assegnata
                   </div>
                 </div>
               ) : photoItemDone && !hasFinalPhotos ? (
@@ -442,7 +438,7 @@ export default async function CleanerJobPage({
                     Completa (foto finali obbligatorie)
                   </span>
                   <div className="text-xs text-yellow-300 opacity-80">
-                    ⚠️ Devi caricare le foto finali prima di completare il job
+                    ⚠️ Devi caricare le foto finali prima di completare la pulizia assegnata
                   </div>
                 </div>
               ) : (

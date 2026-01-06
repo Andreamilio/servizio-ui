@@ -85,13 +85,13 @@ export default async function CleanerHome() {
           <CardHeader>
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-[var(--text-primary)]" />
-              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Job assegnati</h2>
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Pulizie assegnate</h2>
             </div>
           </CardHeader>
           <CardBody>
             {jobs.length === 0 ? (
               <div className="text-sm text-[var(--text-secondary)] text-center py-8">
-                Nessun job disponibile
+                Nessuna pulizia assegnata disponibile
               </div>
             ) : (
               <div className="space-y-3">

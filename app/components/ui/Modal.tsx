@@ -52,11 +52,11 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--bg-overlay)] backdrop-blur-sm"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[var(--bg-overlay)] backdrop-blur-sm overflow-x-hidden"
       onClick={onClose}
     >
       <div
-        className={`${sizeClasses[size]} w-full max-h-[90vh] overflow-y-auto bg-[var(--bg-card)] rounded-2xl border border-[var(--border-light)] shadow-xl`}
+        className={`${sizeClasses[size]} w-full max-h-[90vh] overflow-y-auto overflow-x-hidden bg-[var(--bg-card)] rounded-2xl border border-[var(--border-light)] shadow-xl`}
         onClick={(e) => e.stopPropagation()}
       >
         {(title || showCloseButton) && (
@@ -75,7 +75,7 @@ export function Modal({
             )}
           </div>
         )}
-        <div className="p-4 lg:p-6">{children}</div>
+        <div className="p-4 lg:p-6 overflow-x-hidden">{children}</div>
       </div>
     </div>
   );

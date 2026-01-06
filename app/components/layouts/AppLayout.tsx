@@ -15,7 +15,7 @@ interface AppLayoutProps {
 
 export function AppLayout({ children, role, userInfo }: AppLayoutProps) {
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] flex flex-col overflow-x-hidden">
+    <div className="min-h-screen bg-[var(--bg-primary)] flex flex-col">
       <HeaderNav role={role} userInfo={userInfo} />
       <main className="flex-1 pb-16 lg:pb-0 overflow-x-hidden">
         {children}

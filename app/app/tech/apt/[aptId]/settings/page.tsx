@@ -216,7 +216,7 @@ export default async function TechSettingsPage({
                 href={`/app/tech/apt/${aptId}/settings?tab=${tab.id}`}
                 className={`px-4 py-2 text-sm font-medium transition ${
                   activeTab === tab.id
-                    ? "border-b-2 border-cyan-400 text-cyan-200"
+                    ? "border-b-2 border-cyan-400 text-cyan-600 dark:text-cyan-300"
                     : "opacity-60 hover:opacity-100"
                 }`}
               >
@@ -414,4 +414,3 @@ export default async function TechSettingsPage({
     </main>
   );
 }
-

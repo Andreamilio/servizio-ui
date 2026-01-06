@@ -40,16 +40,16 @@ export function GuestFields({ maxGuests = 10 }: { maxGuests?: number }) {
     }, [maxGuests]);
 
     return (
-        <div className='space-y-3'>
+        <div className='space-y-3 min-w-0'>
             {Array.from({ length: guestsCount }).map((_, i) => {
                 const guestNum = i + 1;
                 return (
                     <div
                         key={guestNum}
                         id={`guest_${guestNum}_container`}
-                        className='guest-container rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-4 space-y-3'>
-                        <div className='text-sm font-medium text-[var(--text-primary)] mb-2'>Ospite {guestNum}</div>
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
+                        className='guest-container rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-4 space-y-3 min-w-0'>
+                        <div className='text-sm font-medium text-[var(--text-primary)] mb-2'>{guestNum === 1 ? 'Responsabile soggiorno' : `Ospite ${guestNum}`}</div>
+                        <div className='grid grid-cols-1 md:grid-cols-2 gap-3 min-w-0'>
                             <div>
                                 <div className='text-xs font-medium text-[var(--text-primary)] mb-1.5'>
                                     Nome <span className='text-[var(--accent-error)]'>*</span>
@@ -75,7 +75,7 @@ export function GuestFields({ maxGuests = 10 }: { maxGuests?: number }) {
                                 />
                             </div>
                         </div>
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
+                        <div className='grid grid-cols-1 md:grid-cols-2 gap-3 min-w-0'>
                             <div>
                                 <div className='text-xs font-medium text-[var(--text-primary)] mb-1.5'>
                                     Telefono <span className='text-[var(--accent-error)]'>*</span>
