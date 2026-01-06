@@ -6,6 +6,8 @@ import { readSession } from "@/app/lib/session";
 import * as Store from "@/app/lib/store";
 import { listClients, listApartmentsByClient } from "@/app/lib/clientStore";
 import { listJobsByApt, type CleaningJob, type CleaningStatus, updateJobsCleanerByStay } from "@/app/lib/cleaningstore";
+import { getUser } from "@/app/lib/userStore";
+import { AppLayout } from "@/app/components/layouts/AppLayout";
 
 import {
   cleaners_getCfg,
@@ -144,6 +146,8 @@ export default async function StayDetailPage({
     : [{ aptId: me.aptId, name: `Apt ${me.aptId} — Principale` }];
 
   const apt = apartments.find((x) => x.aptId === actualAptId);
+
+  const hostUser = me.userId ? getUser(me.userId) : null;
 
   async function genPin(formData: FormData) {
     "use server";
@@ -284,8 +288,15 @@ export default async function StayDetailPage({
   }
 
   return (
-    <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-6">
-      <div className="max-w-3xl mx-auto space-y-5">
+    <AppLayout 
+      role="host"
+      userInfo={hostUser ? {
+        userId: hostUser.userId,
+        username: hostUser.username,
+        profileImageUrl: hostUser.profileImageUrl,
+      } : undefined}
+    >
+      <div className="max-w-3xl mx-auto space-y-5 p-4 sm:p-6">
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="text-xs opacity-60">Host • Dettaglio soggiorno</div>
@@ -316,15 +327,10 @@ export default async function StayDetailPage({
               <input type="hidden" name="stayId" value={stayId} />
               <button
                 type="submit"
-                className="whitespace-nowrap text-sm text-red-200/90 hover:text-red-100 rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-1.5"
+                className="whitespace-nowrap text-sm text-red-700 dark:text-red-200 hover:text-red-800 dark:hover:text-red-100 rounded-xl bg-red-500/10 dark:bg-red-500/20 border border-red-500/20 dark:border-red-500/30 px-3 py-1.5"
+                style={{ color: 'var(--accent-error)' }}
               >
                 Elimina prenotazione
-              </button>
-            </form>
-
-            <form action="/api/auth/logout" method="post">
-              <button className="whitespace-nowrap text-sm opacity-70 hover:opacity-100">
-                Esci
               </button>
             </form>
           </div>
@@ -1277,7 +1283,7 @@ export default async function StayDetailPage({
           )}
         </section>
       </div>
-    </main>
+    </AppLayout>
   );
 }
 

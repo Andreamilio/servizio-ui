@@ -18,6 +18,8 @@ import {
   type Apartment,
   type ApartmentStatus,
 } from "@/app/lib/clientStore";
+import { getUser } from "@/app/lib/userStore";
+import { AppLayout } from "@/app/components/layouts/AppLayout";
 
 export const dynamic = "force-dynamic";
 
@@ -54,12 +56,15 @@ export default async function TechClientsPage({
   // Server Actions - Client
   async function handleCreateClient(formData: FormData) {
     "use server";
-    const id = (formData.get("clientId")?.toString() ?? "").trim();
     const name = (formData.get("name")?.toString() ?? "").trim();
 
-    if (!id || !name) {
+    if (!name) {
       redirect("/app/tech/clients?action=create&err=missing");
     }
+
+    // Il BE genererà l'ID automaticamente, per ora generiamo un ID temporaneo basato sul nome
+    // TODO: Modificare createClient per generare l'ID automaticamente
+    const id = name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || `client-${Date.now()}`;
 
     try {
       createClient(id, name);
@@ -100,14 +105,17 @@ export default async function TechClientsPage({
   async function handleCreateApartment(formData: FormData) {
     "use server";
     const cId = (formData.get("clientId")?.toString() ?? "").trim();
-    const id = (formData.get("aptId")?.toString() ?? "").trim();
     const name = (formData.get("name")?.toString() ?? "").trim();
-    const status = (formData.get("status")?.toString() ?? "ok") as ApartmentStatus;
     const addressShort = (formData.get("addressShort")?.toString() ?? "").trim() || undefined;
 
-    if (!cId || !id || !name) {
+    if (!cId || !name) {
       redirect(`/app/tech/clients?action=createApt&clientId=${cId}&err=missing`);
     }
+
+    // Il BE genererà ID e Status automaticamente, per ora generiamo valori temporanei
+    // TODO: Modificare createApartment per generare ID e Status automaticamente
+    const id = `apt-${Date.now()}`;
+    const status = "ok" as ApartmentStatus;
 
     try {
       createApartment(cId, id, {
@@ -166,9 +174,18 @@ export default async function TechClientsPage({
   const isEditApt = action === "editApt" && selectedApartment;
   const isClientDetail = clientId && selectedClient && !action;
 
+  const techUser = me.userId ? getUser(me.userId) : null;
+
   return (
-    <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-4 lg:p-6">
-      <div className="max-w-4xl mx-auto space-y-4">
+    <AppLayout 
+      role="tech"
+      userInfo={techUser ? {
+        userId: techUser.userId,
+        username: techUser.username,
+        profileImageUrl: techUser.profileImageUrl,
+      } : undefined}
+    >
+      <div className="max-w-4xl mx-auto space-y-4 p-4 lg:p-6">
         <div className="flex items-center justify-between">
           <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
             ← Torna a Tech
@@ -222,19 +239,20 @@ export default async function TechClientsPage({
                   <label className="block text-sm font-medium mb-2">Client ID</label>
                   <input
                     type="text"
-                    name="clientId"
-                    required
-                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    placeholder="es: company-name"
+                    disabled
+                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-tertiary)] cursor-not-allowed"
+                    placeholder="Generato automaticamente dal BE"
                   />
+                  <div className="text-xs text-[var(--text-tertiary)] mt-1">Il Client ID verrà generato automaticamente dal backend</div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Nome</label>
+                  <label className="block text-sm font-medium mb-2">Nome *</label>
                   <input
                     type="text"
                     name="name"
                     required
-                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    placeholder="Nome del cliente"
                   />
                 </div>
                 <div className="flex gap-3 pt-4 border-t border-[var(--border-light)]">
@@ -306,26 +324,24 @@ export default async function TechClientsPage({
                 <input type="hidden" name="clientId" value={selectedClient!.clientId} />
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Apartment ID *</label>
+                    <label className="block text-sm font-medium mb-2">Apartment ID</label>
                     <input
                       type="text"
-                      name="aptId"
-                      required
-                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                      placeholder="es: 101"
+                      disabled
+                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-tertiary)] cursor-not-allowed"
+                      placeholder="Generato automaticamente dal BE"
                     />
+                    <div className="text-xs text-[var(--text-tertiary)] mt-1">L'ID verrà generato automaticamente</div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Status</label>
-                    <select
-                      name="status"
-                      defaultValue="ok"
-                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    >
-                      <option value="ok">OK</option>
-                      <option value="warn">Warn</option>
-                      <option value="crit">Crit</option>
-                    </select>
+                    <input
+                      type="text"
+                      disabled
+                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-tertiary)] cursor-not-allowed"
+                      placeholder="Generato automaticamente dal BE"
+                    />
+                    <div className="text-xs text-[var(--text-tertiary)] mt-1">Lo status verrà generato automaticamente</div>
                   </div>
                 </div>
                 <div>
@@ -334,7 +350,8 @@ export default async function TechClientsPage({
                     type="text"
                     name="name"
                     required
-                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    placeholder="Nome dell'appartamento"
                   />
                 </div>
                 <div>
@@ -342,7 +359,7 @@ export default async function TechClientsPage({
                   <input
                     type="text"
                     name="addressShort"
-                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     placeholder="es: Via Demo 12, Milano"
                   />
                 </div>
@@ -438,8 +455,8 @@ export default async function TechClientsPage({
 
           {/* Client Detail View */}
           {isClientDetail && (
-            <>
-              <div className="mb-6 p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)]">
+            <div className="space-y-2">
+              <div className="p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)]">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <div className="text-lg font-semibold">{selectedClient!.name}</div>
@@ -465,17 +482,18 @@ export default async function TechClientsPage({
                 </div>
               </div>
 
-              <div className="mb-4 flex items-center justify-between">
-                <div className="text-sm font-semibold">Appartamenti ({listApartmentsByClient(selectedClient!.clientId).length})</div>
-                <Link
-                  href={`/app/tech/clients?action=createApt&clientId=${selectedClient!.clientId}`}
-                  className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-4 py-2 font-semibold text-sm"
-                >
-                  + Nuovo Appartamento
-                </Link>
-              </div>
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-semibold">Appartamenti ({listApartmentsByClient(selectedClient!.clientId).length})</div>
+                  <Link
+                    href={`/app/tech/clients?action=createApt&clientId=${selectedClient!.clientId}`}
+                    className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-4 py-2 font-semibold text-sm"
+                  >
+                    + Nuovo Appartamento
+                  </Link>
+                </div>
 
-              <div className="space-y-2">
+                <div className="space-y-2 -mt-2">
                 {listApartmentsByClient(selectedClient!.clientId).length === 0 ? (
                   <div className="text-sm opacity-60 py-8 text-center">Nessun appartamento configurato</div>
                 ) : (
@@ -520,8 +538,9 @@ export default async function TechClientsPage({
                     );
                   })
                 )}
+                </div>
               </div>
-            </>
+            </div>
           )}
 
           {/* Client List View (default) */}
@@ -550,7 +569,7 @@ export default async function TechClientsPage({
           )}
         </div>
       </div>
-    </main>
+    </AppLayout>
   );
 }
 

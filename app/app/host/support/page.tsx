@@ -2,9 +2,11 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { readSession, validateSessionUser } from "@/app/lib/session";
+import { getUser } from "@/app/lib/userStore";
+import { AppLayout } from "@/app/components/layouts/AppLayout";
 import { Card, CardBody, CardHeader } from "@/app/components/ui/Card";
 import { Button } from "@/app/components/ui/Button";
-import { ArrowLeft, MessageCircle, Ticket, AlertCircle } from "lucide-react";
+import { MessageCircle, Ticket, AlertCircle } from "lucide-react";
 
 type SP = Record<string, string | string[] | undefined>;
 
@@ -31,23 +33,18 @@ export default async function HostSupportPage({
         return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
     }
 
-    // Costruisce il link indietro preservando i parametri query
-    const backHref = aptId 
-        ? `/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`
-        : clientId
-        ? `/app/host?client=${encodeURIComponent(clientId)}`
-        : '/app/host';
+    const hostUser = me.userId ? getUser(me.userId) : null;
 
     return (
-        <main className="min-h-screen bg-[var(--bg-primary)]">
+        <AppLayout 
+            role="host"
+            userInfo={hostUser ? {
+                userId: hostUser.userId,
+                username: hostUser.username,
+                profileImageUrl: hostUser.profileImageUrl,
+            } : undefined}
+        >
             <div className="mx-auto w-full max-w-2xl p-4 sm:p-6 lg:p-8">
-                <div className="mb-6">
-                    <Link href={backHref}>
-                        <Button variant="ghost" size="sm" icon={ArrowLeft} iconPosition="left">
-                            Indietro
-                        </Button>
-                    </Link>
-                </div>
 
                 <Card variant="elevated">
                     <CardHeader>
@@ -66,19 +63,19 @@ export default async function HostSupportPage({
                             </Button>
                         </div>
 
-                        <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                        <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-[var(--accent-error)]">
                             <div className="flex items-start gap-3">
-                                <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                                <div className="text-sm text-amber-800 dark:text-amber-200">
-                                    <div className="font-medium mb-1">Emergenza</div>
-                                    <div>Nel prototipo non chiami nessuno. Nel reale: numeri/istruzioni.</div>
+                                <AlertCircle className="w-5 h-5 text-[rgba(255,51,0,1)] flex-shrink-0 mt-0.5" />
+                                <div className="text-sm text-amber-950 dark:text-amber-200">
+                                    <div className="font-medium mb-1 text-[rgba(255,51,0,1)]">Emergenza</div>
+                                    <div className="text-[rgba(0,0,0,1)]">Nel prototipo non chiami nessuno. Nel reale: numeri/istruzioni.</div>
                                 </div>
                             </div>
                         </div>
                     </CardBody>
                 </Card>
             </div>
-        </main>
+        </AppLayout>
     );
 }
 

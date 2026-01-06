@@ -11,11 +11,13 @@ import {
   disableUser,
   enableUser,
   deleteUser,
+  getUser,
   type User,
   type UserRole,
 } from "@/app/lib/userStore";
 import { listClients } from "@/app/lib/clientStore";
 import { UserImageEditor } from "../../components/UserImageEditor";
+import { AppLayout } from "@/app/components/layouts/AppLayout";
 
 export const dynamic = "force-dynamic";
 
@@ -140,9 +142,18 @@ export default async function TechUsersPage({
   const isEditMode = action === "edit" && selectedUser;
   const isCreateMode = action === "create";
 
+  const techUser = me.userId ? getUser(me.userId) : null;
+
   return (
-    <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-4 lg:p-6">
-      <div className="max-w-4xl mx-auto space-y-4">
+    <AppLayout 
+      role="tech"
+      userInfo={techUser ? {
+        userId: techUser.userId,
+        username: techUser.username,
+        profileImageUrl: techUser.profileImageUrl,
+      } : undefined}
+    >
+      <div className="max-w-4xl mx-auto space-y-4 p-4 lg:p-6">
         <div className="flex items-center justify-between">
           <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
             ← Torna a Tech
@@ -448,6 +459,6 @@ export default async function TechUsersPage({
           )}
         </div>
       </div>
-    </main>
+    </AppLayout>
   );
 }

@@ -82,7 +82,7 @@ export function ClientAccordion({
           </div>
 
           {/* Lista appartamenti */}
-          <div className="px-4 pb-4 space-y-2">
+          <div className="px-4 pt-2 pb-4 space-y-2">
             {apartments.map((apt) => {
               const st = pillStatus(apt.status);
               const net = pillNet(apt.network);

@@ -305,7 +305,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                         type='text'
                                         name='wifiSsid'
                                         defaultValue={apartmentDetails?.wifiSsid ?? ''}
-                                        className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500'
+                                        className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500'
                                         placeholder='Nome rete Wi-Fi'
                                     />
                                 </div>
@@ -315,7 +315,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                         type='text'
                                         name='wifiPass'
                                         defaultValue={apartmentDetails?.wifiPass ?? ''}
-                                        className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500'
+                                        className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500'
                                         placeholder='Password Wi-Fi'
                                     />
                                 </div>
@@ -327,7 +327,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                     name='rules'
                                     rows={4}
                                     defaultValue={apartmentDetails?.rules?.join('\n') ?? ''}
-                                    className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500'
+                                    className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500'
                                     placeholder='No smoking&#10;Silenzio dopo le 22:30'
                                 />
                             </div>
@@ -338,7 +338,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                     name='supportContacts'
                                     rows={2}
                                     defaultValue={apartmentDetails?.supportContacts ?? ''}
-                                    className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500'
+                                    className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500'
                                     placeholder='Telefono, email, ecc.'
                                 />
                             </div>

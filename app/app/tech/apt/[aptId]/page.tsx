@@ -17,6 +17,8 @@ import {
 import * as Store from "@/app/lib/store";
 import { events_listByApt, events_log } from "@/app/lib/domain/eventsDomain";
 import { getAllEnabledDevices, getDeviceState } from "@/app/lib/devicePackageStore";
+import { getUser } from "@/app/lib/userStore";
+import { AppLayout } from "@/app/components/layouts/AppLayout";
 
 export const dynamic = "force-dynamic";
 
@@ -50,18 +52,29 @@ export default async function TechAptPage({
   const p = await Promise.resolve(params);
   const aptId = String(p?.aptId ?? "");
 
+  const techUser = me.userId ? getUser(me.userId) : null;
+
   if (!aptId) {
     return (
-      <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-4 lg:p-6">
-        <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
-          ← Back
-        </Link>
-        <div className="mt-3 text-lg font-semibold">AptId mancante (routing)</div>
-        <div className="text-sm opacity-60">
-          La route non sta passando correttamente il parametro: prova ad aprire
-          <span className="font-semibold"> /app/tech/apt/101</span>
+      <AppLayout 
+        role="tech"
+        userInfo={techUser ? {
+          userId: techUser.userId,
+          username: techUser.username,
+          profileImageUrl: techUser.profileImageUrl,
+        } : undefined}
+      >
+        <div className="p-4 lg:p-6">
+          <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
+            ← Back
+          </Link>
+          <div className="mt-3 text-lg font-semibold">AptId mancante (routing)</div>
+          <div className="text-sm opacity-60">
+            La route non sta passando correttamente il parametro: prova ad aprire
+            <span className="font-semibold"> /app/tech/apt/101</span>
+          </div>
         </div>
-      </main>
+      </AppLayout>
     );
   }
 
@@ -77,13 +90,22 @@ export default async function TechAptPage({
 
   if (!apt) {
     return (
-      <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-4 lg:p-6">
-        <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
-          ← Back
-        </Link>
-        <div className="mt-3 text-lg font-semibold">Appartamento non trovato</div>
-        <div className="text-sm opacity-60">AptId: {aptId}</div>
-      </main>
+      <AppLayout 
+        role="tech"
+        userInfo={techUser ? {
+          userId: techUser.userId,
+          username: techUser.username,
+          profileImageUrl: techUser.profileImageUrl,
+        } : undefined}
+      >
+        <div className="p-4 lg:p-6">
+          <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
+            ← Back
+          </Link>
+          <div className="mt-3 text-lg font-semibold">Appartamento non trovato</div>
+          <div className="text-sm opacity-60">AptId: {aptId}</div>
+        </div>
+      </AppLayout>
     );
   }
 
@@ -195,7 +217,15 @@ export default async function TechAptPage({
 
 
   return (
-    <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-4 lg:p-6">
+    <AppLayout 
+      role="tech"
+      userInfo={techUser ? {
+        userId: techUser.userId,
+        username: techUser.username,
+        profileImageUrl: techUser.profileImageUrl,
+      } : undefined}
+    >
+      <div className="p-4 lg:p-6">
       <div className="max-w-3xl mx-auto space-y-4">
         <div className="lg:hidden rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4 space-y-3">
           <div className="flex items-center justify-between gap-3">
@@ -377,6 +407,7 @@ export default async function TechAptPage({
           Nota: store in memoria (dev). Ogni azione forza refresh via redirect.
         </div>
       </div>
-    </main>
+      </div>
+    </AppLayout>
   );
 }

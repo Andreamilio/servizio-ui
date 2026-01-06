@@ -18,7 +18,7 @@ import * as Store from "@/app/lib/store";
 import { events_listByApt, events_log } from "@/app/lib/domain/eventsDomain";
 import { door_getStateFromLog } from "@/app/lib/domain/doorStore";
 import { Badge } from "@/app/components/ui/Badge";
-import { ThemeToggle } from "@/app/components/ThemeToggle";
+import { AppLayout } from "@/app/components/layouts/AppLayout";
 
 function badge(outcome: "ok" | "retrying" | "fail" | null) {
   if (outcome === "ok") return { t: "Accesso disponibile", c: "bg-emerald-500/15 border-emerald-400/20 text-emerald-200" };
@@ -48,12 +48,11 @@ export default async function GuestPage({
   
   const state = getGuestState(aptId);
   const allEvents = events_listByApt(Store, aptId, 5);
-  // Filtra eventi WAN/VPN: visibili solo nella vista Tech
-  // Filtra eventi cleaner: visibili solo in host e tech
+  // Filtra per mostrare solo eventi relativi a porta e portone
   const events = allEvents.filter((e) => 
-    e.type !== 'wan_switched' && 
-    e.type !== 'vpn_toggled' &&
-    !e.label.includes('[cleaner]')
+    e.type === 'door_opened' || 
+    e.type === 'door_closed' || 
+    e.type === 'gate_opened'
   );
   const b = badge(state.lastOutcome);
   // Leggi stato porta da Store.accessLog (single source of truth) invece che da gueststore locale
@@ -142,24 +141,12 @@ export default async function GuestPage({
 
 
   return (
-    <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
+    <AppLayout role="guest">
       <div className="mx-auto w-full max-w-md p-5 space-y-4">
-        {/* Top bar */}
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <Badge variant="default" size="sm">GUEST</Badge>
-            <div className="mt-1 text-lg font-semibold">{state.apt.aptName}</div>
-            <div className="text-xs opacity-60">{state.apt.addressShort}</div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <form action="/api/auth/logout" method="post">
-              <button className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-3 py-2 text-xs text-[var(--text-primary)]">
-                Logout
-              </button>
-            </form>
-          </div>
+        <div className="mb-2">
+          <Badge variant="default" size="sm">GUEST</Badge>
+          <div className="mt-1 text-lg font-semibold">{state.apt.aptName}</div>
+          <div className="text-xs opacity-60">{state.apt.addressShort}</div>
         </div>
 
         {/* Toast */}
@@ -167,8 +154,8 @@ export default async function GuestPage({
           <div
             className={`rounded-2xl border p-3 text-sm ${
               toast.endsWith("_ok")
-                ? "bg-emerald-500/10 border-emerald-400/20 text-emerald-200"
-                : "bg-red-500/10 border-red-400/20 text-red-200"
+                ? "bg-emerald-500/10 dark:bg-emerald-500/10 border-emerald-400/20 dark:border-emerald-400/20 text-emerald-800 dark:text-emerald-200"
+                : "bg-red-500/10 dark:bg-red-500/10 border-red-400/20 dark:border-red-400/20 text-red-800 dark:text-red-200"
             }`}
           >
             {toast === "open_ok" && "Porta sbloccata ✅"}
@@ -190,13 +177,13 @@ export default async function GuestPage({
             <div
               className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold ${
                 doorIsOpen
-                  ? "bg-emerald-50 dark:bg-emerald-500/20 border-emerald-200 dark:border-emerald-400/30 text-emerald-700 dark:text-emerald-200"
-                  : "bg-[var(--bg-card)] border-[var(--border-light)] text-[var(--text-primary)]"
+                  ? "bg-emerald-50 dark:bg-emerald-500/20 border-emerald-200 dark:border-emerald-400/30 text-emerald-900 dark:text-emerald-200"
+                  : "bg-gray-100 dark:bg-[var(--bg-card)] border-gray-300 dark:border-[var(--border-light)] text-gray-900 dark:text-[var(--text-primary)]"
               }`}
             >
               <span
                 className={`h-2 w-2 rounded-full flex-shrink-0 ${
-                  doorIsOpen ? "bg-emerald-400" : "bg-gray-400 dark:bg-[var(--text-tertiary)]"
+                  doorIsOpen ? "bg-emerald-600 dark:bg-emerald-400" : "bg-gray-600 dark:bg-[var(--text-tertiary)]"
                 }`}
               />
               {doorIsOpen ? "SBLOCCATA" : "BLOCCATA"}
@@ -272,6 +259,6 @@ export default async function GuestPage({
           Prototipo: nessun servizio reale. Tutto mock.
         </div>
       </div>
-    </main>
+    </AppLayout>
   );
 }

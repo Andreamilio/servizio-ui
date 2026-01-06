@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { readSession } from "@/app/lib/session";
 import { getApt } from "@/app/lib/techstore";
+import { getUser } from "@/app/lib/userStore";
+import { AppLayout } from "@/app/components/layouts/AppLayout";
 import {
   getTechnicalSettings,
   updateHomeAssistantSettings,
@@ -34,30 +36,49 @@ export default async function TechSettingsPage({
     return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
   }
 
+  const techUser = me.userId ? getUser(me.userId) : null;
   const p = await Promise.resolve(params);
   const aptId = String(p?.aptId ?? "");
 
   if (!aptId) {
     return (
-      <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-4 lg:p-6">
-        <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
-          ← Back
-        </Link>
-        <div className="mt-3 text-lg font-semibold">AptId mancante</div>
-      </main>
+      <AppLayout 
+        role="tech"
+        userInfo={techUser ? {
+          userId: techUser.userId,
+          username: techUser.username,
+          profileImageUrl: techUser.profileImageUrl,
+        } : undefined}
+      >
+        <div className="p-4 lg:p-6">
+          <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
+            ← Back
+          </Link>
+          <div className="mt-3 text-lg font-semibold">AptId mancante</div>
+        </div>
+      </AppLayout>
     );
   }
 
   const apt = getApt(aptId);
   if (!apt) {
     return (
-      <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-4 lg:p-6">
-        <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
-          ← Back
-        </Link>
-        <div className="mt-3 text-lg font-semibold">Appartamento non trovato</div>
-        <div className="text-sm opacity-60">AptId: {aptId}</div>
-      </main>
+      <AppLayout 
+        role="tech"
+        userInfo={techUser ? {
+          userId: techUser.userId,
+          username: techUser.username,
+          profileImageUrl: techUser.profileImageUrl,
+        } : undefined}
+      >
+        <div className="p-4 lg:p-6">
+          <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
+            ← Back
+          </Link>
+          <div className="mt-3 text-lg font-semibold">Appartamento non trovato</div>
+          <div className="text-sm opacity-60">AptId: {aptId}</div>
+        </div>
+      </AppLayout>
     );
   }
 
@@ -169,7 +190,15 @@ export default async function TechSettingsPage({
   const tabs = allTabs.filter((tab) => requiredTabs.includes(tab.id as any));
 
   return (
-    <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-4 lg:p-6">
+    <AppLayout 
+      role="tech"
+      userInfo={techUser ? {
+        userId: techUser.userId,
+        username: techUser.username,
+        profileImageUrl: techUser.profileImageUrl,
+      } : undefined}
+    >
+      <div className="p-4 lg:p-6">
       <div className="max-w-4xl mx-auto space-y-4">
         <div className="lg:hidden">
           <Link className="text-sm opacity-70 hover:opacity-100" href={`/app/tech/apt/${aptId}`}>
@@ -411,6 +440,7 @@ export default async function TechSettingsPage({
           )}
         </div>
       </div>
-    </main>
+      </div>
+    </AppLayout>
   );
 }

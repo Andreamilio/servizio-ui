@@ -7,6 +7,8 @@ import { revalidatePath } from "next/cache";
 import { listStaysByApt } from "@/app/lib/staysStore";
 import { getApartment } from "@/app/lib/clientStore";
 import { listClients } from "@/app/lib/clientStore";
+import { getUser } from "@/app/lib/userStore";
+import { AppLayout } from "@/app/components/layouts/AppLayout";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -56,18 +58,26 @@ export default async function HostJobDetailPage({
   const jobId = String(resolvedParams?.jobId ?? "");
 
   const job = getJob(jobId);
+  const hostUser = me.userId ? getUser(me.userId) : null;
 
   if (!job) {
     return (
-      <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-6">
-        <div className="max-w-3xl mx-auto space-y-4">
+      <AppLayout 
+        role="host"
+        userInfo={hostUser ? {
+          userId: hostUser.userId,
+          username: hostUser.username,
+          profileImageUrl: hostUser.profileImageUrl,
+        } : undefined}
+      >
+        <div className="max-w-3xl mx-auto space-y-4 p-4 sm:p-6">
           <Link className="text-sm opacity-70 hover:opacity-100" href="/app/host">
             ← Torna alla dashboard
           </Link>
           <div className="text-lg font-semibold">Pulizia assegnata non trovata</div>
           <div className="text-sm opacity-60">Pulizia assegnata richiesta: {jobId}</div>
         </div>
-      </main>
+      </AppLayout>
     );
   }
 
@@ -119,8 +129,15 @@ export default async function HostJobDetailPage({
     : null;
 
   return (
-    <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-6">
-      <div className="max-w-3xl mx-auto space-y-4">
+    <AppLayout 
+      role="host"
+      userInfo={hostUser ? {
+        userId: hostUser.userId,
+        username: hostUser.username,
+        profileImageUrl: hostUser.profileImageUrl,
+      } : undefined}
+    >
+      <div className="max-w-3xl mx-auto space-y-4 p-4 sm:p-6">
         <div className="flex items-center justify-between">
           <Link
             className="text-sm opacity-70 hover:opacity-100"
@@ -320,7 +337,7 @@ export default async function HostJobDetailPage({
           </div>
         </div>
       </div>
-    </main>
+    </AppLayout>
   );
 }
 

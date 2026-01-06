@@ -18,6 +18,7 @@ import * as Store from "@/app/lib/store";
 import { door_open, door_close, door_getStateFromLog } from "@/app/lib/domain/doorStore";
 import { gate_open } from "@/app/lib/domain/gateStore";
 import { ProblemModal } from "./ProblemModal";
+import { AppLayout } from "@/app/components/layouts/AppLayout";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -92,8 +93,8 @@ export default async function CleanerJobPage({
 
   if (!job) {
     return (
-      <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-6">
-        <div className="max-w-2xl mx-auto space-y-3">
+      <AppLayout role="cleaner">
+        <div className="max-w-2xl mx-auto space-y-3 p-4 sm:p-6">
           <Link className="text-sm opacity-70 hover:opacity-100" href="/app/cleaner">
             ← Torna a Pulizie
           </Link>
@@ -103,7 +104,7 @@ export default async function CleanerJobPage({
             Store keys: {Array.from(cleaningStore.keys()).join(", ")}
           </div>
         </div>
-      </main>
+      </AppLayout>
     );
   }
 
@@ -114,14 +115,14 @@ export default async function CleanerJobPage({
   
   if (!hasAccess) {
     return (
-      <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-6">
-        <div className="max-w-2xl mx-auto space-y-3">
+      <AppLayout role="cleaner">
+        <div className="max-w-2xl mx-auto space-y-3 p-4 sm:p-6">
           <Link className="text-sm opacity-70 hover:opacity-100" href="/app/cleaner">
             ← Torna a Pulizie
           </Link>
           <div className="text-lg font-semibold">Non autorizzato</div>
         </div>
-      </main>
+      </AppLayout>
     );
   }
 
@@ -234,8 +235,8 @@ export default async function CleanerJobPage({
   }
 
   return (
-    <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-6">
-      <div className="max-w-2xl mx-auto space-y-4">
+    <AppLayout role="cleaner">
+      <div className="max-w-2xl mx-auto space-y-4 p-4 sm:p-6">
         <Link className="text-sm opacity-70 hover:opacity-100" href="/app/cleaner">
           ← Torna a Pulizie
         </Link>
@@ -263,8 +264,8 @@ export default async function CleanerJobPage({
           <div className="text-sm opacity-70">Checklist</div>
 
           {job.status === "todo" && (
-            <div className="rounded-xl bg-yellow-500/10 border border-yellow-400/20 p-3 mb-2">
-              <div className="text-sm text-yellow-200">
+            <div className="rounded-xl bg-yellow-500/10 dark:bg-yellow-500/10 border border-yellow-400/20 dark:border-yellow-400/20 p-3 mb-2">
+              <div className="text-sm" style={{ color: 'var(--color-black)' }}>
                 ⚠️ Avvia la pulizia assegnata per poter spuntare gli elementi della checklist
               </div>
             </div>
@@ -333,15 +334,15 @@ export default async function CleanerJobPage({
               <div
                 className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold ${
                   doorIsOpen
-                    ? "bg-emerald-50 dark:bg-emerald-500/20 border-emerald-200 dark:border-emerald-400/30 text-emerald-700 dark:text-emerald-200"
+                    ? "bg-emerald-50 border-emerald-200 text-emerald-700"
                     : "bg-[var(--bg-card)] border-[var(--border-light)] text-[var(--text-primary)]"
                 }`}
               >
                 <span
                   className={`h-2 w-2 rounded-full flex-shrink-0 ${
                     doorIsOpen 
-                      ? "bg-emerald-400" 
-                      : "bg-gray-400 dark:bg-[var(--text-tertiary)]"
+                      ? "bg-emerald-600 dark:bg-emerald-400" 
+                      : "bg-gray-600 dark:bg-[var(--text-tertiary)]"
                   }`}
                 />
                 {doorIsOpen ? "SBLOCCATA" : "BLOCCATA"}
@@ -463,6 +464,6 @@ export default async function CleanerJobPage({
           )}
         </div>
       </div>
-    </main>
+    </AppLayout>
   );
 }
