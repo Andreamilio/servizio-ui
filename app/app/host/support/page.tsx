@@ -63,12 +63,12 @@ export default async function HostSupportPage({
                             </Button>
                         </div>
 
-                        <div className="p-4 rounded-xl bg-amber-50 border-2 border-amber-500/30">
+                        <div className="p-4 rounded-xl bg-[var(--warning-bg-strong)] border-2 border-[var(--warning-border-strong)]">
                             <div className="flex items-start gap-3">
-                                <AlertCircle className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
+                                <AlertCircle className="w-5 h-5 text-[var(--warning-text-icon)] flex-shrink-0 mt-0.5" />
                                 <div className="text-sm">
-                                    <div className="font-semibold mb-1 text-amber-900">Emergenza</div>
-                                    <div className="text-gray-900">Nel prototipo non chiami nessuno. Nel reale: numeri/istruzioni.</div>
+                                    <div className="font-semibold mb-1 text-[var(--warning-text)]">Emergenza</div>
+                                    <div className="text-[var(--text-primary)]">Nel prototipo non chiami nessuno. Nel reale: numeri/istruzioni.</div>
                                 </div>
                             </div>
                         </div>

@@ -154,8 +154,8 @@ export default async function GuestPage({
           <div
             className={`rounded-2xl border p-3 text-sm ${
               toast.endsWith("_ok")
-                ? "bg-emerald-500/10 border-emerald-400/20 text-emerald-800"
-                : "bg-red-500/10 border-red-400/20 text-red-800"
+                ? "bg-[var(--toast-success-bg)] border-[var(--toast-success-border)] text-[var(--toast-success-text)]"
+                : "bg-[var(--toast-error-bg)] border-[var(--toast-error-border)] text-[var(--toast-error-text)]"
             }`}
           >
             {toast === "open_ok" && "Porta sbloccata ✅"}

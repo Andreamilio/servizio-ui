@@ -50,6 +50,28 @@
   --radius-lg: 16px;
   --radius-xl: 20px;
   --radius-full: 9999px;
+  
+  /* Success/Emerald Colors (for buttons) */
+  --success-button-bg: #d1fae5; /* emerald-50 */
+  --success-button-bg-hover: #a7f3d0; /* emerald-100 */
+  --success-button-border: #6ee7b7; /* emerald-200 */
+  --success-button-text: #065f46; /* emerald-700 */
+  
+  /* Warning/Amber Colors (for alert boxes) */
+  --warning-bg: rgba(245, 158, 11, 0.1); /* amber-500/10 */
+  --warning-bg-strong: #fef3c7; /* amber-50 */
+  --warning-border: rgba(245, 158, 11, 0.2); /* amber-400/20 */
+  --warning-border-strong: rgba(245, 158, 11, 0.3); /* amber-500/30 */
+  --warning-text: #78350f; /* amber-900 */
+  --warning-text-icon: #92400e; /* amber-700 */
+  
+  /* Toast/Notification Colors */
+  --toast-success-bg: rgba(16, 185, 129, 0.1); /* emerald-500/10 */
+  --toast-success-border: rgba(16, 185, 129, 0.2); /* emerald-400/20 */
+  --toast-success-text: #065f46; /* emerald-800 */
+  --toast-error-bg: rgba(239, 68, 68, 0.1); /* red-500/10 */
+  --toast-error-border: rgba(239, 68, 68, 0.2); /* red-400/20 */
+  --toast-error-text: #991b1b; /* red-800 */
 }
 
 /* Design System - Dark Mode */
@@ -95,6 +117,28 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.5);
+  
+  /* Success/Emerald Colors (for buttons) - Dark Mode */
+  --success-button-bg: #065f46; /* emerald-900 - dark green background */
+  --success-button-bg-hover: #047857; /* emerald-800 - slightly lighter on hover */
+  --success-button-border: #059669; /* emerald-700 - visible border */
+  --success-button-text: #a7f3d0; /* emerald-200 - light green text for contrast */
+  
+  /* Warning/Amber Colors (for alert boxes) - Dark Mode */
+  --warning-bg: rgba(251, 191, 36, 0.15); /* amber-400/15 for dark */
+  --warning-bg-strong: rgba(251, 191, 36, 0.2);
+  --warning-border: rgba(251, 191, 36, 0.25);
+  --warning-border-strong: rgba(251, 191, 36, 0.3);
+  --warning-text: #fde68a; /* amber-200 - lighter for better visibility in dark mode */
+  --warning-text-icon: #fbbf24; /* amber-400 */
+  
+  /* Toast/Notification Colors - Dark Mode */
+  --toast-success-bg: rgba(52, 211, 153, 0.15);
+  --toast-success-border: rgba(52, 211, 153, 0.25);
+  --toast-success-text: #6ee7b7; /* emerald-300 */
+  --toast-error-bg: rgba(248, 113, 113, 0.15);
+  --toast-error-border: rgba(248, 113, 113, 0.25);
+  --toast-error-text: #fca5a5; /* red-300 */
 }
 
 @theme inline {

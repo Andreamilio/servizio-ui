@@ -272,12 +272,12 @@ export default async function TechAptPage({
             </div>
 
             {apt.door === "unknown" && (
-              <div className="col-span-full mt-3 rounded-xl bg-amber-500/10 border border-amber-400/20 p-3">
+              <div className="col-span-full mt-3 rounded-xl bg-[var(--warning-bg)] border border-[var(--warning-border)] p-3">
                 <div className="flex items-start gap-2">
-                  <span className="text-amber-700">⚠️</span>
+                  <span className="text-[var(--warning-text-icon)]">⚠️</span>
                   <div className="flex-1">
-                    <div className="text-sm font-semibold text-amber-900">Stato porta sconosciuto</div>
-                    <div className="text-xs text-gray-900 mt-1">
+                    <div className="text-sm font-semibold text-[var(--warning-text)]">Stato porta sconosciuto</div>
+                    <div className="text-xs text-[var(--text-primary)] mt-1">
                       Non ci sono eventi nel log per questo appartamento. Lo stato della porta verrà aggiornato quando ci sono eventi di apertura/chiusura.
                     </div>
                   </div>
@@ -312,38 +312,22 @@ export default async function TechAptPage({
 
           <div className="space-y-4">
             {/* Azioni principali: Porta e Portone */}
-            <div className="grid grid-cols-2 gap-3">
-              {apt.door === "unlocked" ? (
-                <>
-                  <form action={actCloseDoor}>
-                    <button className="w-full rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-4 py-2 font-semibold text-sm">
-                      Chiudi porta
-                    </button>
-                  </form>
-                  <form action={actOpenDoor}>
-                    <button className="w-full rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 px-4 py-2 font-semibold text-sm">
-                      Apri porta
-                    </button>
-                  </form>
-                </>
-              ) : (
-                <>
-                  <form action={actOpenDoor}>
-                    <button className="w-full rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 px-4 py-2 font-semibold text-sm">
-                      Apri porta
-                    </button>
-                  </form>
-                  <form action={actCloseDoor}>
-                    <button className="w-full rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-4 py-2 font-semibold text-sm">
-                      Chiudi porta
-                    </button>
-                  </form>
-                </>
-              )}
-            </div>
+            {apt.door === "unlocked" ? (
+              <form action={actCloseDoor}>
+                <button className="w-full rounded-xl bg-[var(--success-button-bg)] hover:bg-[var(--success-button-bg-hover)] border border-[var(--success-button-border)] text-[var(--success-button-text)] px-4 py-2 font-semibold text-sm">
+                  Chiudi porta
+                </button>
+              </form>
+            ) : (
+              <form action={actOpenDoor}>
+                <button className="w-full rounded-xl bg-[var(--success-button-bg)] hover:bg-[var(--success-button-bg-hover)] border border-[var(--success-button-border)] text-[var(--success-button-text)] px-4 py-2 font-semibold text-sm">
+                  Apri porta
+                </button>
+              </form>
+            )}
 
             <form action={actOpenGate}>
-              <button className="w-full rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 px-4 py-2 font-semibold text-sm">
+              <button className="w-full rounded-xl bg-[var(--success-button-bg)] hover:bg-[var(--success-button-bg-hover)] border border-[var(--success-button-border)] text-[var(--success-button-text)] px-4 py-2 font-semibold text-sm">
                 Apri portone
               </button>
             </form>
