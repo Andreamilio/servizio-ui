@@ -69,16 +69,28 @@ export function PushNotificationToggle() {
       }
       const { publicKey } = await vapidRes.json();
 
-      // 4. Converti VAPID key da base64 a Uint8Array
+      // 4. Elimina subscription esistente se presente (per evitare conflitti con VAPID key cambiata)
+      try {
+        const existingSubscription = await registration.pushManager.getSubscription();
+        if (existingSubscription) {
+          await existingSubscription.unsubscribe();
+          console.log("[PushNotificationToggle] Subscription esistente eliminata");
+        }
+      } catch (err) {
+        console.warn("[PushNotificationToggle] Errore eliminazione subscription esistente:", err);
+        // Continua comunque, potrebbe non essere critico
+      }
+
+      // 5. Converti VAPID key da base64 a Uint8Array
       const applicationServerKey = urlBase64ToUint8Array(publicKey);
 
-      // 5. Crea subscription
+      // 6. Crea nuova subscription
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: applicationServerKey as BufferSource,
       });
 
-      // 6. Invia subscription al server
+      // 7. Invia subscription al server
       const subData = {
         endpoint: subscription.endpoint,
         keys: {
