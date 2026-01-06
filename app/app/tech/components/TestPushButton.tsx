@@ -31,10 +31,19 @@ export function TestPushButton() {
         throw new Error(data.error || "Errore invio notifica");
       }
 
-      setResult({
-        success: true,
-        message: `Notifica inviata con successo a ${data.sent} dispositivo/i su ${data.total}`,
-      });
+      if (data.sent === 0) {
+        setResult({
+          success: false,
+          message: data.errors && data.errors.length > 0 
+            ? `Errore: ${data.errors[0]}` 
+            : "Nessuna notifica inviata. Verifica che le notifiche siano abilitate.",
+        });
+      } else {
+        setResult({
+          success: true,
+          message: `Notifica inviata con successo a ${data.sent} dispositivo/i su ${data.total}${data.failed > 0 ? ` (${data.failed} fallite)` : ''}`,
+        });
+      }
     } catch (error: any) {
       setResult({
         success: false,
