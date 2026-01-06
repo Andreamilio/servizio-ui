@@ -203,7 +203,7 @@ export default async function TechUsersPage({
                       type="text"
                       name="username"
                       required
-                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     />
                   </div>
 
@@ -213,7 +213,7 @@ export default async function TechUsersPage({
                       type="password"
                       name="password"
                       required
-                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     />
                   </div>
 
@@ -271,7 +271,7 @@ export default async function TechUsersPage({
                         name="username"
                         defaultValue={selectedUser!.username}
                         required
-                        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                       />
                     </div>
 
@@ -328,7 +328,7 @@ export default async function TechUsersPage({
                   </form>
 
                   <form action={handleUpdatePassword} className="space-y-4 p-4 rounded-xl bg-amber-500/5 border border-amber-400/10">
-                    <div className="text-sm font-semibold mb-2">Cambia Password</div>
+                    <div className="text-sm font-semibold mb-2 text-[var(--text-primary)]">Cambia Password</div>
                     <input type="hidden" name="userId" value={selectedUser!.userId} />
 
                     <div>
@@ -337,13 +337,13 @@ export default async function TechUsersPage({
                         type="password"
                         name="newPassword"
                         required
-                        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                       />
                     </div>
 
                     <button
                       type="submit"
-                      className="rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/30 px-4 py-2 font-semibold text-sm"
+                      className="rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/30 px-4 py-2 font-semibold text-sm text-[var(--accent-warning)]"
                     >
                       Aggiorna Password
                     </button>
@@ -384,15 +384,14 @@ export default async function TechUsersPage({
                         <div
                           className={`text-xs px-2 py-0.5 rounded border ${
                             user.role === "tech"
-                              ? "bg-[var(--pastel-blue)] border-[var(--border-light)] text-[var(--bg-card)] dark:bg-blue-500/20 dark:border-blue-400/30 dark:text-blue-200"
-                              : "bg-[var(--pastel-purple)] border-[var(--border-light)] text-[var(--bg-card)] dark:bg-purple-500/20 dark:border-purple-400/30 dark:text-purple-200"
+                              ? "bg-[var(--pastel-blue)] border-[var(--border-light)] text-[var(--accent-primary)]"
+                              : "bg-[var(--pastel-purple)] border-[var(--border-light)] text-purple-700"
                           }`}
-                          style={{ color: "var(--bg-card)" }}
                         >
                           {user.role.toUpperCase()}
                         </div>
                         {!user.enabled && (
-                          <div className="text-xs px-2 py-0.5 rounded bg-red-100 border border-[var(--border-light)] text-[var(--accent-error)] dark:bg-red-900/30 dark:border-red-500/30 dark:text-red-200">
+                          <div className="text-xs px-2 py-0.5 rounded bg-red-100 border border-[var(--border-light)] text-[var(--accent-error)]">
                             DISABILITATO
                           </div>
                         )}
@@ -425,7 +424,7 @@ export default async function TechUsersPage({
                           <input type="hidden" name="enabled" value="false" />
                           <button
                             type="submit"
-                            className="rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/30 px-3 py-1.5 font-semibold text-xs"
+                            className="rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/30 px-3 py-1.5 font-semibold text-xs text-[var(--accent-warning)]"
                           >
                             Disabilita
                           </button>

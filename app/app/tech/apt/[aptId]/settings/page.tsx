@@ -217,11 +217,11 @@ export default async function TechSettingsPage({
           </div>
 
           {enabledDevices.length === 0 && (
-            <div className="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-400/20 text-sm">
+            <div className="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-400/20 text-sm text-gray-900">
               ⚠️ Nessun device configurato. Configura prima i device nel{" "}
               <Link
                 href={`/app/tech/apt/${aptId}/devices?edit=1`}
-                className="underline text-cyan-400 hover:text-cyan-300"
+                className="underline text-cyan-600 hover:text-cyan-700"
               >
                 Device Package
               </Link>{" "}
@@ -245,7 +245,7 @@ export default async function TechSettingsPage({
                 href={`/app/tech/apt/${aptId}/settings?tab=${tab.id}`}
                 className={`px-4 py-2 text-sm font-medium transition ${
                   activeTab === tab.id
-                    ? "border-b-2 border-cyan-400 text-cyan-600 dark:text-cyan-300"
+                    ? "border-b-2 border-cyan-400 text-cyan-600"
                     : "opacity-60 hover:opacity-100"
                 }`}
               >
@@ -264,7 +264,7 @@ export default async function TechSettingsPage({
                   name="baseUrl"
                   defaultValue={settings.homeAssistant.baseUrl}
                   placeholder="http://homeassistant.local:8123"
-                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 />
               </div>
 
@@ -275,7 +275,7 @@ export default async function TechSettingsPage({
                   name="token"
                   defaultValue={settings.homeAssistant.token}
                   placeholder="Token"
-                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 />
               </div>
 
@@ -288,7 +288,7 @@ export default async function TechSettingsPage({
                     .join("\n")}
                   placeholder="switch.shelly_gate=relay_gate&#10;lock.tedee_101=smart_lock"
                   rows={6}
-                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500 font-mono text-sm"
+                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500 font-mono text-sm"
                 />
                 <div className="text-xs opacity-60 mt-1">
                   Formato: entity_id=device_type (es. switch.shelly_gate=relay_gate)
@@ -315,7 +315,7 @@ export default async function TechSettingsPage({
                   name="wireguardEndpoint"
                   defaultValue={settings.network.wireguardEndpoint}
                   placeholder="wg.example.com:51820"
-                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 />
               </div>
 
@@ -326,7 +326,7 @@ export default async function TechSettingsPage({
                   name="cloudflareEndpoint"
                   defaultValue={settings.network.cloudflareEndpoint}
                   placeholder="https://tunnel.example.com"
-                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 />
               </div>
 
@@ -337,7 +337,7 @@ export default async function TechSettingsPage({
                   name="healthCheckUrl"
                   defaultValue={settings.network.healthCheckUrl}
                   placeholder="https://health.example.com/check"
-                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 />
               </div>
 

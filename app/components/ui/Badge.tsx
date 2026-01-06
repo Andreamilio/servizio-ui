@@ -13,7 +13,7 @@ export function Badge({ variant = "default", size = "md", className = "", childr
     default: "bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--border-light)]",
     success: "bg-[var(--pastel-green)] text-[var(--accent-success)]",
     warning: "bg-[var(--pastel-amber)] text-[var(--accent-warning)]",
-    error: "bg-red-100 dark:bg-red-900/30 text-[var(--accent-error)]",
+    error: "bg-red-100 text-[var(--accent-error)]",
     info: "bg-[var(--pastel-blue)] text-[var(--accent-info)]",
   };
   

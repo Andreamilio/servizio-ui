@@ -21,9 +21,9 @@ import { Badge } from "@/app/components/ui/Badge";
 import { AppLayout } from "@/app/components/layouts/AppLayout";
 
 function badge(outcome: "ok" | "retrying" | "fail" | null) {
-  if (outcome === "ok") return { t: "Accesso disponibile", c: "bg-emerald-500/15 border-emerald-400/20 text-emerald-200" };
-  if (outcome === "fail") return { t: "Problema accesso", c: "bg-red-500/15 border-red-400/20 text-red-200" };
-  if (outcome === "retrying") return { t: "In corso…", c: "bg-yellow-500/15 border-yellow-400/20 text-yellow-200" };
+  if (outcome === "ok") return { t: "Accesso disponibile", c: "bg-emerald-500/15 border-emerald-400/20 text-emerald-900" };
+  if (outcome === "fail") return { t: "Problema accesso", c: "bg-red-500/15 border-red-400/20 text-red-900" };
+  if (outcome === "retrying") return { t: "In corso…", c: "bg-yellow-500/20 border-yellow-400/30 text-yellow-900" };
   return { t: "Pronto", c: "bg-[var(--bg-secondary)] border-[var(--border-light)] text-[var(--text-secondary)]" };
 }
 
@@ -154,8 +154,8 @@ export default async function GuestPage({
           <div
             className={`rounded-2xl border p-3 text-sm ${
               toast.endsWith("_ok")
-                ? "bg-emerald-500/10 dark:bg-emerald-500/10 border-emerald-400/20 dark:border-emerald-400/20 text-emerald-800 dark:text-emerald-200"
-                : "bg-red-500/10 dark:bg-red-500/10 border-red-400/20 dark:border-red-400/20 text-red-800 dark:text-red-200"
+                ? "bg-emerald-500/10 border-emerald-400/20 text-emerald-800"
+                : "bg-red-500/10 border-red-400/20 text-red-800"
             }`}
           >
             {toast === "open_ok" && "Porta sbloccata ✅"}
@@ -177,13 +177,13 @@ export default async function GuestPage({
             <div
               className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold ${
                 doorIsOpen
-                  ? "bg-emerald-50 dark:bg-emerald-500/20 border-emerald-200 dark:border-emerald-400/30 text-emerald-900 dark:text-emerald-200"
-                  : "bg-gray-100 dark:bg-[var(--bg-card)] border-gray-300 dark:border-[var(--border-light)] text-gray-900 dark:text-[var(--text-primary)]"
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+                  : "bg-gray-100 border-gray-300 text-gray-900"
               }`}
             >
               <span
                 className={`h-2 w-2 rounded-full flex-shrink-0 ${
-                  doorIsOpen ? "bg-emerald-600 dark:bg-emerald-400" : "bg-gray-600 dark:bg-[var(--text-tertiary)]"
+                  doorIsOpen ? "bg-emerald-600" : "bg-gray-600"
                 }`}
               />
               {doorIsOpen ? "SBLOCCATA" : "BLOCCATA"}

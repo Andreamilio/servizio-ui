@@ -327,7 +327,7 @@ export default async function StayDetailPage({
               <input type="hidden" name="stayId" value={stayId} />
               <button
                 type="submit"
-                className="whitespace-nowrap text-sm text-red-700 dark:text-red-200 hover:text-red-800 dark:hover:text-red-100 rounded-xl bg-red-500/10 dark:bg-red-500/20 border border-red-500/20 dark:border-red-500/30 px-3 py-1.5"
+                className="whitespace-nowrap text-sm text-red-700 hover:text-red-800 rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-1.5"
                 style={{ color: 'var(--accent-error)' }}
               >
                 Elimina prenotazione
@@ -1195,7 +1195,7 @@ export default async function StayDetailPage({
             <div className="space-y-3">
               {jobs.map((job: CleaningJob) => {
                 const statusColors: Record<CleaningStatus, string> = {
-                  todo: "bg-yellow-50 border-yellow-200 text-yellow-700",
+                  todo: "bg-yellow-100 border-yellow-300 text-yellow-900",
                   in_progress: "bg-blue-50 border-blue-200 text-blue-700",
                   done: "bg-green-50 border-green-200 text-green-700",
                   problem: "bg-red-50 border-red-200 text-red-700",

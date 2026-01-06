@@ -2,6 +2,7 @@
 
 /* Design System - Light Mode (Default) */
 :root {
+  color-scheme: light;
   /* Backgrounds */
   --bg-primary: #ffffff;
   --bg-secondary: #f8f9fa;
@@ -53,6 +54,7 @@
 
 /* Design System - Dark Mode */
 [data-theme="dark"] {
+  color-scheme: dark;
   /* Backgrounds */
   --bg-primary: #0f172a;
   --bg-secondary: #1e293b;
@@ -102,6 +104,14 @@
   --font-mono: var(--font-geist-mono);
 }
 
+html {
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
 body {
   background: var(--bg-primary);
   color: var(--text-primary);
@@ -112,4 +122,15 @@ body {
 /* Safe area insets for mobile devices */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Padding bottom for bottom navigation with safe area */
+.pb-bottom-nav {
+  padding-bottom: calc(4rem + max(env(safe-area-inset-bottom, 0), 16px));
+}
+
+@media (min-width: 1024px) {
+  .pb-bottom-nav {
+    padding-bottom: 0;
+  }
 }

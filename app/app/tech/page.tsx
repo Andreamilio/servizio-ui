@@ -11,8 +11,8 @@ import { ClientAccordion } from "./components/ClientAccordion";
 
 function pillStatus(s: "online" | "offline") {
   return s === "online"
-    ? { dot: "bg-emerald-500", text: "ONLINE", box: "bg-[var(--pastel-green)] border-[var(--border-light)] text-[var(--accent-success)] dark:bg-emerald-500/20 dark:border-emerald-500/30 dark:text-emerald-400" }
-    : { dot: "bg-red-500", text: "OFFLINE", box: "bg-red-100 border-[var(--border-light)] text-[var(--accent-error)] dark:bg-red-900/30 dark:border-red-500/30 dark:text-red-400" };
+    ? { dot: "bg-emerald-500", text: "ONLINE", box: "bg-[var(--pastel-green)] border-[var(--border-light)] text-[var(--accent-success)]" }
+    : { dot: "bg-red-500", text: "OFFLINE", box: "bg-red-100 border-[var(--border-light)] text-[var(--accent-error)]" };
 }
 
 function pillNet(n: "main" | "backup") {

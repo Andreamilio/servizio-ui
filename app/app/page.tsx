@@ -12,12 +12,12 @@ function pillStatus(s: "online" | "offline") {
     ? {
         dot: "bg-emerald-400",
         text: "ONLINE",
-        box: "bg-[var(--pastel-green)] border-[var(--border-light)] text-[var(--accent-success)] dark:bg-emerald-500/20 dark:border-emerald-400/30 dark:text-emerald-200",
+        box: "bg-[var(--pastel-green)] border-[var(--border-light)] text-[var(--accent-success)]",
       }
     : {
         dot: "bg-red-400",
         text: "OFFLINE",
-        box: "bg-red-100 border-[var(--border-light)] text-[var(--accent-error)] dark:bg-red-500/10 dark:border-red-400/20 dark:text-red-200",
+        box: "bg-red-100 border-[var(--border-light)] text-[var(--accent-error)]",
       };
 }
 

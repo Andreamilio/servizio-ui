@@ -264,8 +264,8 @@ export default async function CleanerJobPage({
           <div className="text-sm opacity-70">Checklist</div>
 
           {job.status === "todo" && (
-            <div className="rounded-xl bg-yellow-500/10 dark:bg-yellow-500/10 border border-yellow-400/20 dark:border-yellow-400/20 p-3 mb-2">
-              <div className="text-sm" style={{ color: 'var(--color-black)' }}>
+            <div className="rounded-xl bg-yellow-500/10 border border-yellow-400/20 p-3 mb-2">
+              <div className="text-sm text-gray-900">
                 ⚠️ Avvia la pulizia assegnata per poter spuntare gli elementi della checklist
               </div>
             </div>
@@ -341,8 +341,8 @@ export default async function CleanerJobPage({
                 <span
                   className={`h-2 w-2 rounded-full flex-shrink-0 ${
                     doorIsOpen 
-                      ? "bg-emerald-600 dark:bg-emerald-400" 
-                      : "bg-gray-600 dark:bg-[var(--text-tertiary)]"
+                      ? "bg-emerald-600" 
+                      : "bg-gray-600"
                   }`}
                 />
                 {doorIsOpen ? "SBLOCCATA" : "BLOCCATA"}
@@ -429,7 +429,7 @@ export default async function CleanerJobPage({
                   <span className="rounded-xl bg-gray-500/20 border border-gray-400/30 opacity-50 cursor-not-allowed px-4 py-2 font-semibold inline-block">
                     Completa (checklist incompleta)
                   </span>
-                  <div className="text-xs text-yellow-300 opacity-80">
+                  <div className="text-xs text-[var(--accent-warning)] opacity-90">
                     ⚠️ Devi completare tutti gli item della checklist prima di completare la pulizia assegnata
                   </div>
                 </div>
@@ -438,7 +438,7 @@ export default async function CleanerJobPage({
                   <span className="rounded-xl bg-gray-500/20 border border-gray-400/30 opacity-50 cursor-not-allowed px-4 py-2 font-semibold inline-block">
                     Completa (foto finali obbligatorie)
                   </span>
-                  <div className="text-xs text-yellow-300 opacity-80">
+                  <div className="text-xs text-[var(--accent-warning)] opacity-90">
                     ⚠️ Devi caricare le foto finali prima di completare la pulizia assegnata
                   </div>
                 </div>

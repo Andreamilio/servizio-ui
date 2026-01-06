@@ -274,10 +274,10 @@ export default async function TechAptPage({
             {apt.door === "unknown" && (
               <div className="col-span-full mt-3 rounded-xl bg-amber-500/10 border border-amber-400/20 p-3">
                 <div className="flex items-start gap-2">
-                  <span className="text-amber-400">⚠️</span>
+                  <span className="text-amber-700">⚠️</span>
                   <div className="flex-1">
-                    <div className="text-sm font-semibold text-amber-200">Stato porta sconosciuto</div>
-                    <div className="text-xs opacity-80 mt-1">
+                    <div className="text-sm font-semibold text-amber-900">Stato porta sconosciuto</div>
+                    <div className="text-xs text-gray-900 mt-1">
                       Non ci sono eventi nel log per questo appartamento. Lo stato della porta verrà aggiornato quando ci sono eventi di apertura/chiusura.
                     </div>
                   </div>

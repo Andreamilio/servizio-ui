@@ -295,7 +295,7 @@ export default async function TechClientsPage({
                     name="name"
                     defaultValue={selectedClient!.name}
                     required
-                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   />
                 </div>
                 <div className="flex gap-3 pt-4 border-t border-[var(--border-light)]">
@@ -420,7 +420,7 @@ export default async function TechClientsPage({
                     name="name"
                     defaultValue={selectedApartment!.name}
                     required
-                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   />
                 </div>
                 <div>
@@ -429,7 +429,7 @@ export default async function TechClientsPage({
                     type="text"
                     name="addressShort"
                     defaultValue={selectedApartment!.addressShort ?? ""}
-                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   />
                 </div>
                 <div className="text-xs opacity-60 mt-2">
@@ -482,25 +482,25 @@ export default async function TechClientsPage({
                 </div>
               </div>
 
-              <div>
-                <div className="flex items-center justify-between">
+              <div className="mt-4">
+                <div className="flex items-center justify-between mb-3">
                   <div className="text-sm font-semibold">Appartamenti ({listApartmentsByClient(selectedClient!.clientId).length})</div>
                   <Link
                     href={`/app/tech/clients?action=createApt&clientId=${selectedClient!.clientId}`}
-                    className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-4 py-2 font-semibold text-sm"
+                    className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-4 py-2 font-semibold text-sm text-cyan-700"
                   >
                     + Nuovo Appartamento
                   </Link>
                 </div>
 
-                <div className="space-y-2 -mt-2">
+                <div className="space-y-2">
                 {listApartmentsByClient(selectedClient!.clientId).length === 0 ? (
                   <div className="text-sm opacity-60 py-8 text-center">Nessun appartamento configurato</div>
                 ) : (
                   listApartmentsByClient(selectedClient!.clientId).map((apt) => {
                     const statusColors = {
                       ok: "bg-emerald-50 border-emerald-200 text-emerald-700",
-                      warn: "bg-amber-50 border-amber-200 text-amber-700",
+                      warn: "bg-amber-100 border-amber-300 text-amber-900",
                       crit: "bg-red-50 border-red-200 text-red-700",
                     };
                     return (

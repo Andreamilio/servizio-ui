@@ -223,7 +223,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                                             ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
                                             : doorUi.tone === 'closed'
                                             ? 'bg-[var(--bg-card)] border-[var(--border-light)] text-[var(--text-primary)]'
-                                            : 'bg-yellow-50 border-yellow-200 text-yellow-700'
+                                            : 'bg-yellow-100 border-yellow-300 text-yellow-900'
                                     }`}>
                                     <span className={`h-2 w-2 rounded-full ${doorUi.tone === 'open' ? 'bg-emerald-400' : doorUi.tone === 'closed' ? 'bg-[var(--text-tertiary)]' : 'bg-yellow-400'}`} />
                                     {doorUi.label}

@@ -16,14 +16,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("light");
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-    // Leggi dal localStorage o usa light come default
-    const savedTheme = localStorage.getItem("theme") as Theme | null;
-    const initialTheme = savedTheme || "light";
-    setThemeState(initialTheme);
-    applyTheme(initialTheme);
-  }, []);
+  const updateColorScheme = (newTheme: Theme) => {
+    // Aggiorna il meta tag color-scheme per Safari iOS
+    let metaColorScheme = document.querySelector('meta[name="color-scheme"]');
+    if (!metaColorScheme) {
+      metaColorScheme = document.createElement('meta');
+      metaColorScheme.setAttribute('name', 'color-scheme');
+      document.head.appendChild(metaColorScheme);
+    }
+    metaColorScheme.setAttribute("content", newTheme);
+  };
 
   const applyTheme = (newTheme: Theme) => {
     const root = document.documentElement;
@@ -32,7 +34,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } else {
       root.removeAttribute("data-theme");
     }
+    // Aggiorna anche il meta tag color-scheme per Safari iOS
+    updateColorScheme(newTheme);
   };
+
+  useEffect(() => {
+    setMounted(true);
+    // Leggi dal localStorage o usa light come default
+    const savedTheme = localStorage.getItem("theme") as Theme | null;
+    const initialTheme = savedTheme || "light";
+    setThemeState(initialTheme);
+    applyTheme(initialTheme);
+  }, []);
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);

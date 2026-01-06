@@ -110,7 +110,7 @@ export default async function HostJobDetailPage({
   }
 
   const statusColors: Record<string, string> = {
-    todo: "bg-yellow-50 border-yellow-200 text-yellow-700",
+    todo: "bg-yellow-100 border-yellow-300 text-yellow-900",
     in_progress: "bg-blue-50 border-blue-200 text-blue-700",
     done: "bg-green-50 border-green-200 text-green-700",
     problem: "bg-red-50 border-red-200 text-red-700",

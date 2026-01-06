@@ -24,8 +24,8 @@ export default function LoginPage({ searchParams }: any) {
             </div>
 
             {err === "pin" && (
-              <div className="rounded-xl bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 p-4">
-                <p className="text-sm text-red-600 dark:text-red-400 font-medium">PIN non valido o scaduto</p>
+              <div className="rounded-xl bg-red-50 border border-red-200 p-4">
+                <p className="text-sm text-red-600 font-medium">PIN non valido o scaduto</p>
               </div>
             )}
 
