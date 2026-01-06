@@ -75,7 +75,7 @@ export function PushNotificationToggle() {
       // 5. Crea subscription
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey,
+        applicationServerKey: applicationServerKey as BufferSource,
       });
 
       // 6. Invia subscription al server
