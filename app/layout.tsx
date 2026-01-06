@@ -51,6 +51,24 @@ export default function RootLayout({
             `,
           }}
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                      console.log('[SW] Service Worker registrato con successo:', registration.scope);
+                    })
+                    .catch(function(error) {
+                      console.error('[SW] Errore registrazione Service Worker:', error);
+                    });
+                });
+              })();
+            `,
+          }}
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

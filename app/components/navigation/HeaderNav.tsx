@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { Home, Users, Building2, Calendar, Sparkles, HelpCircle, Settings, User } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
+import { PushNotificationToggle } from "../PushNotificationToggle";
 import { Button } from "../ui/Button";
 import { UserProfile } from "@/app/app/components/UserProfile";
 import type { Role } from "@/app/lib/store";
@@ -232,6 +233,7 @@ export function HeaderNav({ role, userInfo }: HeaderNavProps) {
 
           {/* Right Side Actions */}
           <div className="flex items-center gap-2">
+            <PushNotificationToggle />
             <ThemeToggle />
             <form action="/api/auth/logout" method="post">
               <Button variant="ghost" size="sm" type="submit" className="hidden sm:flex">

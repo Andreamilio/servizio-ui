@@ -8,6 +8,7 @@ import { getUser } from "@/app/lib/userStore";
 import { AppLayout } from "@/app/components/layouts/AppLayout";
 import { UserProfile } from "../components/UserProfile";
 import { ClientAccordion } from "./components/ClientAccordion";
+import { TestPushButton } from "./components/TestPushButton";
 
 function pillStatus(s: "online" | "offline") {
   return s === "online"
@@ -166,6 +167,17 @@ export default async function TechPage({
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] overflow-hidden">
+            <div className="p-4 border-b border-[var(--border-light)]">
+              <div className="text-sm font-semibold">PUSH NOTIFICATIONS</div>
+              <div className="text-xs opacity-60 mt-1">Test invio notifiche</div>
+            </div>
+
+            <div className="p-4">
+              <TestPushButton />
             </div>
           </div>
         </aside>
