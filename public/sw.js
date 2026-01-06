@@ -32,6 +32,18 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title || 'Notifica', options)
   );
+  
+  // Invia anche un messaggio al client per gestione quando app è aperta (iOS)
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      clients.forEach((client) => {
+        client.postMessage({
+          type: 'PUSH_NOTIFICATION',
+          data: { title: data.title, body: data.body, tag: data.tag }
+        });
+      });
+    })
+  );
 });
 
 self.addEventListener('notificationclick', (event) => {

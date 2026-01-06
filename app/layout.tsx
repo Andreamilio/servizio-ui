@@ -69,6 +69,46 @@ export default function RootLayout({
             `,
           }}
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                if (typeof window === 'undefined') return;
+                
+                // Listener per messaggi dal service worker (quando app è aperta su iOS)
+                function setupPushListener() {
+                  if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.ready.then(function(registration) {
+                      // Listener per messaggi dal service worker
+                      navigator.serviceWorker.addEventListener('message', function(event) {
+                        if (event.data && event.data.type === 'PUSH_NOTIFICATION') {
+                          const { title, body } = event.data.data;
+                          
+                          // Mostra notifica solo se permessi sono stati concessi
+                          if (Notification.permission === 'granted') {
+                            new Notification(title || 'Notifica', {
+                              body: body || '',
+                              icon: '/favicon.ico',
+                              badge: '/favicon.ico',
+                              tag: event.data.data.tag || 'default',
+                            });
+                          }
+                        }
+                      });
+                    });
+                  }
+                }
+                
+                // Setup quando DOM è pronto
+                if (document.readyState === 'loading') {
+                  document.addEventListener('DOMContentLoaded', setupPushListener);
+                } else {
+                  setupPushListener();
+                }
+              })();
+            `,
+          }}
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
