@@ -45,12 +45,12 @@ export default async function GuestSupportPage() {
               </Button>
             </div>
 
-            <div className="p-4 rounded-xl bg-yellow-500/10 border-2 border-yellow-500/30">
+            <div className="p-4 rounded-xl bg-[var(--warning-bg-strong)] border-2 border-[var(--warning-border-strong)]">
               <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-yellow-700 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-[var(--warning-text-icon)] flex-shrink-0 mt-0.5" />
                 <div className="text-sm">
-                  <div className="font-semibold mb-1 text-yellow-900">Emergenza</div>
-                  <div className="text-gray-900">Nel prototipo non chiami nessuno. Nel reale: numeri/istruzioni.</div>
+                  <div className="font-semibold mb-1 text-[var(--warning-text)]">Emergenza</div>
+                  <div className="text-[var(--text-primary)]">Nel prototipo non chiami nessuno. Nel reale: numeri/istruzioni.</div>
                 </div>
               </div>
             </div>
