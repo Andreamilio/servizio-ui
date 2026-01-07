@@ -68,8 +68,11 @@ export async function POST(req: Request) {
             },
             payload,
             {
-              // Opzioni aggiuntive per Apple
-              headers: isApple ? {} : undefined,
+              // Header richiesto da iOS 13+ per notifiche push
+              headers: isApple ? {
+                'apns-push-type': 'alert',
+                'apns-priority': '10',
+              } : undefined,
             }
           );
           console.log("[push/test] Notifica inviata con successo a:", sub.endpoint.substring(0, 50));
@@ -81,11 +84,14 @@ export async function POST(req: Request) {
             message: error.message,
             body: error.body,
           });
-          // Se la subscription è invalida (410 Gone), la rimuoviamo
-          if (error.statusCode === 410 || error.statusCode === 404) {
+          // Se la subscription è invalida o ha JWT token errato, la rimuoviamo
+          // 403 BadJwtToken = subscription creata con keys diverse
+          // 410 Gone = subscription non esiste più
+          // 404 = subscription non trovata
+          if (error.statusCode === 410 || error.statusCode === 404 || error.statusCode === 403) {
             const { deleteSubscription } = await import("@/app/lib/pushStore");
             deleteSubscription(sub.endpoint);
-            console.log("[push/test] Subscription rimossa (invalida):", sub.endpoint.substring(0, 50));
+            console.log("[push/test] Subscription rimossa (invalida/BadJwtToken):", sub.endpoint.substring(0, 50));
           }
           return { 
             success: false, 

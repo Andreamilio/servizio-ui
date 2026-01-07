@@ -55,8 +55,8 @@ export function getVapidPrivateKey(): string {
  * Configura webpush con le VAPID keys.
  */
 export function configureWebPush(): void {
-  // Usa un formato email più standard per Apple/iOS
-  const contact = process.env.VAPID_CONTACT_EMAIL || "mailto:admin@servizio.local";
+  // Email VAPID per Apple/iOS - deve essere valida e reale
+  const contact = process.env.VAPID_CONTACT_EMAIL || "mailto:andrea@3sy.it";
   webpush.setVapidDetails(contact, vapidKeys!.publicKey, vapidKeys!.privateKey);
   console.log("[vapidKeys] WebPush configurato con contact:", contact);
 }

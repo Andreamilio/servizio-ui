@@ -52,3 +52,12 @@ export function getSubscription(
   return subscriptionStore.get(endpoint);
 }
 
+/**
+ * Elimina tutte le subscription (utile per reset/prototipo).
+ */
+export function deleteAllSubscriptions(): number {
+  const count = subscriptionStore.size;
+  subscriptionStore.clear();
+  return count;
+}
+
