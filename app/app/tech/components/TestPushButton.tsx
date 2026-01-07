@@ -4,8 +4,32 @@ import { useState } from "react";
 import { Button } from "@/app/components/ui/Button";
 import { Bell } from "lucide-react";
 
+const notificationTypes = [
+  {
+    id: "porta-aperta",
+    title: "easy stay",
+    message: "porta aperta",
+  },
+  {
+    id: "porta-chiusa",
+    title: "easy stay",
+    message: "porta chiusa",
+  },
+  {
+    id: "fumo",
+    title: "easy stay",
+    message: "rilevato fumo nell'appartamento",
+  },
+  {
+    id: "riscaldamento",
+    title: "easy stay",
+    message: "rilevato riscaldamento acceso con ospite fuori",
+  },
+] as const;
+
 export function TestPushButton() {
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedType, setSelectedType] = useState<string>(notificationTypes[0].id);
   const [result, setResult] = useState<{
     success: boolean;
     message: string;
@@ -15,13 +39,15 @@ export function TestPushButton() {
     setIsLoading(true);
     setResult(null);
 
+    const notification = notificationTypes.find((n) => n.id === selectedType) || notificationTypes[0];
+
     try {
       const res = await fetch("/api/push/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: "Test Push Notification",
-          message: "Questa è una notifica di test da Servizio UI!",
+          title: notification.title,
+          message: notification.message,
         }),
       });
 
@@ -56,8 +82,23 @@ export function TestPushButton() {
     }
   }
 
+  const selectedNotification = notificationTypes.find((n) => n.id === selectedType) || notificationTypes[0];
+
   return (
     <div className="space-y-2">
+      <select
+        value={selectedType}
+        onChange={(e) => setSelectedType(e.target.value)}
+        disabled={isLoading}
+        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {notificationTypes.map((notif) => (
+          <option key={notif.id} value={notif.id}>
+            {notif.message}
+          </option>
+        ))}
+      </select>
+      
       <Button
         onClick={handleTestPush}
         disabled={isLoading}
@@ -67,7 +108,7 @@ export function TestPushButton() {
         iconPosition="left"
         className="w-full"
       >
-        {isLoading ? "Invio in corso..." : "Test Push"}
+        {isLoading ? "Invio in corso..." : `Invia: ${selectedNotification.message}`}
       </Button>
       {result && (
         <div

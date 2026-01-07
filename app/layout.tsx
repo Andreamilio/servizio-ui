@@ -75,24 +75,17 @@ export default function RootLayout({
               (function() {
                 if (typeof window === 'undefined') return;
                 
-                // Listener per messaggi dal service worker (quando app è aperta su iOS)
+                // Listener per messaggi dal service worker (solo per logging/debug)
+                // Il service worker mostra già la notifica automaticamente, non serve duplicarla
                 function setupPushListener() {
                   if ('serviceWorker' in navigator) {
                     navigator.serviceWorker.ready.then(function(registration) {
-                      // Listener per messaggi dal service worker
+                      // Listener per messaggi dal service worker (solo logging)
                       navigator.serviceWorker.addEventListener('message', function(event) {
                         if (event.data && event.data.type === 'PUSH_NOTIFICATION') {
-                          const { title, body } = event.data.data;
-                          
-                          // Mostra notifica solo se permessi sono stati concessi
-                          if (Notification.permission === 'granted') {
-                            new Notification(title || 'Notifica', {
-                              body: body || '',
-                              icon: '/favicon.ico',
-                              badge: '/favicon.ico',
-                              tag: event.data.data.tag || 'default',
-                            });
-                          }
+                          console.log('[Client] Notifica push ricevuta dal service worker:', event.data.data);
+                          // Non mostriamo la notifica qui perché il service worker la mostra già
+                          // Questo evita notifiche duplicate
                         }
                       });
                     });
