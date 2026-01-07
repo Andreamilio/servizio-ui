@@ -127,14 +127,21 @@ export function HeaderNav({ role, userInfo }: HeaderNavProps) {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Profile Icon / Logo */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
             {userInfo && userInfo.userId && (role === "host" || role === "tech") ? (
-              <UserProfile
-                userId={userInfo.userId}
-                username={userInfo.username || ""}
-                role={role}
-                profileImageUrl={userInfo.profileImageUrl}
-              />
+              <>
+                <img 
+                  src="/easy-stay-192.png" 
+                  alt="easy stay" 
+                  className="w-10 h-10 object-contain"
+                />
+                <UserProfile
+                  userId={userInfo.userId}
+                  username={userInfo.username || ""}
+                  role={role}
+                  profileImageUrl={userInfo.profileImageUrl}
+                />
+              </>
             ) : null}
           </div>
 

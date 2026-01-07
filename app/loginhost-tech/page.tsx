@@ -14,14 +14,23 @@ export default function LoginHostTechPage({ searchParams }: { searchParams?: { e
       <div className="w-full max-w-md">
         <Card variant="elevated" className="w-full">
           <CardBody className="space-y-6">
-            <div className="text-center space-y-2">
+            <div className="text-center space-y-4">
               <div className="flex justify-center">
-                <div className="p-3 rounded-2xl bg-[var(--pastel-purple)]">
-                  <User className="w-8 h-8 text-[var(--accent-primary)]" />
-                </div>
+                <img 
+                  src="/easy-stay-192.png" 
+                  alt="easy stay" 
+                  className="w-24 h-24 object-contain"
+                />
               </div>
-              <h1 className="text-2xl font-semibold text-[var(--text-primary)]">Accesso Host / Tech</h1>
-              <p className="text-sm text-[var(--text-secondary)]">Inserisci le tue credenziali per accedere</p>
+              <div className="text-center space-y-2">
+                <div className="flex justify-center">
+                  <div className="p-3 rounded-2xl bg-[var(--pastel-purple)]">
+                    <User className="w-8 h-8 text-[var(--accent-primary)]" />
+                  </div>
+                </div>
+                <h1 className="text-2xl font-semibold text-[var(--text-primary)]">Accesso Host / Tech</h1>
+                <p className="text-sm text-[var(--text-secondary)]">Inserisci le tue credenziali per accedere</p>
+              </div>
             </div>
 
             {err === "auth" && (
@@ -55,10 +64,17 @@ export default function LoginHostTechPage({ searchParams }: { searchParams?: { e
               </Button>
             </form>
 
-            <div className="pt-4 border-t border-[var(--border-light)]">
+            <div className="pt-4 border-t border-[var(--border-light)] space-y-4">
               <p className="text-center text-sm text-[var(--text-secondary)]">
                 Demo: <span className="font-mono">tech/tech123</span> oppure <span className="font-mono">host/host123</span>
               </p>
+              <div className="flex justify-center pt-2">
+                <img 
+                  src="/easy-stay-192.png" 
+                  alt="easy stay" 
+                  className="w-16 h-16 opacity-60 object-contain"
+                />
+              </div>
             </div>
           </CardBody>
         </Card>
