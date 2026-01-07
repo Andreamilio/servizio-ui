@@ -115,39 +115,6 @@ export function BottomNav({ role }: BottomNavProps) {
   const allItems = [...items, ...conditionalItems];
   const navRef = useRef<HTMLElement>(null);
 
-  // #region agent log
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    // Create a temporary element to measure safe-area-inset-bottom
-    const testEl = document.createElement('div');
-    testEl.style.position = 'fixed';
-    testEl.style.bottom = '0';
-    testEl.style.left = '0';
-    testEl.style.width = '1px';
-    testEl.style.height = '1px';
-    testEl.style.paddingBottom = 'env(safe-area-inset-bottom, 0px)';
-    testEl.style.visibility = 'hidden';
-    document.body.appendChild(testEl);
-    const computedPadding = window.getComputedStyle(testEl).paddingBottom;
-    document.body.removeChild(testEl);
-    
-    const viewportMeta = document.querySelector('meta[name="viewport"]');
-    const viewportContent = viewportMeta?.getAttribute('content') || '';
-    const hasViewportFit = viewportContent.includes('viewport-fit=cover');
-    const navEl = navRef.current;
-    const navPaddingBottom = navEl ? window.getComputedStyle(navEl).paddingBottom : '0px';
-    const navHeight = navEl?.offsetHeight || 0;
-    const navBottom = navEl ? navEl.getBoundingClientRect().bottom : 0;
-    const windowHeight = window.innerHeight;
-    const isStandalone = (window.navigator as any).standalone === true || window.matchMedia('(display-mode: standalone)').matches;
-    const visualViewport = (window as any).visualViewport;
-    const visualViewportHeight = visualViewport?.height || windowHeight;
-    const safeAreaDiff = windowHeight - visualViewportHeight;
-    
-    fetch('http://127.0.0.1:7242/ingest/3df387f4-627b-438e-a378-69576d8b319f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'BottomNav.tsx:useEffect',message:'Safe area debug v2',data:{safeAreaBottom:computedPadding,viewportFit:hasViewportFit,navPaddingBottom,navHeight,navBottom,windowHeight,visualViewportHeight,safeAreaDiff,isStandalone,userAgent:navigator.userAgent},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'A'})}).catch(()=>{});
-  }, []);
-  // #endregion
-
   // Nascondi la tab bar sulla dashboard host principale (senza apt selezionato)
   if (role === "host" && pathname === "/app/host" && !searchParams.get('apt')) {
     return null;
