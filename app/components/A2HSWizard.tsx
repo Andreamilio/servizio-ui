@@ -57,24 +57,11 @@ export function A2HSWizard() {
   const [platform, setPlatform] = useState<Platform>("android");
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
 
-  // Inizializza piattaforma al mount (solo se non già visto, per performance)
+  // Inizializza piattaforma al mount
   useEffect(() => {
-    if (hasSeenA2HS()) return; // Skip se già visto
-    
     const saved = getSavedPlatform();
     const detected = detectPlatform();
     setPlatform(saved || detected);
-  }, []);
-
-  // Auto-apertura se non visto
-  useEffect(() => {
-    if (!hasSeenA2HS()) {
-      setIsOpen(true);
-      // Inizializza piattaforma quando si apre
-      const saved = getSavedPlatform();
-      const detected = detectPlatform();
-      setPlatform(saved || detected);
-    }
   }, []);
 
   // Listener CustomEvent per apertura programmatica
