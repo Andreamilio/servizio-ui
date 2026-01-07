@@ -23,7 +23,7 @@ export function OpenA2HSLink({ variant = "default" }: OpenA2HSLinkProps) {
   }
 
   return (
-    <div className="text-center pt-2">
+    <div className="text-center pt-2 lg:hidden">
       <button
         onClick={handleClick}
         className="text-sm text-[var(--accent-primary)] hover:underline font-medium"

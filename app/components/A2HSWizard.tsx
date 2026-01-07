@@ -159,7 +159,7 @@ export function A2HSWizard() {
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[var(--bg-overlay)] backdrop-blur-sm pb-[env(safe-area-inset-bottom)]"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[var(--bg-overlay)] backdrop-blur-sm pb-[env(safe-area-inset-bottom)] lg:hidden"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           handleClose();
@@ -217,9 +217,9 @@ export function A2HSWizard() {
 
         {/* Contenuto step */}
         <div className="p-4 lg:p-6 flex-1 flex flex-col items-center justify-center min-h-0 overflow-hidden">
-          <div className="text-center space-y-4 w-full">
+          <div className="text-center space-y-4 w-full max-w-full px-2 overflow-y-auto">
             {platform === "ios" && 'image' in currentStepData && currentStepData.image ? (
-              <div className="flex justify-center">
+              <div className="flex justify-center flex-shrink-0">
                 <img
                   src={currentStepData.image}
                   alt={currentStepData.title}
@@ -229,7 +229,7 @@ export function A2HSWizard() {
                 />
               </div>
             ) : (
-              <div className="flex justify-center items-center h-64 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-light)]">
+              <div className="flex justify-center items-center h-64 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-light)] flex-shrink-0">
                 <div className="text-center space-y-2">
                   <Smartphone className="w-16 h-16 mx-auto text-[var(--text-secondary)] opacity-50" />
                   <p className="text-sm text-[var(--text-secondary)]">Schermata Android</p>
@@ -238,11 +238,11 @@ export function A2HSWizard() {
               </div>
             )}
 
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-[var(--text-primary)]">
+            <div className="space-y-2 flex-shrink-0">
+              <h3 className="text-lg font-semibold text-[var(--text-primary)] break-words">
                 {currentStepData.title}
               </h3>
-              <p className="text-sm text-[var(--text-secondary)]">
+              <p className="text-sm text-[var(--text-secondary)] break-words">
                 {currentStepData.description}
               </p>
             </div>
