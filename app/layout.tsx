@@ -17,6 +17,13 @@ export const metadata: Metadata = {
   title: "easy stay",
   description: "easy stay - Gestione accessi e controllo porte",
   applicationName: "easy stay",
+  icons: {
+    icon: [
+      { url: "/easy-stay-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/easy-stay-192.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/easy-stay-192.png",
+  },
   other: {
     "color-scheme": "light dark",
   },
@@ -37,6 +44,8 @@ export default function RootLayout({
     <html lang="it" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" href="/easy-stay-192.png" />
+        <link rel="apple-touch-icon" href="/easy-stay-192.png" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
