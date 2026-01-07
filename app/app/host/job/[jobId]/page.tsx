@@ -5,20 +5,12 @@ import { redirect } from "next/navigation";
 import { getJob, resolveProblem } from "@/app/lib/cleaningstore";
 import { revalidatePath } from "next/cache";
 import { listStaysByApt } from "@/app/lib/staysStore";
-import { getApartment } from "@/app/lib/clientStore";
-import { listClients } from "@/app/lib/clientStore";
+import { getApartment, listClients, type Client, type Apartment } from "@/app/lib/clientStore";
 import { getUser } from "@/app/lib/userStore";
 import { AppLayout } from "@/app/components/layouts/AppLayout";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-
-function fmtDT(ts?: number | null): string {
-  if (!ts) return "—";
-  const d = new Date(ts);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
 
 function fmtDTFull(ts?: number | null): string {
   if (!ts) return "—";
@@ -27,24 +19,10 @@ function fmtDTFull(ts?: number | null): string {
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-function timeLeftDHM(ts: number): string {
-  const now = Date.now();
-  const diff = ts - now;
-  if (diff <= 0) return "Scaduto";
-  const days = Math.floor(diff / (24 * 60 * 60 * 1000));
-  const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-  const minutes = Math.floor((diff % (60 * 60 * 1000)) / (60 * 1000));
-  if (days > 0) return `${days}g ${hours}h`;
-  if (hours > 0) return `${hours}h ${minutes}m`;
-  return `${minutes}m`;
-}
-
 export default async function HostJobDetailPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ jobId: string }>;
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const cookieStore = await cookies();
   const sess = cookieStore.get("sess")?.value;
@@ -98,12 +76,12 @@ export default async function HostJobDetailPage({
   }
 
   // Recupera clientId per i link
-  const clients = (listClients() as any[]) ?? [];
-  const getClientId = (c: any) => String(c?.id ?? c?.clientId ?? c?.clientID ?? c?.slug ?? "");
+  const clients = listClients();
+  const getClientId = (c: Client) => String(c?.id ?? c?.clientId ?? c?.clientID ?? c?.slug ?? "");
   let clientId = "";
   for (const client of clients) {
     const apts = client?.apartments ?? [];
-    if (apts.some((a: any) => String(a?.aptId ?? a?.id ?? "") === job.aptId)) {
+    if (apts.some((a: Apartment) => String(a?.aptId ?? a?.id ?? "") === job.aptId)) {
       clientId = getClientId(client);
       break;
     }
@@ -215,6 +193,7 @@ export default async function HostJobDetailPage({
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {job.finalPhotos.map((photo, idx) => (
                 <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-[var(--border-light)]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={photo} alt={`Foto finale ${idx + 1}`} className="w-full h-full object-cover" />
                 </div>
               ))}
@@ -255,6 +234,7 @@ export default async function HostJobDetailPage({
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {job.problemPhotos.map((photo, idx) => (
                     <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-red-400/30">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={photo} alt={`Foto problema ${idx + 1}`} className="w-full h-full object-cover" />
                     </div>
                   ))}
@@ -270,8 +250,6 @@ export default async function HostJobDetailPage({
           <div className="space-y-2">
             {job.checklist && job.checklist.length > 0 ? (
               job.checklist.map((item) => {
-                const completedCount = job.checklist.filter((i) => i.done).length;
-                const totalCount = job.checklist.length;
                 return (
                   <div key={item.id} className="flex items-center gap-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3">
                     <div

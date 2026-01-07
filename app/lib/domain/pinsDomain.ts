@@ -1,10 +1,11 @@
 // app/lib/domain/pinsDomain.ts
 import { stays_get, stays_create, stays_setGuestNames } from "@/app/lib/domain/staysDomain";
-import { createStay as createStayV2, getStay as getStayV2 } from "@/app/lib/staysStore";
+import { createStay as createStayV2 } from "@/app/lib/staysStore";
+import type { PinRecord } from "@/app/lib/store";
 
-// Interfaccia MINIMA che il domain si aspetta: se non c’è, meglio che esploda in build
+// Interfaccia MINIMA che il domain si aspetta: se non c'è, meglio che esploda in build
 export type StorePinsLike = {
-  listPinsByStay(stayId: string): any[];
+  listPinsByStay(stayId: string): PinRecord[];
   revokePin(pin: string): void;
 
   createPinForGuest(input: {
@@ -16,7 +17,7 @@ export type StorePinsLike = {
     validFrom: number;
     validTo: number;
     source: "auto" | "manual";
-  }): any;
+  }): PinRecord;
 
   createPinsForStayGuests(input: {
     aptId: string;
@@ -27,16 +28,16 @@ export type StorePinsLike = {
     source: "auto" | "manual";
     guestNames?: string[];
     guestIds?: string[];
-  }): any;
+  }): PinRecord[];
 
   createCleanerPinForStay(input: {
     aptId: string;
     stayId: string;
     cleanerName: string;
     source?: "auto" | "manual";
-  }): any;
+  }): PinRecord;
 
-  deleteStay(stayId: string): any;
+  deleteStay(stayId: string): void;
 };
 
 export function pins_listByStay(Store: StorePinsLike, stayId: string) {

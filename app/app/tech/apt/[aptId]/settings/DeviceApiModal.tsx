@@ -9,7 +9,6 @@ import { Button } from "@/app/components/ui/Button";
 
 type DeviceApiModalProps = {
   deviceType: DeviceType;
-  aptId: string;
   initialSettings: DeviceApiSettings | null;
   onClose: () => void;
   onSave: (settings: DeviceApiSettings) => Promise<void>;
@@ -17,7 +16,6 @@ type DeviceApiModalProps = {
 
 export function DeviceApiModal({
   deviceType,
-  aptId,
   initialSettings,
   onClose,
   onSave,

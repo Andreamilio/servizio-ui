@@ -18,7 +18,7 @@ export type User = {
 };
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __userStore: Map<string, User> | undefined;
 }
 
@@ -140,7 +140,8 @@ export function updateUser(userId: string, updates: Partial<Omit<User, "userId" 
     normalizedUsername = newUsername;
   }
 
-  const { username: _, ...updatesWithoutUsername } = updates;
+  const { username: _unusedUsername, ...updatesWithoutUsername } = updates;
+  void _unusedUsername; // suppress unused warning
   const updated: User = {
     ...user,
     ...updatesWithoutUsername,
@@ -200,17 +201,17 @@ export function authenticateUser(username: string, password: string): User | nul
       try {
         createUser({ username: "tech", password: "tech123", role: "tech" });
         console.log("[userStore] ✅ Seeded demo user: tech/tech123");
-      } catch (error: any) {
+      } catch (error) {
         // Ignora se già esiste (race condition)
-        if (!error.message?.includes("già esistente")) console.error("[userStore] Seed error:", error);
+        if (!(error instanceof Error && error.message?.includes("già esistente"))) console.error("[userStore] Seed error:", error);
       }
     }
     if (!hostUser) {
       try {
         createUser({ username: "host", password: "host123", role: "host", clientId: "global-properties" });
         console.log("[userStore] ✅ Seeded demo user: host/host123");
-      } catch (error: any) {
-        if (!error.message?.includes("già esistente")) console.error("[userStore] Seed error:", error);
+      } catch (error) {
+        if (!(error instanceof Error && error.message?.includes("già esistente"))) console.error("[userStore] Seed error:", error);
       }
     }
   }

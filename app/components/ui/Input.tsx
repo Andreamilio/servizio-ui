@@ -1,4 +1,4 @@
-import { InputHTMLAttributes, ReactNode } from "react";
+import { InputHTMLAttributes } from "react";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -28,3 +28,4 @@ export function Input({ label, error, helperText, className = "", ...props }: In
     </div>
   );
 }
+

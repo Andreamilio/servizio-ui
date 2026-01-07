@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { readSession } from "@/app/lib/session";
-import { createPin, listPinsByApt, revokePin } from "@/app/lib/store";
+import { createPin, listPinsByApt, revokePin, type Role, type PinRecord } from "@/app/lib/store";
 import { Card, CardBody, CardHeader } from "@/app/components/ui/Card";
 import { Button } from "@/app/components/ui/Button";
 import { Input } from "@/app/components/ui/Input";
@@ -25,7 +25,7 @@ export default async function HostPage() {
 
   async function gen(formData: FormData) {
     "use server";
-    const role = (formData.get("role")?.toString() ?? "guest") as any;
+    const role = (formData.get("role")?.toString() ?? "guest") as Role;
     const ttl = Number(formData.get("ttl")?.toString() ?? "120");
     createPin(role, aptId, ttl);
     revalidatePath("/app/host/pins");
@@ -121,7 +121,8 @@ export default async function HostPage() {
                       <div className="text-xs text-[var(--text-secondary)] mt-1">
                         {p.role} • scade tra{" "}
                         {(() => {
-                          const to = (p as any).validTo ?? p.expiresAt ?? (p as any).createdAt ?? Date.now();
+                          const pinRecord = p as PinRecord;
+                          const to = pinRecord.validTo ?? pinRecord.expiresAt ?? pinRecord.createdAt ?? Date.now();
                           return Math.max(0, Math.round((Number(to) - Date.now()) / 60000));
                         })()} min
                       </div>

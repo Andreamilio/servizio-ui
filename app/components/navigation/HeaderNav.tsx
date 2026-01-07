@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
-import { Home, Users, Building2, Calendar, Sparkles, HelpCircle, Settings, User } from "lucide-react";
+import { Home, Users, Building2, Calendar, Sparkles, HelpCircle } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
 import { Button } from "../ui/Button";
 import { UserProfile } from "@/app/app/components/UserProfile";

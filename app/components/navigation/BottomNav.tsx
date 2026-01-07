@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
-import { Home, Users, Building2, Calendar, Sparkles, HelpCircle, LogOut } from "lucide-react";
+import { useRef } from "react";
+import { Home, Users, Building2, Calendar, Sparkles, HelpCircle } from "lucide-react";
 import type { Role } from "@/app/lib/store";
 
 interface NavItem {

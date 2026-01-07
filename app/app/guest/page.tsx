@@ -54,7 +54,7 @@ export default async function GuestPage({
     e.type === 'door_closed' || 
     e.type === 'gate_opened'
   );
-  const b = badge(state.lastOutcome);
+  badge(state.lastOutcome); // chiamata per side effects
   // Leggi stato porta da Store.accessLog (single source of truth) invece che da gueststore locale
   const doorState = door_getStateFromLog(Store, aptId);
   const doorIsOpen = doorState === "open";
@@ -88,7 +88,7 @@ export default async function GuestPage({
     }
 
     revalidatePath("/app/guest");
-    redirect(`/app/guest?toast=${outcome === "ok" ? "open_ok" : "open_fail"}&r=${Date.now()}`);
+    redirect(`/app/guest?toast=${outcome === "ok" ? "open_ok" : "open_fail"}`);
   }
 
   async function actCloseDoor() {
@@ -112,7 +112,7 @@ export default async function GuestPage({
     }
 
     revalidatePath("/app/guest");
-    redirect(`/app/guest?toast=${outcome === "ok" ? "close_ok" : "close_fail"}&r=${Date.now()}`);
+    redirect(`/app/guest?toast=${outcome === "ok" ? "close_ok" : "close_fail"}`);
   }
 
   async function actOpenGate() {
@@ -136,7 +136,7 @@ export default async function GuestPage({
     }
 
     revalidatePath("/app/guest");
-    redirect(`/app/guest?toast=${outcome === "ok" ? "gate_open_ok" : "gate_open_fail"}&r=${Date.now()}`);
+    redirect(`/app/guest?toast=${outcome === "ok" ? "gate_open_ok" : "gate_open_fail"}`);
   }
 
 

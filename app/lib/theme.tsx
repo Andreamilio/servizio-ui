@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from "react";
 
 type Theme = "light" | "dark";
 
@@ -12,51 +12,60 @@ interface ThemeContextType {
 
 export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+// Funzioni helper fuori dal componente per evitare re-creazione
+function updateColorScheme(newTheme: Theme) {
+  if (typeof document === "undefined") return;
+  let metaColorScheme = document.querySelector('meta[name="color-scheme"]');
+  if (!metaColorScheme) {
+    metaColorScheme = document.createElement('meta');
+    metaColorScheme.setAttribute('name', 'color-scheme');
+    document.head.appendChild(metaColorScheme);
+  }
+  metaColorScheme.setAttribute("content", newTheme);
+}
+
+function applyThemeToDOM(newTheme: Theme) {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  if (newTheme === "dark") {
+    root.setAttribute("data-theme", "dark");
+  } else {
+    root.removeAttribute("data-theme");
+  }
+  updateColorScheme(newTheme);
+}
+
+function getInitialTheme(): Theme {
+  if (typeof window === "undefined") return "light";
+  const savedTheme = localStorage.getItem("theme") as Theme | null;
+  return savedTheme || "light";
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("light");
-  const [mounted, setMounted] = useState(false);
+  // Inizializza con una funzione per evitare il setState nell'effect
+  const [theme, setThemeState] = useState<Theme>(getInitialTheme);
+  const mountedRef = useRef(false);
 
-  const updateColorScheme = (newTheme: Theme) => {
-    // Aggiorna il meta tag color-scheme per Safari iOS
-    let metaColorScheme = document.querySelector('meta[name="color-scheme"]');
-    if (!metaColorScheme) {
-      metaColorScheme = document.createElement('meta');
-      metaColorScheme.setAttribute('name', 'color-scheme');
-      document.head.appendChild(metaColorScheme);
-    }
-    metaColorScheme.setAttribute("content", newTheme);
-  };
-
-  const applyTheme = (newTheme: Theme) => {
-    const root = document.documentElement;
-    if (newTheme === "dark") {
-      root.setAttribute("data-theme", "dark");
-    } else {
-      root.removeAttribute("data-theme");
-    }
-    // Aggiorna anche il meta tag color-scheme per Safari iOS
-    updateColorScheme(newTheme);
-  };
-
+  // Applica il tema al DOM dopo il mount (senza setState)
   useEffect(() => {
-    setMounted(true);
-    // Leggi dal localStorage o usa light come default
-    const savedTheme = localStorage.getItem("theme") as Theme | null;
-    const initialTheme = savedTheme || "light";
-    setThemeState(initialTheme);
-    applyTheme(initialTheme);
-  }, []);
+    mountedRef.current = true;
+    applyThemeToDOM(theme);
+  }, [theme]);
 
-  const setTheme = (newTheme: Theme) => {
+  const setTheme = useCallback((newTheme: Theme) => {
     setThemeState(newTheme);
     localStorage.setItem("theme", newTheme);
-    applyTheme(newTheme);
-  };
+    applyThemeToDOM(newTheme);
+  }, []);
 
-  const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-  };
+  const toggleTheme = useCallback(() => {
+    setThemeState(prev => {
+      const newTheme = prev === "light" ? "dark" : "light";
+      localStorage.setItem("theme", newTheme);
+      applyThemeToDOM(newTheme);
+      return newTheme;
+    });
+  }, []);
 
   // Sempre fornisci il context, anche durante SSR
   return (

@@ -6,13 +6,11 @@ import { revalidatePath } from 'next/cache';
 import { readSession, validateSessionUser } from '@/app/lib/session';
 import * as Store from '@/app/lib/store';
 import { listJobsByApt } from '@/app/lib/cleaningstore';
-import { listClients, listApartmentsByClient, getApartment, updateApartment } from '@/app/lib/clientStore';
+import { listClients, listApartmentsByClient, getApartment, updateApartment, type Client, type Apartment } from '@/app/lib/clientStore';
 import { getUser } from '@/app/lib/userStore';
 import { AppLayout } from '@/app/components/layouts/AppLayout';
 import { ApartmentSearchForm } from './components/ApartmentSearchForm';
-import { UserProfile } from '../components/UserProfile';
 
-import { stays_createWithOptionalCleaner } from '@/app/lib/domain/pinsDomain';
 import { getAllEnabledDevices, getDeviceState, getDeviceLabel } from '@/app/lib/devicePackageStore';
 
 export const dynamic = 'force-dynamic';
@@ -25,29 +23,6 @@ function pick(sp: SP, key: string) {
     return typeof v === 'string' ? v : Array.isArray(v) ? v[0] : undefined;
 }
 
-function timeLeftDHM(ts: number) {
-    const ms = Math.max(0, ts - Date.now());
-    const totalMin = Math.floor(ms / 60000);
-    const d = Math.floor(totalMin / (60 * 24));
-    const h = Math.floor((totalMin % (60 * 24)) / 60);
-    const m = totalMin % 60;
-
-    if (d > 0) return `${d}g ${h}h ${m}m`;
-    if (h > 0) return `${h}h ${m}m`;
-    return `${m}m`;
-}
-
-function parseDateTimeLocal(v?: string | null) {
-    if (!v) return null;
-    const d = new Date(v);
-    return Number.isNaN(d.getTime()) ? null : d;
-}
-
-function toDTLocalValue(d: Date) {
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
 function fmtDT(ts?: number | null) {
     if (!ts) return '—';
     const d = new Date(ts);
@@ -57,7 +32,7 @@ function fmtDT(ts?: number | null) {
 
 function getDoorUi(aptId: string): { label: string; tone: 'open' | 'closed' | 'unknown' } {
     const log = Store.listAccessLogByApt(aptId, 50) ?? [];
-    const last = log.find((e: any) => e?.type === 'door_opened' || e?.type === 'door_closed');
+    const last = log.find((e: Store.AccessEvent) => e?.type === 'door_opened' || e?.type === 'door_closed');
     // Default a BLOCCATA (closed) per prototipo
     if (!last) return { label: 'BLOCCATA', tone: 'closed' };
     if (last.type === 'door_opened') return { label: 'SBLOCCATA', tone: 'open' };
@@ -89,7 +64,7 @@ function computeHealth(aptId: string, name: string): AptHealth {
 }
 
 export default async function HostPage({ searchParams }: { searchParams?: SP | Promise<SP> }) {
-    const sp = ((await Promise.resolve(searchParams as any)) ?? {}) as SP;
+    const sp = ((await Promise.resolve(searchParams)) ?? {}) as SP;
     const q = (pick(sp, 'q') ?? '').trim().toLowerCase();
     const aptSelected = pick(sp, 'apt');
 
@@ -106,8 +81,8 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
         return <div className='p-6 text-[var(--text-primary)]'>Non autorizzato</div>;
     }
 
-    const clients = (listClients() as any[]) ?? [];
-    const getClientId = (c: any) => String(c?.id ?? c?.clientId ?? c?.clientID ?? c?.slug ?? '');
+    const clients = listClients();
+    const getClientId = (c: Client) => String(c?.id ?? c?.clientId ?? c?.clientID ?? c?.slug ?? '');
     
     // Se l'utente host ha un clientId associato, filtra i clienti disponibili
     const hostUser = me.userId ? getUser(me.userId) : null;
@@ -127,12 +102,12 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
     
     // Se clientId è specificato, mostra solo gli appartamenti di quel client, altrimenti mostra tutti
     const apartments = clientId
-        ? (listApartmentsByClient(clientId) as any[]).map((a) => ({
+        ? listApartmentsByClient(clientId).map((a: Apartment) => ({
               aptId: String(a?.aptId ?? a?.id ?? a?.apt ?? ''),
               name: String(a?.aptName ?? a?.name ?? a?.title ?? `Apt ${a?.aptId ?? a?.id ?? ''}`),
           }))
-        : (listClients() as any[]).flatMap((c) => 
-            (listApartmentsByClient(getClientId(c)) as any[]).map((a) => ({
+        : listClients().flatMap((c: Client) => 
+            listApartmentsByClient(getClientId(c)).map((a: Apartment) => ({
               aptId: String(a?.aptId ?? a?.id ?? a?.apt ?? ''),
               name: String(a?.aptName ?? a?.name ?? a?.title ?? `Apt ${a?.aptId ?? a?.id ?? ''}`),
             }))
@@ -162,7 +137,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
         const doorUi = getDoorUi(aptId);
         const allAccessEvents = Store.listAccessLogByApt(aptId, 20) ?? [];
         // Filtra eventi WAN/VPN: visibili solo nella vista Tech
-        const accessEvents = allAccessEvents.filter((e: any) => e.type !== 'wan_switched' && e.type !== 'vpn_toggled');
+        const accessEvents = allAccessEvents.filter((e: Store.AccessEvent) => e.type !== 'wan_switched' && e.type !== 'vpn_toggled');
 
         async function actOpenDoor() {
             'use server';
@@ -413,7 +388,7 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                             <div className='text-sm opacity-60'>Nessun evento registrato.</div>
                         ) : (
                             <div className='space-y-2'>
-                                {accessEvents.map((e: any) => (
+                                {accessEvents.map((e: Store.AccessEvent) => (
                                     <div key={String(e.id)} className='rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3'>
                                         <div className='flex items-center justify-between'>
                                             <div className='text-xs opacity-60'>{fmtDT(e.ts)}</div>

@@ -13,7 +13,7 @@ export { getDeviceLabel, getAllDeviceTypes } from "./devicePackageTypes";
 import { getAllDeviceTypes, type DeviceType, type DevicePackageItem, type DevicePackage, type DeviceController } from "./devicePackageTypes";
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __devicePackageStore: Map<string, DevicePackage> | undefined;
 }
 

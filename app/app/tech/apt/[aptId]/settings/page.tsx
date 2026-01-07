@@ -16,7 +16,7 @@ import {
   updateDeviceApiSettings,
   type DeviceApiSettings,
 } from "@/app/lib/technicalSettingsStore";
-import { getAllEnabledDevices, getAllDevices, getDeviceLabel, type DeviceType } from "@/app/lib/devicePackageStore";
+import { getAllEnabledDevices, getAllDevices, type DeviceType } from "@/app/lib/devicePackageStore";
 import { ApiDevicesSection } from "./ApiDevicesSection";
 
 export const dynamic = "force-dynamic";
@@ -88,7 +88,7 @@ export default async function TechSettingsPage({
   
   // Se il tab richiesto non è disponibile, usa il primo disponibile
   const requestedTab = sp.tab;
-  const activeTab = requestedTab && requiredTabs.includes(requestedTab as any)
+  const activeTab = requestedTab && requiredTabs.includes(requestedTab as string)
     ? requestedTab
     : (requiredTabs[0] ?? "network");
 
@@ -187,7 +187,7 @@ export default async function TechSettingsPage({
   ];
 
   // Filtra i tab in base a quelli richiesti dai device configurati
-  const tabs = allTabs.filter((tab) => requiredTabs.includes(tab.id as any));
+  const tabs = allTabs.filter((tab) => requiredTabs.includes(tab.id as string));
 
   return (
     <AppLayout 
@@ -231,7 +231,6 @@ export default async function TechSettingsPage({
         </div>
 
         <ApiDevicesSection
-          aptId={aptId}
           devicesWithApi={devicesWithApi}
           saveDeviceApi={updateDeviceApi}
         />

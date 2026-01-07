@@ -56,7 +56,7 @@ export type TechnicalSettings = {
 };
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __technicalSettingsStore: Map<string, TechnicalSettings> | undefined;
 }
 
@@ -199,10 +199,18 @@ export function updateTestResult(
 
 export type RequiredSettingsTab = "home_assistant" | "network" | "diagnostics";
 
+// Lazy imports per evitare circular dependency
+let devicePackageStore: typeof import("./devicePackageStore") | null = null;
+function getDevicePackageStore() {
+  if (!devicePackageStore) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    devicePackageStore = require("./devicePackageStore");
+  }
+  return devicePackageStore;
+}
+
 export function getRequiredSettingsTabs(aptId: string): RequiredSettingsTab[] {
-  // Import per evitare circular dependency - importa solo le funzioni necessarie
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { getDevicePackage, getAllDeviceTypes } = require("./devicePackageStore");
+  const { getDevicePackage, getAllDeviceTypes } = getDevicePackageStore();
   const pkg = getDevicePackage(aptId);
   const deviceTypes = getAllDeviceTypes();
 

@@ -7,12 +7,11 @@ import type { DeviceType } from "@/app/lib/devicePackageTypes";
 import type { DeviceApiSettings } from "@/app/lib/technicalSettingsStore";
 
 type ApiDevicesSectionProps = {
-  aptId: string;
   devicesWithApi: Array<{ deviceType: DeviceType; settings: DeviceApiSettings | null }>;
   saveDeviceApi: (deviceType: string, settings: DeviceApiSettings) => Promise<void>;
 };
 
-export function ApiDevicesSection({ aptId, devicesWithApi, saveDeviceApi }: ApiDevicesSectionProps) {
+export function ApiDevicesSection({ devicesWithApi, saveDeviceApi }: ApiDevicesSectionProps) {
   const [selectedDevice, setSelectedDevice] = useState<DeviceType | null>(null);
   const [currentSettings, setCurrentSettings] = useState<DeviceApiSettings | null>(null);
 
@@ -41,7 +40,6 @@ export function ApiDevicesSection({ aptId, devicesWithApi, saveDeviceApi }: ApiD
       {selectedDevice && (
         <DeviceApiModal
           deviceType={selectedDevice}
-          aptId={aptId}
           initialSettings={currentSettings}
           onClose={handleCloseModal}
           onSave={handleSaveSettings}
@@ -50,4 +48,5 @@ export function ApiDevicesSection({ aptId, devicesWithApi, saveDeviceApi }: ApiD
     </>
   );
 }
+
 

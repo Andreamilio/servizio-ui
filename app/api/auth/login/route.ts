@@ -70,7 +70,7 @@ export async function POST(req: Request) {
     let next = "";
 
     if (isJson) {
-      const body = await req.json().catch(() => ({} as any));
+      const body = await req.json().catch(() => ({})) as { username?: string; password?: string; next?: string };
       username = String(body?.username ?? "").trim();
       password = String(body?.password ?? "").trim();
       next = String(body?.next ?? "").trim();
@@ -130,7 +130,7 @@ export async function POST(req: Request) {
     });
     return res;
   }
-  } catch (error: any) {
+  } catch (error) {
     console.error("[auth/login] Error:", error);
     if (isJson) {
       return NextResponse.json(

@@ -12,7 +12,6 @@ import {
   enableUser,
   deleteUser,
   getUser,
-  type User,
   type UserRole,
 } from "@/app/lib/userStore";
 import { listClients } from "@/app/lib/clientStore";
@@ -72,8 +71,8 @@ export default async function TechUsersPage({
       createUser({ username, password, role, clientId });
       revalidatePath("/app/tech/users");
       redirect("/app/tech/users");
-    } catch (error: any) {
-      const errorMessage = error?.message || "";
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "";
       if (errorMessage.includes("già esistente")) {
         redirect("/app/tech/users?action=create&err=exists");
       } else {
@@ -95,8 +94,8 @@ export default async function TechUsersPage({
 
     try {
       updateUser(id, { username, role, clientId });
-    } catch (error: any) {
-      const errorMessage = error?.message || "";
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "";
       if (errorMessage.includes("già esistente")) {
         redirect(`/app/tech/users?action=edit&userId=${id}&err=exists`);
       }
@@ -366,6 +365,7 @@ export default async function TechUsersPage({
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       {user.profileImageUrl ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
                         <img
                           src={user.profileImageUrl}
                           alt={user.username}

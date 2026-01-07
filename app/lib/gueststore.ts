@@ -34,7 +34,7 @@ export type GuestState = {
 };
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __guestStore: Map<string, GuestState> | undefined;
 }
 

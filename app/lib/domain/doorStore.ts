@@ -1,9 +1,12 @@
 // app/lib/doorStore.ts
-import crypto from "crypto";
 import type { DoorOutcome } from "@/app/lib/gueststore"; // oppure ridefiniscilo qui
-import type { AccessEventType } from "@/app/lib/store";
+import type { AccessEvent } from "@/app/lib/store";
 
 export type DoorState = "open" | "closed";
+
+type StoreWithAccessLog = {
+  listAccessLogByApt?: (aptId: string, limit?: number) => AccessEvent[];
+};
 
 export type DoorSnapshot = {
   aptId: string;
@@ -13,7 +16,7 @@ export type DoorSnapshot = {
 };
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __doorStore: Map<string, DoorSnapshot> | undefined;
 }
 
@@ -66,11 +69,11 @@ export function door_close(aptId: string): DoorOutcome {
  * Legge lo stato della porta da Store.accessLog (single source of truth)
  * Usato da tutte le viste per avere coerenza
  */
-export function door_getStateFromLog(Store: any, aptId: string): "open" | "closed" | "unknown" {
+export function door_getStateFromLog(Store: StoreWithAccessLog, aptId: string): "open" | "closed" | "unknown" {
   if (!Store?.listAccessLogByApt) return "unknown";
   
   const log = Store.listAccessLogByApt(aptId, 50) ?? [];
-  const last = log.find((e: any) => e?.type === "door_opened" || e?.type === "door_closed");
+  const last = log.find((e: AccessEvent) => e?.type === "door_opened" || e?.type === "door_closed");
   
   if (!last) return "unknown";
   if (last.type === "door_opened") return "open";

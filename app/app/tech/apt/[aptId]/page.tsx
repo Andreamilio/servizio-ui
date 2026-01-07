@@ -22,15 +22,6 @@ import { AppLayout } from "@/app/components/layouts/AppLayout";
 
 export const dynamic = "force-dynamic";
 
-function Chip({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider opacity-60">{label}</div>
-      <div className="text-sm font-semibold">{value}</div>
-    </div>
-  );
-}
-
 export default async function TechAptPage({
   params,
 }: {

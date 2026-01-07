@@ -4,7 +4,8 @@ import { redirect } from 'next/navigation';
 
 import { readSession, validateSessionUser } from '@/app/lib/session';
 import * as Store from '@/app/lib/store';
-import { listClients, listApartmentsByClient, getApartment } from '@/app/lib/clientStore';
+import { listClients, getApartment, type Client } from '@/app/lib/clientStore';
+import type { Stay, StayGuest } from '@/app/lib/staysStore';
 import { getUser } from '@/app/lib/userStore';
 import { AppLayout } from '@/app/components/layouts/AppLayout';
 
@@ -31,12 +32,6 @@ function parseDateTimeLocal(v?: string | null) {
     return Number.isNaN(d.getTime()) ? null : d;
 }
 
-function fmtDT(ts?: number | null) {
-    if (!ts) return '—';
-    const d = new Date(ts);
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
 
 function fmtDTMedium(ts?: number | null): string {
     if (!ts) return '—';
@@ -45,7 +40,7 @@ function fmtDTMedium(ts?: number | null): string {
     return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-function getResponsabileName(guests: any[]): string {
+function getResponsabileName(guests: StayGuest[]): string {
     if (!guests || guests.length === 0) return 'Nessun ospite';
     const first = guests[0];
     if (first.firstName && first.lastName) {
@@ -55,7 +50,7 @@ function getResponsabileName(guests: any[]): string {
 }
 
 export default async function HostStaysPage({ searchParams }: { searchParams?: SP | Promise<SP> }) {
-    const sp = ((await Promise.resolve(searchParams as any)) ?? {}) as SP;
+    const sp = ((await Promise.resolve(searchParams)) ?? {}) as SP;
     const aptId = pick(sp, 'apt') ?? '';
 
     const cookieStore = await cookies();
@@ -76,8 +71,8 @@ export default async function HostStaysPage({ searchParams }: { searchParams?: S
     const hostUser = getUser(me.userId ?? '');
     const hostUserClientId = hostUser?.clientId ?? '';
 
-    const availableClients = listClients() as any[];
-    const getClientId = (c: any) => String(c?.id ?? c?.clientId ?? c?.clientID ?? c?.slug ?? '');
+    const availableClients = listClients();
+    const getClientId = (c: Client) => String(c?.id ?? c?.clientId ?? c?.clientID ?? c?.slug ?? '');
     const urlClientId = pick(sp, 'client')?.trim();
     const wantedClientId = hostUserClientId || urlClientId || undefined;
     const client = wantedClientId ? availableClients.find((c) => getClientId(c) === wantedClientId) ?? null : null;
@@ -206,7 +201,7 @@ export default async function HostStaysPage({ searchParams }: { searchParams?: S
         }
 
         // Verifica che lo stay sia stato salvato
-        const verifyStay = stays_listByApt(aptId).find((s: any) => s.stayId === st.stayId);
+        const verifyStay = stays_listByApt(aptId).find((s: Stay) => s.stayId === st.stayId);
         if (!verifyStay) {
             console.error('Stay creato ma non trovato nella lista:', st.stayId);
         }
@@ -251,7 +246,7 @@ export default async function HostStaysPage({ searchParams }: { searchParams?: S
                         <div className='text-sm opacity-60 mb-4'>Nessun soggiorno registrato.</div>
                     ) : (
                         <div className='space-y-2 mb-4'>
-                            {stays.map((st: any) => {
+                            {stays.map((st: Stay) => {
                                 const sid = String(st?.stayId ?? '');
                                 const g = Array.isArray(st?.guests) ? st.guests.length : 0;
                                 const checkin = st?.checkInAt ? fmtDTMedium(st.checkInAt) : '—';
@@ -284,7 +279,6 @@ export default async function HostStaysPage({ searchParams }: { searchParams?: S
                             return (
                                 <CreateStayModal
                                     aptId={aptId}
-                                    clientId={clientId}
                                     cleaners={cfg.cleaners}
                                     createStayAction={createStay}
                                 />

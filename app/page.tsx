@@ -4,7 +4,7 @@ import { Button } from "@/app/components/ui/Button";
 import { Card, CardBody } from "@/app/components/ui/Card";
 import { KeyRound } from "lucide-react";
 
-export default function LoginPage({ searchParams }: any) {
+export default function LoginPage({ searchParams }: { searchParams?: Record<string, string | string[] | undefined> | Promise<Record<string, string | string[] | undefined>> }) {
   const next = typeof searchParams?.next === "string" ? searchParams.next : "";
   const err = typeof searchParams?.err === "string" ? searchParams.err : "";
 

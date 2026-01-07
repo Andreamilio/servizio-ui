@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { readSession, validateSessionUser } from '@/app/lib/session';
-import { listClients, getApartment } from '@/app/lib/clientStore';
+import { listClients, getApartment, type Client } from '@/app/lib/clientStore';
 import { getUser } from '@/app/lib/userStore';
 import { AppLayout } from '@/app/components/layouts/AppLayout';
 
@@ -20,7 +20,7 @@ function pick(sp: SP, key: string) {
 }
 
 export default async function HostCleanersPage({ searchParams }: { searchParams?: SP | Promise<SP> }) {
-    const sp = ((await Promise.resolve(searchParams as any)) ?? {}) as SP;
+    const sp = ((await Promise.resolve(searchParams)) ?? {}) as SP;
     const aptId = pick(sp, 'apt') ?? '';
 
     const cookieStore = await cookies();
@@ -41,8 +41,8 @@ export default async function HostCleanersPage({ searchParams }: { searchParams?
     const hostUser = getUser(me.userId ?? '');
     const hostUserClientId = hostUser?.clientId ?? '';
 
-    const availableClients = listClients() as any[];
-    const getClientId = (c: any) => String(c?.id ?? c?.clientId ?? c?.clientID ?? c?.slug ?? '');
+    const availableClients = listClients();
+    const getClientId = (c: Client) => String(c?.id ?? c?.clientId ?? c?.clientID ?? c?.slug ?? '');
     const urlClientId = pick(sp, 'client')?.trim();
     const wantedClientId = hostUserClientId || urlClientId || undefined;
     const client = wantedClientId ? availableClients.find((c) => getClientId(c) === wantedClientId) ?? null : null;
@@ -359,4 +359,5 @@ export default async function HostCleanersPage({ searchParams }: { searchParams?
         </AppLayout>
     );
 }
+
 

@@ -1,43 +1,68 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 
 export function GuestFields({ maxGuests = 10 }: { maxGuests?: number }) {
     const [guestsCount, setGuestsCount] = useState(2);
+    const initializedRef = useRef(false);
+    const selectRef = useRef<HTMLSelectElement | null>(null);
+
+    // Callback per sincronizzare lo stato con il valore del select
+    const syncWithSelect = useCallback(() => {
+        const select = selectRef.current || document.getElementById('guestsCount') as HTMLSelectElement;
+        if (select) {
+            const count = parseInt(select.value) || 2;
+            setGuestsCount(count);
+        }
+    }, []);
 
     useEffect(() => {
-        const select = document.getElementById('guestsCount') as HTMLSelectElement;
-        if (!select) {
-            // Se il select non esiste ancora, riprova dopo un breve delay
-            const timeout = setTimeout(() => {
-                const retrySelect = document.getElementById('guestsCount') as HTMLSelectElement;
-                if (retrySelect) {
-                    const initialCount = parseInt(retrySelect.value) || 2;
-                    setGuestsCount(initialCount);
-                    updateVisibilityForSelect(retrySelect);
-                }
-            }, 100);
-            return () => clearTimeout(timeout);
+        // Handler per il change event
+        const handleChange = () => {
+            syncWithSelect();
+        };
+
+        // Funzione per inizializzare il listener
+        const initializeListener = (select: HTMLSelectElement) => {
+            if (initializedRef.current) return;
+            initializedRef.current = true;
+            selectRef.current = select;
+            
+            // Sincronizza il valore iniziale tramite callback (non direttamente nell'effect)
+            requestAnimationFrame(() => {
+                syncWithSelect();
+            });
+            
+            select.addEventListener('change', handleChange);
+        };
+
+        // Controlla subito se il select esiste già
+        const existingSelect = document.getElementById('guestsCount') as HTMLSelectElement;
+        if (existingSelect) {
+            initializeListener(existingSelect);
+            return () => {
+                existingSelect.removeEventListener('change', handleChange);
+            };
         }
 
-        const updateVisibilityForSelect = (sel: HTMLSelectElement) => {
-            const count = parseInt(sel.value) || 2;
-            setGuestsCount(count);
-            // Non serve più gestire la visibilità perché ora renderizziamo solo i campi necessari
-        };
+        // Altrimenti usa MutationObserver per attendere che il select sia nel DOM
+        const observer = new MutationObserver(() => {
+            const select = document.getElementById('guestsCount') as HTMLSelectElement;
+            if (select) {
+                initializeListener(select);
+                observer.disconnect();
+            }
+        });
 
-        // Inizializza con il valore corrente del select
-        const initialCount = parseInt(select.value) || 2;
-        setGuestsCount(initialCount);
-        updateVisibilityForSelect(select);
-        
-        // Aggiungi listener
-        select.addEventListener('change', () => updateVisibilityForSelect(select));
+        observer.observe(document.body, { childList: true, subtree: true });
         
         return () => {
-            select.removeEventListener('change', () => updateVisibilityForSelect(select));
+            observer.disconnect();
+            if (selectRef.current) {
+                selectRef.current.removeEventListener('change', handleChange);
+            }
         };
-    }, [maxGuests]);
+    }, [maxGuests, syncWithSelect]);
 
     return (
         <div className='space-y-3 min-w-0'>

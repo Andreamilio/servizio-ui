@@ -43,12 +43,12 @@ export default async function CleanerJobPage({
       return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
   }
 
-  const resolvedParams = await Promise.resolve(params as any);
-  const jobIdRaw = (resolvedParams as any)?.jobId;
+  const resolvedParams = await Promise.resolve(params);
+  const jobIdRaw = resolvedParams?.jobId;
   const jobId = Array.isArray(jobIdRaw) ? jobIdRaw[0] : jobIdRaw;
   const jobIdStr = String(jobId ?? ""); // es: "job-017-1"
 
-  const spResolved = (await Promise.resolve(searchParams as any)) ?? {};
+  const spResolved = (await Promise.resolve(searchParams)) ?? {};
   const sp = spResolved as Record<string, string | string[] | undefined>;
   const start = sp.start === "1";
   const done = sp.done === "1";
@@ -383,6 +383,7 @@ export default async function CleanerJobPage({
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {job.finalPhotos?.map((photo, idx) => (
                     <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-[var(--border-light)]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={photo} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
                     </div>
                   ))}

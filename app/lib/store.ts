@@ -81,11 +81,11 @@ export type AccessEvent = {
 };
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __pinStore: Map<string, PinRecord> | undefined;
-  // eslint-disable-next-line no-var
+   
   var __accessLog: AccessEvent[] | undefined;
-  // eslint-disable-next-line no-var
+   
   var __readinessStore: Map<string, Readiness> | undefined;
 }
 

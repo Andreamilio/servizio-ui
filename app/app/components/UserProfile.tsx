@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { UserProfileModal } from "./UserProfileModal";
 
 type UserProfileProps = {
@@ -10,14 +10,18 @@ type UserProfileProps = {
   profileImageUrl?: string;
 };
 
+// Hook per evitare problemi di hydration
+function useIsClient() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+}
+
 export function UserProfile({ userId, username, role, profileImageUrl }: UserProfileProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  // Evita problemi di hydration renderizzando solo dopo il mount
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const isClient = useIsClient();
 
   function getInitials(name: string): string {
     return name
@@ -29,7 +33,7 @@ export function UserProfile({ userId, username, role, profileImageUrl }: UserPro
   }
 
   // Durante SSR, renderizza solo un placeholder per evitare mismatch
-  if (!mounted) {
+  if (!isClient) {
     return (
       <div className="w-8 h-8 rounded-full bg-[var(--pastel-blue)] border border-[var(--border-light)] flex items-center justify-center">
         <span className="text-xs font-semibold text-[var(--accent-primary)]">
@@ -42,6 +46,7 @@ export function UserProfile({ userId, username, role, profileImageUrl }: UserPro
   return (
     <>
       {profileImageUrl ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
         <img
           src={profileImageUrl}
           alt={username}

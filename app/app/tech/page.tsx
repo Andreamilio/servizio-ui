@@ -2,24 +2,11 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { readSession, validateSessionUser } from "@/app/lib/session";
-import { getAccessLog, getIncidents, listApts, techStore } from "@/app/lib/techstore";
+import { getAccessLog, getIncidents, listApts } from "@/app/lib/techstore";
 import { listClients } from "@/app/lib/clientStore";
 import { getUser } from "@/app/lib/userStore";
 import { AppLayout } from "@/app/components/layouts/AppLayout";
-import { UserProfile } from "../components/UserProfile";
 import { ClientAccordion } from "./components/ClientAccordion";
-
-function pillStatus(s: "online" | "offline") {
-  return s === "online"
-    ? { dot: "bg-emerald-500", text: "ONLINE", box: "bg-[var(--pastel-green)] border-[var(--border-light)] text-[var(--accent-success)]" }
-    : { dot: "bg-red-500", text: "OFFLINE", box: "bg-red-100 border-[var(--border-light)] text-[var(--accent-error)]" };
-}
-
-function pillNet(n: "main" | "backup") {
-  return n === "main"
-    ? { text: "MAIN WAN", box: "bg-[var(--bg-card)] border-[var(--border-light)] text-[var(--text-primary)]" }
-    : { text: "BACKUP WAN", box: "bg-[var(--bg-card)] border-[var(--border-light)] text-[var(--text-primary)]" };
-}
 
 export default async function TechPage({
   searchParams,
@@ -40,8 +27,7 @@ export default async function TechPage({
   }
 
   const apts = listApts();
-  const clients = listClients();
-  const clientsCount = clients.length;
+  listClients(); // chiamata per side effects
 
   // Raggruppare appartamenti per cliente
   const apartmentsByClient = new Map<string, typeof apts>();

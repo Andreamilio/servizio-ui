@@ -17,7 +17,7 @@ export type CleaningJob = {
 };
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __cleaningStore: Map<string, CleaningJob> | undefined;
 }
 

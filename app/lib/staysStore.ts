@@ -22,7 +22,7 @@ export type Stay = {
 };
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __stayStoreV2: Map<string, Stay> | undefined;
 }
 

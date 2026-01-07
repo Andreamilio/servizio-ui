@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
 import { readSession, validateSessionUser } from "@/app/lib/session";
 import {
   listClients,
@@ -14,8 +13,6 @@ import {
   createApartment,
   updateApartment,
   deleteApartment,
-  type Client,
-  type Apartment,
   type ApartmentStatus,
 } from "@/app/lib/clientStore";
 import { getUser } from "@/app/lib/userStore";
@@ -68,8 +65,9 @@ export default async function TechClientsPage({
 
     try {
       createClient(id, name);
-    } catch (error: any) {
-      redirect(`/app/tech/clients?action=create&err=${encodeURIComponent(error.message)}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Errore sconosciuto";
+      redirect(`/app/tech/clients?action=create&err=${encodeURIComponent(message)}`);
     }
     
     redirect("/app/tech/clients");
@@ -124,8 +122,9 @@ export default async function TechClientsPage({
         addressShort,
         // I dettagli (WiFi, Check-in/out, Rules, Contatti) vengono aggiunti successivamente dall'host
       });
-    } catch (error: any) {
-      redirect(`/app/tech/clients?action=createApt&clientId=${cId}&err=${encodeURIComponent(error.message)}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Errore sconosciuto";
+      redirect(`/app/tech/clients?action=createApt&clientId=${cId}&err=${encodeURIComponent(message)}`);
     }
     
     redirect(`/app/tech/clients?clientId=${cId}`);
@@ -331,7 +330,7 @@ export default async function TechClientsPage({
                       className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-tertiary)] cursor-not-allowed"
                       placeholder="Generato automaticamente dal BE"
                     />
-                    <div className="text-xs text-[var(--text-tertiary)] mt-1">L'ID verrà generato automaticamente</div>
+                    <div className="text-xs text-[var(--text-tertiary)] mt-1">L&apos;ID verrà generato automaticamente</div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Status</label>
@@ -364,7 +363,7 @@ export default async function TechClientsPage({
                   />
                 </div>
                 <div className="text-xs opacity-60 mt-2">
-                  I dettagli (Wi-Fi, Check-in/out, House Rules, Contatti) possono essere aggiunti successivamente dall'host nella vista appartamento.
+                  I dettagli (Wi-Fi, Check-in/out, House Rules, Contatti) possono essere aggiunti successivamente dall&apos;host nella vista appartamento.
                 </div>
                 <div className="flex gap-3 pt-4 border-t border-[var(--border-light)]">
                   <button
@@ -433,7 +432,7 @@ export default async function TechClientsPage({
                   />
                 </div>
                 <div className="text-xs opacity-60 mt-2">
-                  I dettagli (Wi-Fi, Check-in/out, House Rules, Contatti) possono essere modificati dall'host nella vista appartamento.
+                  I dettagli (Wi-Fi, Check-in/out, House Rules, Contatti) possono essere modificati dall&apos;host nella vista appartamento.
                 </div>
                 <div className="flex gap-3 pt-4 border-t border-[var(--border-light)]">
                   <button
@@ -547,7 +546,7 @@ export default async function TechClientsPage({
           {!isCreateClient && !isEditClient && !isCreateApt && !isEditApt && !isClientDetail && (
             <div className="space-y-2">
               {clients.length === 0 ? (
-                <div className="text-sm opacity-60 py-8 text-center">Nessun cliente configurato. Clicca "Nuovo Cliente" per iniziare.</div>
+                <div className="text-sm opacity-60 py-8 text-center">Nessun cliente configurato. Clicca &quot;Nuovo Cliente&quot; per iniziare.</div>
               ) : (
                 clients.map((client) => (
                   <Link

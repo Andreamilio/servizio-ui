@@ -4,10 +4,11 @@ import { redirect } from "next/navigation";
 
 import { readSession } from "@/app/lib/session";
 import * as Store from "@/app/lib/store";
-import { listClients, listApartmentsByClient } from "@/app/lib/clientStore";
+import { listClients, listApartmentsByClient, type Client, type Apartment } from "@/app/lib/clientStore";
 import { listJobsByApt, type CleaningJob, type CleaningStatus, updateJobsCleanerByStay } from "@/app/lib/cleaningstore";
 import { getUser } from "@/app/lib/userStore";
 import { AppLayout } from "@/app/components/layouts/AppLayout";
+import type { StayGuest } from "@/app/lib/staysStore";
 
 import {
   cleaners_getCfg,
@@ -19,9 +20,6 @@ import { stays_get, stays_updateGuest, stays_updateDates, stays_addGuest, stays_
 import {
   pins_listByStay,
   pins_revoke,
-  pins_createSingleGuestPin,
-  pins_createGuestPinsForStay,
-  stays_createWithOptionalCleaner,
   pins_deleteStayAndPins,
 } from "@/app/lib/domain/pinsDomain";
 
@@ -76,7 +74,9 @@ function fmtDTMedium(ts?: number | null): string {
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-function getResponsabileName(guests: any[]): string {
+type StayGuestLike = { guestId?: string; name?: string; firstName?: string; lastName?: string };
+
+function getResponsabileName(guests: StayGuestLike[]): string {
   if (!guests || guests.length === 0) return 'Nessun ospite';
   const first = guests[0];
   if (first.firstName && first.lastName) {
@@ -93,7 +93,7 @@ export default async function StayDetailPage({
   searchParams?: SP | Promise<SP>;
 }) {
   const { stayId } = await params;
-  const sp = ((await Promise.resolve(searchParams as any)) ?? {}) as SP;
+  const sp = ((await Promise.resolve(searchParams)) ?? {}) as SP;
   const aptId = pick(sp, "apt") ?? "";
   const clientId = pick(sp, "client") ?? "";
 
@@ -128,8 +128,8 @@ export default async function StayDetailPage({
   const stayCheckout = stayCheckoutDT ? toDTLocalValue(stayCheckoutDT) : "";
 
   // Get apartment name
-  const clients = (listClients() as any[]) ?? [];
-  const getClientId = (c: any) =>
+  const clients = listClients();
+  const getClientId = (c: Client) =>
     String(c?.id ?? c?.clientId ?? c?.clientID ?? c?.slug ?? "");
   const wantedClientId = (pick(sp, "client") ?? getClientId(clients[0]) ?? "").trim();
   const client =
@@ -137,7 +137,7 @@ export default async function StayDetailPage({
 
   const finalClientId = client ? getClientId(client) : "";
   const apartments = finalClientId
-    ? (listApartmentsByClient(finalClientId) as any[]).map((a) => ({
+    ? listApartmentsByClient(finalClientId).map((a: Apartment) => ({
         aptId: String(a?.aptId ?? a?.id ?? a?.apt ?? ""),
         name: String(
           a?.aptName ?? a?.name ?? a?.title ?? `Apt ${a?.aptId ?? a?.id ?? ""}`
@@ -148,76 +148,6 @@ export default async function StayDetailPage({
   const apt = apartments.find((x) => x.aptId === actualAptId);
 
   const hostUser = me.userId ? getUser(me.userId) : null;
-
-  async function genPin(formData: FormData) {
-    "use server";
-
-    const aptId = formData.get("aptId")?.toString() ?? "";
-    if (!aptId) return;
-
-    const stayId = (formData.get("stayId")?.toString() ?? "").trim();
-    const guestName = (formData.get("guestName")?.toString() ?? "").trim();
-
-    const checkin = (formData.get("checkin")?.toString() ?? "").trim();
-    const checkout = (formData.get("checkout")?.toString() ?? "").trim();
-
-    const ci = parseDateTimeLocal(checkin);
-    const co = parseDateTimeLocal(checkout);
-
-    const now = Date.now();
-    const vf = ci?.getTime() ?? now;
-    const vt = co?.getTime() ?? now + 2 * 60 * 60 * 1000;
-
-    pins_createSingleGuestPin(Store, {
-      aptId,
-      stayId,
-      guestName,
-      validFrom: vf,
-      validTo: vt,
-    });
-
-    redirect(
-      `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(aptId)}`
-    );
-  }
-
-  async function genPins(formData: FormData) {
-    "use server";
-
-    const aptId = formData.get("aptId")?.toString() ?? "";
-    if (!aptId) return;
-
-    const stayIdIn = (formData.get("stayId")?.toString() ?? "").trim();
-    const checkin = (formData.get("checkin")?.toString() ?? "").trim();
-    const checkout = (formData.get("checkout")?.toString() ?? "").trim();
-    const guestsStr = (formData.get("guests")?.toString() ?? "2").trim();
-    const guestsCount = Math.max(1, Math.min(10, Number(guestsStr) || 2));
-
-    const ci = parseDateTimeLocal(checkin);
-    const co = parseDateTimeLocal(checkout);
-
-    const now = Date.now();
-    const vf = ci?.getTime() ?? now;
-    const vt = co?.getTime() ?? now + 2 * 60 * 60 * 1000;
-
-    const guestNames = Array.from({ length: guestsCount }).map((_, i) => {
-      const n = (formData.get(`guestName_${i + 1}`)?.toString() ?? "").trim();
-      return n.length ? n : `Ospite ${i + 1}`;
-    });
-
-    pins_createGuestPinsForStay(Store, {
-      aptId,
-      stayId: stayIdIn,
-      validFrom: vf,
-      validTo: vt,
-      guestNames,
-      source: "manual",
-    });
-
-    redirect(
-      `/app/host/stay/${encodeURIComponent(stayIdIn)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(aptId)}`
-    );
-  }
 
   async function delPin(formData: FormData) {
     "use server";
@@ -243,47 +173,6 @@ export default async function StayDetailPage({
 
     redirect(
       `/app/host?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(aptId)}`
-    );
-  }
-
-  async function createStay(formData: FormData) {
-    "use server";
-    const aptId = formData.get("aptId")?.toString() ?? "";
-    if (!aptId) return;
-
-    const checkin = (formData.get("checkin")?.toString() ?? "").trim();
-    const checkout = (formData.get("checkout")?.toString() ?? "").trim();
-    const guests = Math.max(
-      1,
-      Math.min(10, Number(formData.get("guests")?.toString() ?? "2") || 2)
-    );
-
-    const selectedCleaner = cleaners_normName(
-      formData.get("cleaner")?.toString() ?? ""
-    );
-
-    const ci = parseDateTimeLocal(checkin);
-    const co = parseDateTimeLocal(checkout);
-
-    if (!ci || !co || co.getTime() <= ci.getTime()) {
-      redirect(
-        `/app/host?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(aptId)}`
-      );
-    }
-
-    const vf = ci.getTime();
-    const vt = co.getTime();
-
-    const st = stays_createWithOptionalCleaner(Store, {
-      aptId,
-      checkInAt: vf,
-      checkOutAt: vt,
-      guestsCount: guests,
-      cleanerName: selectedCleaner,
-    });
-
-    redirect(
-      `/app/host/stay/${encodeURIComponent(st.stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(aptId)}`
     );
   }
 
@@ -454,7 +343,7 @@ export default async function StayDetailPage({
                     let validTo: number | null = null;
                     
                     if (oldCleanerName) {
-                      const oldPins = Store.listPinsByStay(stayId).filter((p: any) => p.role === "cleaner");
+                      const oldPins = Store.listPinsByStay(stayId).filter((p: Store.PinRecord) => p.role === "cleaner");
                       if (oldPins.length > 0) {
                         // Usa gli orari del PIN esistente
                         validFrom = oldPins[0].validFrom ?? oldPins[0].createdAt;
@@ -597,8 +486,8 @@ export default async function StayDetailPage({
             <div className="text-sm opacity-50">Nessun ospite registrato.</div>
           ) : (
             <div className="space-y-3">
-              {stayObj.guests.map((guest: any, idx: number) => {
-                const guestPins = pins.filter((p: any) => p.guestId === guest.guestId && p.role === "guest");
+              {stayObj.guests.map((guest: StayGuest, idx: number) => {
+                const guestPins = pins.filter((p: Store.PinRecord) => p.guestId === guest.guestId && p.role === "guest");
                 
                 async function updateGuest(formData: FormData) {
                   "use server";
@@ -632,8 +521,8 @@ export default async function StayDetailPage({
                   const guestId = formData.get("guestId")?.toString() ?? "";
                   if (!guestId) return;
 
-                  const guestPinsToRevoke = pins.filter((p: any) => p.guestId === guestId && p.role === "guest");
-                  guestPinsToRevoke.forEach((p: any) => {
+                  const guestPinsToRevoke = pins.filter((p: Store.PinRecord) => p.guestId === guestId && p.role === "guest");
+                  guestPinsToRevoke.forEach((p: Store.PinRecord) => {
                     pins_revoke(Store, p.pin);
                   });
 
@@ -649,7 +538,7 @@ export default async function StayDetailPage({
 
                   const stay = stays_get(stayId);
                   if (!stay) return;
-                  const guest = stay.guests.find((g: any) => g.guestId === guestId);
+                  const guest = stay.guests.find((g: StayGuest) => g.guestId === guestId);
                   if (!guest) return;
 
                   Store.createPinForGuest({
@@ -675,8 +564,8 @@ export default async function StayDetailPage({
 
                   // Revoca tutti i PIN dell'ospite prima di rimuoverlo
                   const stayPins = pins_listByStay(Store, stayId);
-                  const guestPinsToRevoke = stayPins.filter((p: any) => p.guestId === guestId && p.role === "guest");
-                  guestPinsToRevoke.forEach((p: any) => {
+                  const guestPinsToRevoke = stayPins.filter((p: Store.PinRecord) => p.guestId === guestId && p.role === "guest");
+                  guestPinsToRevoke.forEach((p: Store.PinRecord) => {
                     pins_revoke(Store, p.pin);
                   });
 
@@ -779,7 +668,7 @@ export default async function StayDetailPage({
                         <div className="text-xs opacity-50 mb-2">Nessun PIN attivo</div>
                       ) : (
                         <div className="space-y-2 mb-2">
-                          {guestPins.map((p: any) => {
+                          {guestPins.map((p: Store.PinRecord) => {
                             const vTo = p.validTo ?? p.expiresAt;
                             return (
                               <div
@@ -958,7 +847,7 @@ export default async function StayDetailPage({
         <section className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
           <div className="text-sm opacity-70 mb-3">PIN Cleaner</div>
           {(() => {
-            const cleanerPins = pins.filter((p: any) => p.role === "cleaner" && p.stayId === stayId);
+            const cleanerPins = pins.filter((p: Store.PinRecord) => p.role === "cleaner" && p.stayId === stayId);
             // Recupera il cleaner assegnato allo stay (persistente, indipendente dai PIN)
             const assignedCleaner = stayObj.cleanerName || null;
 
@@ -1038,7 +927,7 @@ export default async function StayDetailPage({
                   <div className="text-sm opacity-60">Nessun PIN cleaner attivo per questo soggiorno.</div>
                 ) : (
                   <div className="space-y-2">
-                    {cleanerPins.map((p: any) => {
+                    {cleanerPins.map((p: Store.PinRecord) => {
                       const vFrom = p.validFrom ?? p.createdAt;
                       const vTo = p.validTo ?? p.expiresAt;
 
@@ -1129,7 +1018,7 @@ export default async function StayDetailPage({
             <div className="text-sm opacity-50">Nessun PIN attivo per questo stay.</div>
           ) : (
             <div className="space-y-2">
-              {pins.map((p: any) => {
+              {pins.map((p: Store.PinRecord) => {
                 const vFrom = p.validFrom ?? p.createdAt;
                 const vTo = p.validTo ?? p.expiresAt;
 

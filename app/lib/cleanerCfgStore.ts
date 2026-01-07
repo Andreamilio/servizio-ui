@@ -16,7 +16,7 @@ export type CleanerCfg = {
 };
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __cleanerCfgStore: Map<string, CleanerCfg> | undefined;
 }
 

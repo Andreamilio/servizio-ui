@@ -93,14 +93,14 @@ export function validateSessionUser(session: SessionPayload | null): SessionPayl
     if (!techUser) {
       try {
         createUser({ username: "tech", password: "tech123", role: "tech" });
-      } catch (error) {
+      } catch {
         // Ignora se già esiste
       }
     }
     if (!hostUser) {
       try {
         createUser({ username: "host", password: "host123", role: "host", clientId: "global-properties" });
-      } catch (error) {
+      } catch {
         // Ignora se già esiste
       }
     }

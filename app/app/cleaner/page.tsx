@@ -2,11 +2,9 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { readSession, validateSessionUser } from "@/app/lib/session";
-import { listJobsByApt, listJobsByStay } from "@/app/lib/cleaningstore";
-import { listStaysByApt } from "@/app/lib/staysStore";
+import { listJobsByApt, listJobsByStay, type CleaningJob } from "@/app/lib/cleaningstore";
 import { listPinsByApt } from "@/app/lib/store";
 import { Card, CardBody, CardHeader } from "@/app/components/ui/Card";
-import { Button } from "@/app/components/ui/Button";
 import { Badge } from "@/app/components/ui/Badge";
 import { AppLayout } from "@/app/components/layouts/AppLayout";
 import { Sparkles } from "lucide-react";
@@ -34,7 +32,7 @@ export default async function CleanerHome() {
   }
 
   // Raccogli tutti i job associati agli stay del cleaner
-  const jobs: any[] = [];
+  const jobs: CleaningJob[] = [];
   for (const stayId of stayIds) {
     const stayJobs = listJobsByStay(stayId);
     jobs.push(...stayJobs);

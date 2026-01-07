@@ -11,12 +11,11 @@ type Cleaner = {
 
 type CreateStayModalProps = {
     aptId: string;
-    clientId: string;
     cleaners: Cleaner[];
     createStayAction: (formData: FormData) => Promise<void>;
 };
 
-export function CreateStayModal({ aptId, clientId, cleaners, createStayAction }: CreateStayModalProps) {
+export function CreateStayModal({ aptId, cleaners, createStayAction }: CreateStayModalProps) {
     const [isOpen, setIsOpen] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
 

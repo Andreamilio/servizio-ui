@@ -7,7 +7,6 @@ import { getApt } from "@/app/lib/techstore";
 import { getUser } from "@/app/lib/userStore";
 import { AppLayout } from "@/app/components/layouts/AppLayout";
 import {
-  getDevicePackage,
   getAllDeviceTypes,
   getDeviceLabel,
   getAllEnabledDevices,
@@ -87,7 +86,6 @@ export default async function TechDevicesPage({
   const sp = await Promise.resolve(searchParams ?? {});
   const isEditMode = sp.edit === "1";
 
-  const devicePackage = getDevicePackage(aptId);
   const allDevicesMap = getAllDevices(aptId);
   const deviceTypes = getAllDeviceTypes();
   
@@ -168,7 +166,7 @@ export default async function TechDevicesPage({
 
             {enabledDevices.length === 0 ? (
               <div className="text-sm opacity-60 py-8 text-center">
-                Nessun device configurato. Clicca "Modifica" per aggiungere device.
+                Nessun device configurato. Clicca &quot;Modifica&quot; per aggiungere device.
               </div>
             ) : (
               <div className="space-y-2">
@@ -259,7 +257,7 @@ export default async function TechDevicesPage({
           </form>
 
           <div className="mt-4 text-xs opacity-60">
-            Nota: La checkbox "Controllabile" è disponibile solo se "Presente" è selezionata. Se un device non è presente, non verrà mostrato nelle viste Tech/Host/Guest.
+            Nota: La checkbox &quot;Controllabile&quot; è disponibile solo se &quot;Presente&quot; è selezionata. Se un device non è presente, non verrà mostrato nelle viste Tech/Host/Guest.
           </div>
         </div>
       </div>

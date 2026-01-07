@@ -3,9 +3,9 @@
 // Tutte le viste devono leggere/scrivere eventi passando da qui.
 // Lo storage reale (oggi in-memory, domani DB/API) sta sotto in Store.
 
-import type { AccessEventType } from "@/app/lib/store";
+import type { AccessEventType, AccessEvent } from "@/app/lib/store";
 
-// Actor = chi ha generato l’evento (per audit)
+// Actor = chi ha generato l'evento (per audit)
 export type EventActor = "host" | "guest" | "cleaner" | "tech" | "system";
 
 export type DomainEvent = {
@@ -17,22 +17,27 @@ export type DomainEvent = {
   ts: number;
 };
 
-function hasFn(obj: any, name: string) {
+type StoreWithEvents = {
+  listAccessLogByApt?: (aptId: string, limit?: number) => AccessEvent[];
+  logAccessEvent?: (aptId: string, type: AccessEventType, label: string) => void;
+};
+
+function hasFn(obj: StoreWithEvents, name: keyof StoreWithEvents) {
   return obj && typeof obj[name] === "function";
 }
 
-export function events_listByApt(Store: any, aptId: string, limit = 10): DomainEvent[] {
+export function events_listByApt(Store: StoreWithEvents, aptId: string, limit = 10): DomainEvent[] {
   if (!aptId) return [];
 
   // ✅ store.ts già espone listAccessLogByApt(aptId, limit)
-  if (hasFn(Store, "listAccessLogByApt")) {
+  if (hasFn(Store, "listAccessLogByApt") && Store.listAccessLogByApt) {
     const raw = Store.listAccessLogByApt(aptId, limit) ?? [];
     // Store.AccessEvent non ha "actor": lo aggiungiamo come "system" di default.
-    return raw.map((e: any) => ({
+    return raw.map((e: AccessEvent) => ({
       id: String(e.id),
       aptId: String(e.aptId),
       type: e.type as AccessEventType,
-      actor: "system",
+      actor: "system" as EventActor,
       label: String(e.label ?? ""),
       ts: Number(e.ts ?? Date.now()),
     }));
@@ -42,7 +47,7 @@ export function events_listByApt(Store: any, aptId: string, limit = 10): DomainE
 }
 
 export function events_log(
-  Store: any,
+  Store: StoreWithEvents,
   params: {
     aptId: string;
     type: AccessEventType;
@@ -56,7 +61,7 @@ export function events_log(
   // ✅ store.ts già espone logAccessEvent(aptId, type, label)
   // Lo store non salva "actor" (per ora). Lo teniamo nel dominio come info logica.
   // Se domani vuoi, estendiamo Store.AccessEvent includendo actor.
-  if (hasFn(Store, "logAccessEvent")) {
+  if (hasFn(Store, "logAccessEvent") && Store.logAccessEvent) {
     Store.logAccessEvent(aptId, type, `[${actor}] ${label}`);
     return;
   }

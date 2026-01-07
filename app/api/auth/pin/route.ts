@@ -71,7 +71,7 @@ export async function POST(req: Request) {
     const norm = (v: unknown) => String(v ?? "").trim().replace(/\s+/g, "");
 
     if (isJson) {
-      const body = await req.json().catch(() => ({} as any));
+      const body = await req.json().catch(() => ({})) as { pin?: string; code?: string; otp?: string; next?: string };
       pin = norm(body?.pin ?? body?.code ?? body?.otp);
       next = String(body?.next ?? "").trim();
     } else {
@@ -152,7 +152,7 @@ export async function POST(req: Request) {
     });
     return res;
   }
-  } catch (error: any) {
+  } catch (error) {
     console.error("[auth/pin] Error:", error);
     if (isJson) {
       return NextResponse.json(

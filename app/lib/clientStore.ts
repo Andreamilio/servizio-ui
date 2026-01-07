@@ -37,7 +37,7 @@ export type ClientStats = {
  * In futuro verrà sostituito da DB / API senza cambiare l'interfaccia
  */
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __clientStore: Map<string, Client> | undefined;
 }
 

@@ -20,7 +20,7 @@ export type Pin = {
 };
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __accessPins: Map<string, Pin> | undefined;
 }
 

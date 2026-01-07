@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { readSession, validateSessionUser } from "@/app/lib/session";
@@ -8,22 +7,7 @@ import { Card, CardBody, CardHeader } from "@/app/components/ui/Card";
 import { Button } from "@/app/components/ui/Button";
 import { MessageCircle, Ticket, AlertCircle } from "lucide-react";
 
-type SP = Record<string, string | string[] | undefined>;
-
-function pick(sp: SP, key: string) {
-    const v = sp[key];
-    return typeof v === 'string' ? v : Array.isArray(v) ? v[0] : undefined;
-}
-
-export default async function HostSupportPage({ 
-    searchParams 
-}: { 
-    searchParams?: SP | Promise<SP> 
-}) {
-    const sp = ((await Promise.resolve(searchParams as any)) ?? {}) as SP;
-    const clientId = pick(sp, 'client')?.trim() || '';
-    const aptId = pick(sp, 'apt')?.trim() || '';
-
+export default async function HostSupportPage() {
     const cookieStore = await cookies();
     const sess = cookieStore.get("sess")?.value;
     const me = validateSessionUser(readSession(sess));

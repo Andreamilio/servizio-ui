@@ -17,7 +17,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const body = await req.json().catch(() => ({} as any));
+    const body = await req.json().catch(() => ({})) as { currentPassword?: string; newPassword?: string; confirmPassword?: string };
     const currentPassword = String(body?.currentPassword ?? "").trim();
     const newPassword = String(body?.newPassword ?? "").trim();
     const confirmPassword = String(body?.confirmPassword ?? "").trim();
@@ -67,7 +67,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ ok: true, message: "Password aggiornata con successo" });
-  } catch (error: any) {
+  } catch (error) {
     console.error("[auth/change-password] Error:", error);
     return NextResponse.json(
       { ok: false, error: "Errore interno del server" },
@@ -75,4 +75,5 @@ export async function POST(req: Request) {
     );
   }
 }
+
 

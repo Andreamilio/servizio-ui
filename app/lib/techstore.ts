@@ -53,7 +53,7 @@ export type IncidentItem = {
 };
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __techStore:
     | {
         clientName: string;
@@ -66,7 +66,7 @@ declare global {
 }
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __techSensors: Map<string, Sensor[]> | undefined;
 }
 

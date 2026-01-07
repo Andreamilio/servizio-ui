@@ -1,9 +1,12 @@
 // app/lib/gateStore.ts
-import crypto from "crypto";
 import type { DoorOutcome } from "@/app/lib/gueststore"; // oppure ridefiniscilo qui
-import type { AccessEventType } from "@/app/lib/store";
+import type { AccessEvent } from "@/app/lib/store";
 
 export type GateState = "open" | "closed";
+
+type StoreWithAccessLog = {
+  listAccessLogByApt?: (aptId: string, limit?: number) => AccessEvent[];
+};
 
 export type GateSnapshot = {
   aptId: string;
@@ -13,7 +16,7 @@ export type GateSnapshot = {
 };
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __gateStore: Map<string, GateSnapshot> | undefined;
 }
 
@@ -59,11 +62,11 @@ export function gate_open(aptId: string): DoorOutcome {
  * Legge lo stato del portone da Store.accessLog (single source of truth)
  * Usato da tutte le viste per avere coerenza
  */
-export function gate_getStateFromLog(Store: any, aptId: string): "open" | "closed" | "unknown" {
+export function gate_getStateFromLog(Store: StoreWithAccessLog, aptId: string): "open" | "closed" | "unknown" {
   if (!Store?.listAccessLogByApt) return "unknown";
   
   const log = Store.listAccessLogByApt(aptId, 50) ?? [];
-  const last = log.find((e: any) => e?.type === "gate_opened");
+  const last = log.find((e: AccessEvent) => e?.type === "gate_opened");
   
   if (!last) return "unknown";
   return "open";
