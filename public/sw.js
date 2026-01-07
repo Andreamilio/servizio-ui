@@ -22,8 +22,8 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: data.body || '',
-    icon: '/favicon.ico',
-    badge: '/favicon.ico',
+    icon: '/easy-stay-192.png',
+    badge: '/easy-stay-192.png',
     tag: data.tag || 'default',
     requireInteraction: false,
     silent: false,
