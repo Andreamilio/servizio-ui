@@ -14,8 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Servizio UI",
-  description: "Servizio UI - Gestione accessi e controllo porte",
+  title: "easy stay",
+  description: "easy stay - Gestione accessi e controllo porte",
+  applicationName: "easy stay",
   other: {
     "color-scheme": "light dark",
   },
@@ -35,6 +36,7 @@ export default function RootLayout({
   return (
     <html lang="it" suppressHydrationWarning>
       <head>
+        <link rel="manifest" href="/manifest.json" />
         <script
           dangerouslySetInnerHTML={{
             __html: `

@@ -7,23 +7,23 @@ import { Bell } from "lucide-react";
 const notificationTypes = [
   {
     id: "porta-aperta",
-    title: "easy stay",
-    message: "porta aperta",
+    title: "🚪 Porta aperta",
+    message: "È stata rilevata l'apertura della porta dell'appartamento.",
   },
   {
     id: "porta-chiusa",
-    title: "easy stay",
-    message: "porta chiusa",
+    title: "🔒 Porta chiusa",
+    message: "La porta dell'appartamento risulta ora chiusa.",
   },
   {
     id: "fumo",
-    title: "easy stay",
-    message: "rilevato fumo nell'appartamento",
+    title: "🚨 Allarme fumo",
+    message: "Rilevata presenza di fumo all'interno dell'appartamento.",
   },
   {
     id: "riscaldamento",
-    title: "easy stay",
-    message: "rilevato riscaldamento acceso con ospite fuori",
+    title: "🌡️ Riscaldamento attivo",
+    message: "Il riscaldamento è acceso mentre l'ospite risulta assente.",
   },
 ] as const;
 
