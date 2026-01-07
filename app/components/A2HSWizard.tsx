@@ -231,7 +231,7 @@ export function A2HSWizard() {
         {/* Contenuto step */}
         <div className="p-4 lg:p-6 flex-1 flex flex-col items-center justify-center min-h-0 overflow-hidden">
           <div className="text-center space-y-4 w-full">
-            {platform === "ios" && currentStepData.image ? (
+            {platform === "ios" && 'image' in currentStepData && currentStepData.image ? (
               <div className="flex justify-center">
                 <img
                   src={currentStepData.image}
