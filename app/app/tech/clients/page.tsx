@@ -201,7 +201,7 @@ export default async function TechClientsPage({
             {!isCreateClient && !isEditClient && !isCreateApt && !isEditApt && !isClientDetail && (
               <Link
                 href="/app/tech/clients?action=create"
-                className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-4 py-2 font-semibold text-sm"
+                className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-4 py-2 font-semibold text-sm whitespace-nowrap"
               >
                 + Nuovo Cliente
               </Link>
