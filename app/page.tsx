@@ -3,6 +3,7 @@ import { Input } from "@/app/components/ui/Input";
 import { Button } from "@/app/components/ui/Button";
 import { Card, CardBody } from "@/app/components/ui/Card";
 import { KeyRound } from "lucide-react";
+import { OpenA2HSLink } from "@/app/components/OpenA2HSLink";
 
 export default function LoginPage({ searchParams }: any) {
   const next = typeof searchParams?.next === "string" ? searchParams.next : "";
@@ -55,6 +56,8 @@ export default function LoginPage({ searchParams }: any) {
                 Entra
               </Button>
             </form>
+
+            <OpenA2HSLink />
 
             <div className="pt-4 border-t border-[var(--border-light)] space-y-4">
               <p className="text-center text-sm text-[var(--text-secondary)]">

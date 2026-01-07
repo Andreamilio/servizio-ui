@@ -2,6 +2,7 @@ import { Input } from "@/app/components/ui/Input";
 import { Button } from "@/app/components/ui/Button";
 import { Card, CardBody } from "@/app/components/ui/Card";
 import { User } from "lucide-react";
+import { OpenA2HSLink } from "@/app/components/OpenA2HSLink";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +64,8 @@ export default function LoginHostTechPage({ searchParams }: { searchParams?: { e
                 Entra
               </Button>
             </form>
+
+            <OpenA2HSLink />
 
             <div className="pt-4 border-t border-[var(--border-light)] space-y-4">
               <p className="text-center text-sm text-[var(--text-secondary)]">
