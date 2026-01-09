@@ -1,7 +1,10 @@
 "use client";
 
+import { VStack, HStack, Text, Box } from "@chakra-ui/react";
 import { getDeviceLabel, type DeviceType } from "@/app/lib/devicePackageTypes";
 import type { DeviceApiSettings } from "@/app/lib/technicalSettingsStore";
+import { Card, CardBody, CardHeader } from "@/app/components/ui/Card";
+import { Button } from "@/app/components/ui/Button";
 
 type ApiDevicesListProps = {
   devicesWithApi: Array<{ deviceType: DeviceType; settings: DeviceApiSettings | null }>;
@@ -14,30 +17,46 @@ export function ApiDevicesList({ devicesWithApi, onOpenModal }: ApiDevicesListPr
   }
 
   return (
-    <div className="mb-6 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
-      <div className="text-sm font-semibold mb-3">Device con API diretta</div>
-      <div className="space-y-2">
-        {devicesWithApi.map(({ deviceType, settings }) => (
-          <div
-            key={deviceType}
-            className="flex items-center justify-between rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3"
-          >
-            <div>
-              <div className="text-sm font-semibold">{getDeviceLabel(deviceType)}</div>
-              <div className="text-xs opacity-60 mt-0.5">
-                {settings?.endpoint ? `Endpoint: ${settings.endpoint}` : "Non configurato"}
-              </div>
-            </div>
-            <button
-              onClick={() => onOpenModal(deviceType)}
-              className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-4 py-2 font-semibold text-sm"
-            >
-              Configura
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
+    <Card mb={6}>
+      <CardBody p={4}>
+        <VStack spacing={3} align="stretch">
+          <Text fontSize="sm" fontWeight="semibold" mb={3}>
+            Device con API diretta
+          </Text>
+          <VStack spacing={2} align="stretch">
+            {devicesWithApi.map(({ deviceType, settings }) => (
+              <Card key={deviceType} variant="outlined">
+                <CardBody p={3}>
+                  <HStack justify="space-between">
+                    <Box>
+                      <Text fontSize="sm" fontWeight="semibold">
+                        {getDeviceLabel(deviceType)}
+                      </Text>
+                      <Text fontSize="xs" opacity={0.6} mt={0.5}>
+                        {settings?.endpoint ? `Endpoint: ${settings.endpoint}` : "Non configurato"}
+                      </Text>
+                    </Box>
+                    <Button
+                      onClick={() => onOpenModal(deviceType)}
+                      borderRadius="xl"
+                      bg="rgba(6, 182, 212, 0.2)"
+                      _hover={{ bg: "rgba(6, 182, 212, 0.3)" }}
+                      border="1px solid"
+                      borderColor="rgba(6, 182, 212, 0.3)"
+                      px={4}
+                      py={2}
+                      fontWeight="semibold"
+                      fontSize="sm"
+                    >
+                      Configura
+                    </Button>
+                  </HStack>
+                </CardBody>
+              </Card>
+            ))}
+          </VStack>
+        </VStack>
+      </CardBody>
+    </Card>
   );
 }
-

@@ -1,13 +1,19 @@
-import { ButtonHTMLAttributes, ReactNode } from "react";
-import { LucideIcon } from "lucide-react";
+"use client";
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+import { ButtonHTMLAttributes, ReactNode } from "react";
+import { Button as ChakraButton, ButtonProps as ChakraButtonProps } from "@chakra-ui/react";
+import { LucideIcon } from "lucide-react";
+import { useTheme } from "@/app/lib/theme";
+
+interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "color"> {
   variant?: "primary" | "secondary" | "ghost" | "danger" | "success";
   size?: "sm" | "md" | "lg";
   icon?: LucideIcon;
   iconPosition?: "left" | "right";
   fullWidth?: boolean;
   children: ReactNode;
+  asChild?: boolean;
+  leftIcon?: ReactNode;
 }
 
 export function Button({
@@ -16,43 +22,92 @@ export function Button({
   icon: Icon,
   iconPosition = "left",
   fullWidth = false,
-  className = "",
   children,
+  leftIcon: propLeftIcon,
   ...props
 }: ButtonProps) {
-  const baseClasses = "inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
-  
-  const variantClasses = {
-    primary: "bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] focus:ring-[var(--accent-primary)]",
-    secondary: "bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--border-light)] hover:bg-[var(--bg-tertiary)] focus:ring-[var(--border-medium)]",
-    ghost: "bg-transparent text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] focus:ring-[var(--border-medium)]",
-    danger: "bg-[var(--accent-error)] text-white hover:opacity-90 focus:ring-[var(--accent-error)]",
-    success: "bg-[var(--accent-success)] text-white hover:opacity-90 focus:ring-[var(--accent-success)]",
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  // Map our variants to ChakraUI button styles
+  const getButtonStyles = (): ChakraButtonProps => {
+    const baseStyles: ChakraButtonProps = {
+      borderRadius: "xl",
+      fontWeight: "semibold",
+      transition: "all 0.2s",
+      width: fullWidth ? "100%" : undefined,
+    };
+
+    switch (variant) {
+      case "primary":
+        return {
+          ...baseStyles,
+          bg: "var(--accent-primary)",
+          color: "white",
+          _hover: { bg: "var(--accent-primary-hover)" },
+          _focus: { ring: "2px", ringColor: "var(--accent-primary)", ringOffset: "2px" },
+        };
+      case "secondary":
+        return {
+          ...baseStyles,
+          bg: "var(--bg-secondary)",
+          color: "var(--text-primary)",
+          border: "1px solid",
+          borderColor: "var(--border-light)",
+          _hover: { bg: "var(--bg-tertiary)" },
+          _focus: { ring: "2px", ringColor: "var(--border-medium)", ringOffset: "2px" },
+        };
+      case "ghost":
+        return {
+          ...baseStyles,
+          bg: "transparent",
+          color: "var(--text-primary)",
+          _hover: { bg: "var(--bg-secondary)" },
+          _focus: { ring: "2px", ringColor: "var(--border-medium)", ringOffset: "2px" },
+        };
+      case "danger":
+        return {
+          ...baseStyles,
+          bg: "var(--accent-error)",
+          color: "white",
+          _hover: { opacity: 0.9 },
+          _focus: { ring: "2px", ringColor: "var(--accent-error)", ringOffset: "2px" },
+        };
+      case "success":
+        return {
+          ...baseStyles,
+          bg: "var(--accent-success)",
+          color: "white",
+          _hover: { opacity: 0.9 },
+          _focus: { ring: "2px", ringColor: "var(--accent-success)", ringOffset: "2px" },
+        };
+      default:
+        return baseStyles;
+    }
   };
-  
-  const sizeClasses = {
-    sm: "px-3 py-1.5 text-sm",
-    md: "px-4 py-2 text-base",
-    lg: "px-6 py-3 text-lg",
+
+  const sizeMap = {
+    sm: "sm" as const,
+    md: "md" as const,
+    lg: "lg" as const,
   };
-  
-  const widthClass = fullWidth ? "w-full" : "";
-  
+
   const iconSize = size === "sm" ? 16 : size === "md" ? 20 : 24;
-  const iconClasses = children ? (iconPosition === "left" ? "mr-2" : "ml-2") : "";
-  
+
+  // ChakraUI Button uses leftIcon and rightIcon props
+  const leftIcon = propLeftIcon || (Icon && iconPosition === "left" ? <Icon size={iconSize} /> : undefined);
+  const rightIcon = Icon && iconPosition === "right" ? <Icon size={iconSize} /> : undefined;
+
   return (
-    <button
-      className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${widthClass} ${className}`}
-      {...props}
+    <ChakraButton
+      size={sizeMap[size]}
+      leftIcon={leftIcon}
+      rightIcon={rightIcon}
+      asChild={props.asChild}
+      {...getButtonStyles()}
+      {...(props as ChakraButtonProps)}
     >
-      {Icon && iconPosition === "left" && (
-        <Icon size={iconSize} className={iconClasses} />
-      )}
       {children}
-      {Icon && iconPosition === "right" && (
-        <Icon size={iconSize} className={iconClasses} />
-      )}
-    </button>
+    </ChakraButton>
   );
 }

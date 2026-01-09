@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
+import NextLink from "next/link";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
-import { Home, Users, Building2, Calendar, Sparkles, HelpCircle, Settings, User } from "lucide-react";
+import { Home, Users, Building2, Calendar, Sparkles, HelpCircle } from "lucide-react";
+import { Box, HStack, Container, IconButton } from "@chakra-ui/react";
 import { ThemeToggle } from "../ThemeToggle";
 import { PushNotificationToggle } from "../PushNotificationToggle";
 import { Button } from "../ui/Button";
@@ -123,17 +124,32 @@ export function HeaderNav({ role, userInfo }: HeaderNavProps) {
   const allItems = [...items, ...conditionalItems];
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-[var(--bg-card)]/95 backdrop-blur-sm border-b border-[var(--border-light)] shadow-sm">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
+    <Box
+      as="header"
+      position="sticky"
+      top={0}
+      zIndex={50}
+      w="100%"
+      bg="var(--bg-card)"
+      bgOpacity={0.95}
+      backdropFilter="blur(4px)"
+      borderBottom="1px solid"
+      borderColor="var(--border-light)"
+      boxShadow="sm"
+    >
+      <Container maxW="7xl" px={{ base: 4, sm: 6, lg: 8 }}>
+        <HStack h={16} justify="space-between">
           {/* Profile Icon / Logo */}
-          <div className="flex items-center gap-4">
+          <HStack spacing={4}>
             {userInfo && userInfo.userId && (role === "host" || role === "tech") ? (
               <>
-                <img 
-                  src="/easy-stay-192.png" 
-                  alt="easy stay" 
-                  className="w-10 h-10 object-contain"
+                <Box
+                  as="img"
+                  src="/easy-stay-192.png"
+                  alt="easy stay"
+                  w={10}
+                  h={10}
+                  objectFit="contain"
                 />
                 <UserProfile
                   userId={userInfo.userId}
@@ -143,15 +159,12 @@ export function HeaderNav({ role, userInfo }: HeaderNavProps) {
                 />
               </>
             ) : null}
-          </div>
+          </HStack>
 
           {/* Navigation Items - Desktop Only */}
-          <nav className="hidden lg:flex items-center gap-1">
+          <Box as="nav" display={{ base: "none", lg: "flex" }} alignItems="center" gap={1}>
             {allItems.map((item) => {
               const Icon = item.icon;
-              // Per "/app/guest" (Home), attiva solo se pathname è esattamente "/app/guest"
-              // Per "/app/host/stays" e "/app/host/cleaners", attiva solo se l'href corrisponde esattamente
-              // Per altre route, usa la logica normale ma escludi route specifiche
               let isActive = false;
               let href = item.href;
               
@@ -171,13 +184,10 @@ export function HeaderNav({ role, userInfo }: HeaderNavProps) {
               if (item.href === "/app/guest") {
                 isActive = pathname === item.href;
               } else if (item.href.includes("/app/host/stays")) {
-                // Per "Soggiorni", controlla se siamo sulla route stays
                 isActive = pathname === "/app/host/stays";
               } else if (item.href.includes("/app/host/cleaners")) {
-                // Per "Cleaner", controlla se siamo sulla route cleaners
                 isActive = pathname === "/app/host/cleaners";
               } else if (item.href === "/app/host") {
-                // Per "Dashboard", attiva solo se siamo su /app/host e NON su altre route host
                 isActive = pathname === item.href || (
                   pathname.startsWith(item.href + "/") && 
                   !pathname.startsWith("/app/host/stays") && 
@@ -188,7 +198,6 @@ export function HeaderNav({ role, userInfo }: HeaderNavProps) {
                   !pathname.startsWith("/app/host/support")
                 );
               } else if (item.href === "/app/tech") {
-                // Per "Dashboard" tech, attiva solo se siamo su /app/tech e NON su /app/tech/users o /app/tech/clients
                 if (pathname.startsWith("/app/tech/users") || pathname.startsWith("/app/tech/clients")) {
                   isActive = false;
                 } else {
@@ -198,7 +207,6 @@ export function HeaderNav({ role, userInfo }: HeaderNavProps) {
                 isActive = pathname === item.href || pathname.startsWith(item.href + "/");
               }
               
-              // Check if this is a Dashboard/Home item that should use back navigation
               const isDashboardItem = item.href === "/app/tech" || 
                                       item.href === "/app/host" || 
                                       item.href === "/app/guest";
@@ -206,50 +214,73 @@ export function HeaderNav({ role, userInfo }: HeaderNavProps) {
               if (isDashboardItem) {
                 const dashboardHref = getDashboardHref(role, pathname, searchParams);
                 return (
-                  <button
+                  <Button
                     key={item.href}
                     onClick={() => router.push(dashboardHref)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-                      isActive
-                        ? "bg-[var(--accent-primary)] text-[var(--text-inverse)]"
-                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
-                    }`}
+                    leftIcon={<Icon size={18} />}
+                    size="sm"
+                    px={4}
+                    py={2}
+                    borderRadius="xl"
+                    fontSize="sm"
+                    fontWeight="medium"
+                    transition="colors"
+                    bg={isActive ? "var(--accent-primary)" : "transparent"}
+                    color={isActive ? "var(--text-inverse)" : "var(--text-secondary)"}
+                    _hover={{
+                      color: isActive ? undefined : "var(--text-primary)",
+                      bg: isActive ? undefined : "var(--bg-secondary)",
+                    }}
                   >
-                    <Icon size={18} />
-                    <span>{item.label}</span>
-                  </button>
+                    {item.label}
+                  </Button>
                 );
               }
               
               return (
-                <Link
+                <Button
                   key={item.href}
-                  href={href}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-[var(--accent-primary)] text-[var(--text-inverse)]"
-                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
-                  }`}
+                  asChild
+                  leftIcon={<Icon size={18} />}
+                  size="sm"
+                  px={4}
+                  py={2}
+                  borderRadius="xl"
+                  fontSize="sm"
+                  fontWeight="medium"
+                  transition="colors"
+                  bg={isActive ? "var(--accent-primary)" : "transparent"}
+                  color={isActive ? "var(--text-inverse)" : "var(--text-secondary)"}
+                  _hover={{
+                    color: isActive ? undefined : "var(--text-primary)",
+                    bg: isActive ? undefined : "var(--bg-secondary)",
+                  }}
                 >
-                  <Icon size={18} />
-                  <span>{item.label}</span>
-                </Link>
+                  <NextLink href={href}>
+                    {item.label}
+                  </NextLink>
+                </Button>
               );
             })}
-          </nav>
+          </Box>
 
           {/* Right Side Actions */}
-          <div className="flex items-center gap-2">
+          <HStack spacing={2}>
             <PushNotificationToggle />
             <ThemeToggle />
-            <form action="/api/auth/logout" method="post">
-              <Button variant="ghost" size="sm" type="submit" className="hidden sm:flex">
+            <Box as="form" action="/api/auth/logout" method="post">
+              <Button
+                variant="ghost"
+                size="sm"
+                type="submit"
+                display={{ base: "none", sm: "flex" }}
+              >
                 Logout
               </Button>
-            </form>
-          </div>
-        </div>
-      </div>
-    </header>
+            </Box>
+          </HStack>
+        </HStack>
+      </Container>
+    </Box>
   );
 }

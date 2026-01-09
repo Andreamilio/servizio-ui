@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { readSession, validateSessionUser } from "@/app/lib/session";
@@ -7,6 +6,8 @@ import { Card, CardBody, CardHeader } from "@/app/components/ui/Card";
 import { Button } from "@/app/components/ui/Button";
 import { AppLayout } from "@/app/components/layouts/AppLayout";
 import { ArrowLeft, Wifi, Clock, FileText, Phone } from "lucide-react";
+import { Box, VStack, HStack, Heading, Text, Grid, GridItem, List, ListItem } from "@chakra-ui/react";
+import { Link } from "@/app/components/ui/Link";
 
 export default async function GuestApartmentPage() {
   const cookieStore = await cookies();
@@ -15,93 +16,135 @@ export default async function GuestApartmentPage() {
 
   if (!me || me.role !== "guest") {
     redirect("/?err=session_expired");
-    return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
+    return (
+      <Box p={6} color="var(--text-primary)">
+        Non autorizzato
+      </Box>
+    );
   }
 
   const aptId = me.aptId;
-  if (!aptId) return <div className="p-6 text-[var(--text-primary)]">AptId non disponibile</div>;
+  if (!aptId) {
+    return (
+      <Box p={6} color="var(--text-primary)">
+        AptId non disponibile
+      </Box>
+    );
+  }
   
   const s = getGuestState(aptId);
 
   return (
     <AppLayout role="guest">
-      <div className="mx-auto w-full max-w-4xl p-4 sm:p-6 lg:p-8">
-        <div className="mb-6">
+      <Box mx="auto" w="100%" maxW="4xl" p={{ base: 4, sm: 6, lg: 8 }}>
+        <Box mb={6}>
           <Link href="/app/guest">
-            <Button variant="ghost" size="sm" icon={ArrowLeft} iconPosition="left">
+            <Button variant="ghost" size="sm" leftIcon={<ArrowLeft size={16} />}>
               Indietro
             </Button>
           </Link>
-        </div>
+        </Box>
 
-        <div className="space-y-6">
+        <VStack spacing={6} align="stretch">
           {/* Apartment Info */}
           <Card variant="elevated">
             <CardHeader>
-              <h1 className="text-2xl font-semibold text-[var(--text-primary)]">{s.apt.aptName}</h1>
-              <p className="text-sm text-[var(--text-secondary)]">{s.apt.addressShort}</p>
+              <Heading as="h1" size="xl" fontWeight="semibold" color="var(--text-primary)">
+                {s.apt.aptName}
+              </Heading>
+              <Text fontSize="sm" color="var(--text-secondary)">
+                {s.apt.addressShort}
+              </Text>
             </CardHeader>
-            <CardBody className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)]">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Wifi className="w-4 h-4 text-[var(--text-secondary)]" />
-                    <div className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">Wi-Fi</div>
-                  </div>
-                  <div className="font-semibold text-[var(--text-primary)]">{s.apt.wifiSsid}</div>
-                  <div className="text-xs text-[var(--text-secondary)] mt-1">Password: {s.apt.wifiPass}</div>
-                </div>
+            <CardBody>
+              <VStack spacing={6} align="stretch">
+                <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)" }} gap={4}>
+                  <Card variant="outlined">
+                    <CardBody p={4}>
+                      <VStack align="stretch" spacing={2}>
+                        <HStack spacing={2}>
+                          <Wifi size={16} color="var(--text-secondary)" />
+                          <Text fontSize="xs" fontWeight="medium" color="var(--text-secondary)" textTransform="uppercase" letterSpacing="wide">
+                            Wi-Fi
+                          </Text>
+                        </HStack>
+                        <Text fontWeight="semibold" color="var(--text-primary)">
+                          {s.apt.wifiSsid}
+                        </Text>
+                        <Text fontSize="xs" color="var(--text-secondary)" mt={1}>
+                          Password: {s.apt.wifiPass}
+                        </Text>
+                      </VStack>
+                    </CardBody>
+                  </Card>
 
-                <div className="p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)]">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Clock className="w-4 h-4 text-[var(--text-secondary)]" />
-                    <div className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">Orari</div>
-                  </div>
-                  <div className="text-sm text-[var(--text-primary)]">
-                    <div>Check-in: <span className="font-semibold">{s.apt.checkIn}</span></div>
-                    <div className="mt-1">Check-out: <span className="font-semibold">{s.apt.checkOut}</span></div>
-                  </div>
-                </div>
-              </div>
+                  <Card variant="outlined">
+                    <CardBody p={4}>
+                      <VStack align="stretch" spacing={2}>
+                        <HStack spacing={2}>
+                          <Clock size={16} color="var(--text-secondary)" />
+                          <Text fontSize="xs" fontWeight="medium" color="var(--text-secondary)" textTransform="uppercase" letterSpacing="wide">
+                            Orari
+                          </Text>
+                        </HStack>
+                        <Text fontSize="sm" color="var(--text-primary)">
+                          Check-in: <Text as="span" fontWeight="semibold">{s.apt.checkIn}</Text>
+                        </Text>
+                        <Text fontSize="sm" color="var(--text-primary)" mt={1}>
+                          Check-out: <Text as="span" fontWeight="semibold">{s.apt.checkOut}</Text>
+                        </Text>
+                      </VStack>
+                    </CardBody>
+                  </Card>
+                </Grid>
 
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <FileText className="w-5 h-5 text-[var(--text-primary)]" />
-                  <h2 className="text-lg font-semibold text-[var(--text-primary)]">Regole principali</h2>
-                </div>
-                <ul className="space-y-2">
-                  {s.apt.rules.map((r, idx) => (
-                    <li key={idx} className="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] text-sm text-[var(--text-primary)]">
-                      {r}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                <Box>
+                  <HStack spacing={2} mb={4}>
+                    <FileText size={20} color="var(--text-primary)" />
+                    <Heading as="h2" size="md" fontWeight="semibold" color="var(--text-primary)">
+                      Regole principali
+                    </Heading>
+                  </HStack>
+                  <VStack spacing={2} align="stretch">
+                    {s.apt.rules.map((r, idx) => (
+                      <Card key={idx} variant="outlined">
+                        <CardBody p={3}>
+                          <Text fontSize="sm" color="var(--text-primary)">
+                            {r}
+                          </Text>
+                        </CardBody>
+                      </Card>
+                    ))}
+                  </VStack>
+                </Box>
+              </VStack>
             </CardBody>
           </Card>
 
           {/* Contacts */}
           <Card>
             <CardHeader>
-              <div className="flex items-center gap-2">
-                <Phone className="w-5 h-5 text-[var(--text-primary)]" />
-                <h2 className="text-lg font-semibold text-[var(--text-primary)]">Contatti</h2>
-              </div>
+              <HStack spacing={2}>
+                <Phone size={20} color="var(--text-primary)" />
+                <Heading as="h2" size="md" fontWeight="semibold" color="var(--text-primary)">
+                  Contatti
+                </Heading>
+              </HStack>
             </CardHeader>
             <CardBody>
-              <div className="space-y-2">
-                <div className="text-sm text-[var(--text-primary)]">
-                  <span className="font-medium">Supporto:</span>{" "}
-                  <span className="text-[var(--text-secondary)]">chat in-app (mock)</span>
-                </div>
-                <div className="text-xs text-[var(--text-tertiary)]">
+              <VStack spacing={2} align="stretch">
+                <Text fontSize="sm" color="var(--text-primary)">
+                  <Text as="span" fontWeight="medium">Supporto:</Text>{" "}
+                  <Text as="span" color="var(--text-secondary)">chat in-app (mock)</Text>
+                </Text>
+                <Text fontSize="xs" color="var(--text-tertiary)">
                   (Nel prodotto reale qui avrai chat/ticket e numeri emergenza in base al piano.)
-                </div>
-              </div>
+                </Text>
+              </VStack>
             </CardBody>
           </Card>
-        </div>
-      </div>
+        </VStack>
+      </Box>
     </AppLayout>
   );
 }

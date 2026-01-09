@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { VStack, HStack, Grid, GridItem, Text } from "@chakra-ui/react";
+import { Input } from "@/app/components/ui/Input";
+import { Card, CardBody } from "@/app/components/ui/Card";
 
 export function GuestFields({ maxGuests = 10 }: { maxGuests?: number }) {
     const [guestsCount, setGuestsCount] = useState(2);
@@ -8,7 +11,6 @@ export function GuestFields({ maxGuests = 10 }: { maxGuests?: number }) {
     useEffect(() => {
         const select = document.getElementById('guestsCount') as HTMLSelectElement;
         if (!select) {
-            // Se il select non esiste ancora, riprova dopo un breve delay
             const timeout = setTimeout(() => {
                 const retrySelect = document.getElementById('guestsCount') as HTMLSelectElement;
                 if (retrySelect) {
@@ -23,15 +25,12 @@ export function GuestFields({ maxGuests = 10 }: { maxGuests?: number }) {
         const updateVisibilityForSelect = (sel: HTMLSelectElement) => {
             const count = parseInt(sel.value) || 2;
             setGuestsCount(count);
-            // Non serve più gestire la visibilità perché ora renderizziamo solo i campi necessari
         };
 
-        // Inizializza con il valore corrente del select
         const initialCount = parseInt(select.value) || 2;
         setGuestsCount(initialCount);
         updateVisibilityForSelect(select);
         
-        // Aggiungi listener
         select.addEventListener('change', () => updateVisibilityForSelect(select));
         
         return () => {
@@ -40,68 +39,73 @@ export function GuestFields({ maxGuests = 10 }: { maxGuests?: number }) {
     }, [maxGuests]);
 
     return (
-        <div className='space-y-3 min-w-0'>
+        <VStack spacing={3} align="stretch" minW={0}>
             {Array.from({ length: guestsCount }).map((_, i) => {
                 const guestNum = i + 1;
                 return (
-                    <div
+                    <Card
                         key={guestNum}
                         id={`guest_${guestNum}_container`}
-                        className='guest-container rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-4 space-y-3 min-w-0'>
-                        <div className='text-sm font-medium text-[var(--text-primary)] mb-2'>{guestNum === 1 ? 'Responsabile soggiorno' : `Ospite ${guestNum}`}</div>
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-3 min-w-0'>
-                            <div>
-                                <div className='text-xs font-medium text-[var(--text-primary)] mb-1.5'>
-                                    Nome <span className='text-[var(--accent-error)]'>*</span>
-                                </div>
-                                <input
-                                    type='text'
-                                    name={`guest_${guestNum}_firstName`}
-                                    required
-                                    placeholder='Nome'
-                                    className='w-full rounded-xl bg-[var(--bg-card)] border border-[var(--border-light)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]'
-                                />
-                            </div>
-                            <div>
-                                <div className='text-xs font-medium text-[var(--text-primary)] mb-1.5'>
-                                    Cognome <span className='text-[var(--accent-error)]'>*</span>
-                                </div>
-                                <input
-                                    type='text'
-                                    name={`guest_${guestNum}_lastName`}
-                                    required
-                                    placeholder='Cognome'
-                                    className='w-full rounded-xl bg-[var(--bg-card)] border border-[var(--border-light)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]'
-                                />
-                            </div>
-                        </div>
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-3 min-w-0'>
-                            <div>
-                                <div className='text-xs font-medium text-[var(--text-primary)] mb-1.5'>
-                                    Telefono <span className='text-[var(--accent-error)]'>*</span>
-                                </div>
-                                <input
-                                    type='tel'
-                                    name={`guest_${guestNum}_phone`}
-                                    required
-                                    placeholder='+39 123 456 7890'
-                                    className='w-full rounded-xl bg-[var(--bg-card)] border border-[var(--border-light)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]'
-                                />
-                            </div>
-                            <div>
-                                <div className='text-xs font-medium text-[var(--text-primary)] mb-1.5'>Email (opzionale)</div>
-                                <input
-                                    type='email'
-                                    name={`guest_${guestNum}_email`}
-                                    placeholder='email@example.com'
-                                    className='w-full rounded-xl bg-[var(--bg-card)] border border-[var(--border-light)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]'
-                                />
-                            </div>
-                        </div>
-                    </div>
+                        variant="outlined"
+                        minW={0}
+                    >
+                        <CardBody p={4}>
+                            <VStack spacing={3} align="stretch" minW={0}>
+                                <Text fontSize="sm" fontWeight="medium" color="var(--text-primary)" mb={2}>
+                                    {guestNum === 1 ? 'Responsabile soggiorno' : `Ospite ${guestNum}`}
+                                </Text>
+                                <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={3} minW={0}>
+                                    <Input
+                                        type='text'
+                                        name={`guest_${guestNum}_firstName`}
+                                        label={
+                                            <>
+                                                Nome <Text as="span" color="var(--accent-error)">*</Text>
+                                            </>
+                                        }
+                                        required
+                                        placeholder='Nome'
+                                        fontSize="sm"
+                                    />
+                                    <Input
+                                        type='text'
+                                        name={`guest_${guestNum}_lastName`}
+                                        label={
+                                            <>
+                                                Cognome <Text as="span" color="var(--accent-error)">*</Text>
+                                            </>
+                                        }
+                                        required
+                                        placeholder='Cognome'
+                                        fontSize="sm"
+                                    />
+                                </Grid>
+                                <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={3} minW={0}>
+                                    <Input
+                                        type='tel'
+                                        name={`guest_${guestNum}_phone`}
+                                        label={
+                                            <>
+                                                Telefono <Text as="span" color="var(--accent-error)">*</Text>
+                                            </>
+                                        }
+                                        required
+                                        placeholder='+39 123 456 7890'
+                                        fontSize="sm"
+                                    />
+                                    <Input
+                                        type='email'
+                                        name={`guest_${guestNum}_email`}
+                                        label="Email (opzionale)"
+                                        placeholder='email@example.com'
+                                        fontSize="sm"
+                                    />
+                                </Grid>
+                            </VStack>
+                        </CardBody>
+                    </Card>
                 );
             })}
-        </div>
+        </VStack>
     );
 }
-

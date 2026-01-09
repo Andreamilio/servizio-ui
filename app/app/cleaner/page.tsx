@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { readSession, validateSessionUser } from "@/app/lib/session";
@@ -10,6 +9,8 @@ import { Button } from "@/app/components/ui/Button";
 import { Badge } from "@/app/components/ui/Badge";
 import { AppLayout } from "@/app/components/layouts/AppLayout";
 import { Sparkles } from "lucide-react";
+import { Box, VStack, HStack, Heading, Text } from "@chakra-ui/react";
+import { Link } from "@/app/components/ui/Link";
 
 export default async function CleanerHome() {
   const cookieStore = await cookies();
@@ -19,7 +20,11 @@ export default async function CleanerHome() {
 
   if (!me || me.role !== "cleaner") {
     redirect("/?err=session_expired");
-    return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
+    return (
+      <Box p={6} color="var(--text-primary)">
+        Non autorizzato
+      </Box>
+    );
   }
 
   // Trova tutti i PIN del cleaner per questo aptId
@@ -75,48 +80,66 @@ export default async function CleanerHome() {
 
   return (
     <AppLayout role="cleaner">
-      <div className="mx-auto w-full max-w-4xl p-4 sm:p-6 lg:p-8">
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-[var(--text-primary)]">Pulizie</h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">Appartamento {me.aptId}</p>
-        </div>
+      <Box mx="auto" w="100%" maxW="4xl" p={{ base: 4, sm: 6, lg: 8 }}>
+        <Box mb={6}>
+          <Heading as="h1" size="xl" fontWeight="semibold" color="var(--text-primary)">
+            Pulizie
+          </Heading>
+          <Text fontSize="sm" color="var(--text-secondary)" mt={1}>
+            Appartamento {me.aptId}
+          </Text>
+        </Box>
 
         <Card variant="elevated">
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-[var(--text-primary)]" />
-              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Pulizie assegnate</h2>
-            </div>
+            <HStack spacing={2}>
+              <Sparkles size={20} color="var(--text-primary)" />
+              <Heading as="h2" size="md" fontWeight="semibold" color="var(--text-primary)">
+                Pulizie assegnate
+              </Heading>
+            </HStack>
           </CardHeader>
           <CardBody>
             {jobs.length === 0 ? (
-              <div className="text-sm text-[var(--text-secondary)] text-center py-8">
+              <Text fontSize="sm" color="var(--text-secondary)" textAlign="center" py={8}>
                 Nessuna pulizia assegnata disponibile
-              </div>
+              </Text>
             ) : (
-              <div className="space-y-3">
+              <VStack spacing={3} align="stretch">
                 {jobs.map((j) => (
-                  <Link
+                  <Box
                     key={j.id}
+                    as={Link}
                     href={`/app/cleaner/${j.id}`}
-                    className="block p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] hover:border-[var(--border-medium)] transition-colors"
+                    display="block"
+                    p={4}
+                    borderRadius="xl"
+                    bg="var(--bg-secondary)"
+                    border="1px solid"
+                    borderColor="var(--border-light)"
+                    _hover={{ borderColor: "var(--border-medium)" }}
+                    transition="colors"
                   >
-                    <div className="flex items-center justify-between gap-3 mb-2">
-                      <div className="font-semibold text-[var(--text-primary)]">{j.aptName}</div>
+                    <HStack justify="space-between" gap={3} mb={2}>
+                      <Text fontWeight="semibold" color="var(--text-primary)">
+                        {j.aptName}
+                      </Text>
                       <Badge variant={getStatusVariant(j.status)} size="sm">
                         {getStatusLabel(j.status)}
                       </Badge>
-                    </div>
+                    </HStack>
                     {j.windowLabel && (
-                      <div className="text-xs text-[var(--text-secondary)]">{j.windowLabel}</div>
+                      <Text fontSize="xs" color="var(--text-secondary)">
+                        {j.windowLabel}
+                      </Text>
                     )}
-                  </Link>
+                  </Box>
                 ))}
-              </div>
+              </VStack>
             )}
           </CardBody>
         </Card>
-      </div>
+      </Box>
     </AppLayout>
   );
 }

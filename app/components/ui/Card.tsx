@@ -1,58 +1,93 @@
-import { ReactNode, HTMLAttributes } from "react";
+"use client";
 
-interface CardProps extends HTMLAttributes<HTMLDivElement> {
+import { ReactNode, HTMLAttributes } from "react";
+import { Box, BoxProps } from "@chakra-ui/react";
+
+interface CardProps extends Omit<HTMLAttributes<HTMLDivElement>, "color"> {
   variant?: "default" | "elevated" | "outlined";
   children: ReactNode;
 }
 
-interface CardHeaderProps extends HTMLAttributes<HTMLDivElement> {
+interface CardHeaderProps extends Omit<HTMLAttributes<HTMLDivElement>, "color"> {
   children: ReactNode;
 }
 
-interface CardBodyProps extends HTMLAttributes<HTMLDivElement> {
+interface CardBodyProps extends Omit<HTMLAttributes<HTMLDivElement>, "color"> {
   children: ReactNode;
 }
 
-interface CardFooterProps extends HTMLAttributes<HTMLDivElement> {
+interface CardFooterProps extends Omit<HTMLAttributes<HTMLDivElement>, "color"> {
   children: ReactNode;
 }
 
-export function Card({ variant = "default", className = "", children, ...props }: CardProps) {
-  const baseClasses = "rounded-2xl bg-[var(--bg-card)] border transition-colors";
-  
-  const variantClasses = {
-    default: "border-[var(--border-light)] shadow-sm",
-    elevated: "border-[var(--border-light)] shadow-lg",
-    outlined: "border-[var(--border-light)]",
+export function Card({ variant = "default", children, ...props }: CardProps) {
+  const getVariantStyles = (): BoxProps => {
+    const baseStyles: BoxProps = {
+      borderRadius: "2xl",
+      bg: "var(--bg-card)",
+      border: "1px solid",
+      borderColor: "var(--border-light)",
+      transition: "colors",
+    };
+
+    switch (variant) {
+      case "default":
+        return {
+          ...baseStyles,
+          boxShadow: "var(--shadow-sm)",
+        };
+      case "elevated":
+        return {
+          ...baseStyles,
+          boxShadow: "var(--shadow-lg)",
+        };
+      case "outlined":
+        return baseStyles;
+      default:
+        return baseStyles;
+    }
   };
-  
+
   return (
-    <div className={`${baseClasses} ${variantClasses[variant]} ${className}`} {...props}>
+    <Box {...getVariantStyles()} {...(props as BoxProps)}>
       {children}
-    </div>
+    </Box>
   );
 }
 
-export function CardHeader({ className = "", children, ...props }: CardHeaderProps) {
+export function CardHeader({ children, ...props }: CardHeaderProps) {
   return (
-    <div className={`p-5 lg:p-6 border-b border-[var(--border-light)] ${className}`} {...props}>
+    <Box
+      p={{ base: 5, lg: 6 }}
+      borderBottom="1px solid"
+      borderColor="var(--border-light)"
+      {...(props as BoxProps)}
+    >
       {children}
-    </div>
+    </Box>
   );
 }
 
-export function CardBody({ className = "", children, ...props }: CardBodyProps) {
+export function CardBody({ children, ...props }: CardBodyProps) {
   return (
-    <div className={`p-5 lg:p-6 ${className}`} {...props}>
+    <Box
+      p={{ base: 5, lg: 6 }}
+      {...(props as BoxProps)}
+    >
       {children}
-    </div>
+    </Box>
   );
 }
 
-export function CardFooter({ className = "", children, ...props }: CardFooterProps) {
+export function CardFooter({ children, ...props }: CardFooterProps) {
   return (
-    <div className={`p-4 lg:p-6 border-t border-[var(--border-light)] ${className}`} {...props}>
+    <Box
+      p={{ base: 4, lg: 6 }}
+      borderTop="1px solid"
+      borderColor="var(--border-light)"
+      {...(props as BoxProps)}
+    >
       {children}
-    </div>
+    </Box>
   );
 }

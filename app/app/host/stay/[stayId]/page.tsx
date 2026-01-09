@@ -1,21 +1,16 @@
-import Link from "next/link";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-
 import { readSession } from "@/app/lib/session";
+import { redirect } from "next/navigation";
 import * as Store from "@/app/lib/store";
 import { listClients, listApartmentsByClient } from "@/app/lib/clientStore";
 import { listJobsByApt, type CleaningJob, type CleaningStatus, updateJobsCleanerByStay } from "@/app/lib/cleaningstore";
 import { getUser } from "@/app/lib/userStore";
 import { AppLayout } from "@/app/components/layouts/AppLayout";
-
 import {
   cleaners_getCfg,
   cleaners_normName,
 } from "@/app/lib/domain/cleanersDomain";
-
 import { stays_get, stays_updateGuest, stays_updateDates, stays_addGuest, stays_removeGuest, stays_updateCleaner } from "@/app/lib/domain/staysDomain";
-
 import {
   pins_listByStay,
   pins_revoke,
@@ -24,6 +19,15 @@ import {
   stays_createWithOptionalCleaner,
   pins_deleteStayAndPins,
 } from "@/app/lib/domain/pinsDomain";
+import { Box, VStack, HStack, Heading, Text, Grid, GridItem, Image, Input as ChakraInput, Field } from "@chakra-ui/react";
+import { Select } from "@/app/components/ui/Select";
+import { Card, CardBody, CardHeader } from "@/app/components/ui/Card";
+import { Link } from "@/app/components/ui/Link";
+import { Button } from "@/app/components/ui/Button";
+import { Badge } from "@/app/components/ui/Badge";
+import { Input } from "@/app/components/ui/Input";
+import { CheckIcon } from "lucide-react";
+import { PinCollapsible } from "./PinCollapsible";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -55,18 +59,14 @@ function parseDateTimeLocal(v?: string | null) {
 
 function toDTLocalValue(d: Date) {
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
-    d.getHours()
-  )}:${pad(d.getMinutes())}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function fmtDT(ts?: number | null) {
   if (!ts) return "—";
   const d = new Date(ts);
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(
-    d.getHours()
-  )}:${pad(d.getMinutes())}`;
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function fmtDTMedium(ts?: number | null): string {
@@ -102,7 +102,11 @@ export default async function StayDetailPage({
   const me = readSession(sess);
 
   if (!me || me.role !== "host") {
-    return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
+    return (
+      <Box p={6} color="var(--text-primary)">
+        Non autorizzato
+      </Box>
+    );
   }
 
   const stayObj = stays_get(stayId);
@@ -127,7 +131,6 @@ export default async function StayDetailPage({
   const stayCheckin = stayCheckinDT ? toDTLocalValue(stayCheckinDT) : "";
   const stayCheckout = stayCheckoutDT ? toDTLocalValue(stayCheckoutDT) : "";
 
-  // Get apartment name
   const clients = (listClients() as any[]) ?? [];
   const getClientId = (c: any) =>
     String(c?.id ?? c?.clientId ?? c?.clientID ?? c?.slug ?? "");
@@ -151,13 +154,11 @@ export default async function StayDetailPage({
 
   async function genPin(formData: FormData) {
     "use server";
-
     const aptId = formData.get("aptId")?.toString() ?? "";
     if (!aptId) return;
 
     const stayId = (formData.get("stayId")?.toString() ?? "").trim();
     const guestName = (formData.get("guestName")?.toString() ?? "").trim();
-
     const checkin = (formData.get("checkin")?.toString() ?? "").trim();
     const checkout = (formData.get("checkout")?.toString() ?? "").trim();
 
@@ -183,7 +184,6 @@ export default async function StayDetailPage({
 
   async function genPins(formData: FormData) {
     "use server";
-
     const aptId = formData.get("aptId")?.toString() ?? "";
     if (!aptId) return;
 
@@ -234,7 +234,6 @@ export default async function StayDetailPage({
 
   async function delStay(formData: FormData) {
     "use server";
-
     const aptId = (formData.get("aptId")?.toString() ?? "").trim();
     const stayId = (formData.get("stayId")?.toString() ?? "").trim();
     if (!aptId || !stayId) return;
@@ -296,135 +295,828 @@ export default async function StayDetailPage({
         profileImageUrl: hostUser.profileImageUrl,
       } : undefined}
     >
-      <div className="max-w-3xl mx-auto space-y-5 p-4 sm:p-6">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="text-xs opacity-60">Host • Dettaglio soggiorno</div>
-            <h1 className="text-lg font-semibold">
-              {getResponsabileName(stayObj.guests || [])} - {fmtDTMedium(stayObj.checkInAt)} - {fmtDTMedium(stayObj.checkOutAt)}
-            </h1>
-            <div className="mt-1 text-sm opacity-70">
-              {apt?.name ?? (actualAptId ? `Apt ${actualAptId}` : "Apt")}
-            </div>
-          </div>
+      <Box maxW="3xl" mx="auto" p={{ base: 4, sm: 6 }}>
+        <VStack spacing={5} align="stretch">
+          <HStack justify="space-between" gap={3} align="start">
+            <Box>
+              <Text fontSize="xs" opacity={0.6}>Host • Dettaglio soggiorno</Text>
+              <Heading as="h1" size="lg" fontWeight="semibold">
+                {getResponsabileName(stayObj.guests || [])} - {fmtDTMedium(stayObj.checkInAt)} - {fmtDTMedium(stayObj.checkOutAt)}
+              </Heading>
+              <Text mt={1} fontSize="sm" opacity={0.7}>
+                {apt?.name ?? (actualAptId ? `Apt ${actualAptId}` : "Apt")}
+              </Text>
+            </Box>
 
-          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
-            <Link
-              className="whitespace-nowrap text-sm opacity-70 hover:opacity-100"
-              href={
-                actualAptId
-                  ? `/app/host?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
-                  : finalClientId
-                  ? `/app/host?client=${encodeURIComponent(finalClientId)}`
-                  : "/app/host"
-              }
-            >
-              ← Appartamento
-            </Link>
-
-            <form action={delStay}>
-              <input type="hidden" name="aptId" value={actualAptId} />
-              <input type="hidden" name="stayId" value={stayId} />
-              <button
-                type="submit"
-                className="whitespace-nowrap text-sm text-red-700 hover:text-red-800 rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-1.5"
-                style={{ color: 'var(--accent-error)' }}
+            <HStack spacing={{ base: 2, sm: 3 }} flexWrap="wrap" justify="end">
+              <Link
+                href={
+                  actualAptId
+                    ? `/app/host?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
+                    : finalClientId
+                    ? `/app/host?client=${encodeURIComponent(finalClientId)}`
+                    : "/app/host"
+                }
+                fontSize="sm"
+                opacity={0.7}
+                _hover={{ opacity: 1 }}
+                whiteSpace="nowrap"
               >
-                Elimina prenotazione
-              </button>
-            </form>
-          </div>
-        </div>
+                ← Appartamento
+              </Link>
 
-        {/* Stay info */}
-        <section className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
-          <div className="text-sm opacity-70 mb-3">Informazioni soggiorno</div>
-          
-          {(() => {
-            async function updateStayDates(formData: FormData) {
-              "use server";
-              const stayId = formData.get("stayId")?.toString() ?? "";
-              const checkinStr = formData.get("checkin")?.toString() ?? "";
-              const checkoutStr = formData.get("checkout")?.toString() ?? "";
+              <Box as="form" action={delStay}>
+                <input type="hidden" name="aptId" value={actualAptId} />
+                <input type="hidden" name="stayId" value={stayId} />
+                <Button
+                  type="submit"
+                  size="sm"
+                  borderRadius="xl"
+                  bg="rgba(239, 68, 68, 0.1)"
+                  border="1px solid"
+                  borderColor="rgba(239, 68, 68, 0.2)"
+                  px={3}
+                  py={1.5}
+                  fontSize="sm"
+                  color="var(--accent-error)"
+                  whiteSpace="nowrap"
+                >
+                  Elimina prenotazione
+                </Button>
+              </Box>
+            </HStack>
+          </HStack>
 
-              if (!stayId) {
-                redirect(
-                  `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
-                );
-                return;
-              }
-
-              const checkinDT = parseDateTimeLocal(checkinStr);
-              const checkoutDT = parseDateTimeLocal(checkoutStr);
-
-              if (!checkinDT || !checkoutDT || checkoutDT.getTime() <= checkinDT.getTime()) {
-                redirect(
-                  `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
-                );
-                return;
-              }
-
-              stays_updateDates(stayId, {
-                checkInAt: checkinDT.getTime(),
-                checkOutAt: checkoutDT.getTime(),
-              });
-
-              redirect(
-                `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
-              );
-            }
-
-            return (
-              <div className="space-y-4">
-                <div className="space-y-2 text-sm">
-                  <div>
-                    <span className="opacity-60">Ospiti:</span> {stayGuestsCount}
-                  </div>
-                </div>
-
-                <form action={updateStayDates} className="space-y-3">
-                  <input type="hidden" name="stayId" value={stayId} />
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                      <div className="text-[11px] opacity-60 mb-1">
-                        Check-in (data + ora) <span className="text-red-400">*</span>
-                      </div>
-                      <input
-                        type="datetime-local"
-                        name="checkin"
-                        defaultValue={stayCheckin ?? ""}
-                        required
-                        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2"
-                      />
-                    </div>
-                    <div>
-                      <div className="text-[11px] opacity-60 mb-1">
-                        Check-out (data + ora) <span className="text-red-400">*</span>
-                      </div>
-                      <input
-                        type="datetime-local"
-                        name="checkout"
-                        defaultValue={stayCheckout ?? ""}
-                        required
-                        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2"
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full rounded-xl bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-4 py-2 text-sm font-semibold">
-                    Salva modifiche date
-                  </button>
-                </form>
-
-                {/* Form per modificare il cleaner */}
+          {/* Stay info */}
+          <Card>
+            <CardBody p={4}>
+              <VStack spacing={4} align="stretch">
+                <Text fontSize="sm" opacity={0.7} mb={3}>
+                  Informazioni soggiorno
+                </Text>
+                
                 {(() => {
-                  async function updateCleaner(formData: FormData) {
+                  async function updateStayDates(formData: FormData) {
                     "use server";
                     const stayId = formData.get("stayId")?.toString() ?? "";
-                    const newCleanerName = cleaners_normName(formData.get("cleaner")?.toString() ?? "");
+                    const checkinStr = formData.get("checkin")?.toString() ?? "";
+                    const checkoutStr = formData.get("checkout")?.toString() ?? "";
+
+                    if (!stayId) {
+                      redirect(
+                        `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
+                      );
+                      return;
+                    }
+
+                    const checkinDT = parseDateTimeLocal(checkinStr);
+                    const checkoutDT = parseDateTimeLocal(checkoutStr);
+
+                    if (!checkinDT || !checkoutDT || checkoutDT.getTime() <= checkinDT.getTime()) {
+                      redirect(
+                        `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
+                      );
+                      return;
+                    }
+
+                    stays_updateDates(stayId, {
+                      checkInAt: checkinDT.getTime(),
+                      checkOutAt: checkoutDT.getTime(),
+                    });
+
+                    redirect(
+                      `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
+                    );
+                  }
+
+                  return (
+                    <VStack spacing={4} align="stretch">
+                      <VStack spacing={2} align="stretch" fontSize="sm">
+                        <Text>
+                          <Text as="span" opacity={0.6}>Ospiti:</Text> {stayGuestsCount}
+                        </Text>
+                      </VStack>
+
+                      <Box as="form" action={updateStayDates}>
+                        <VStack spacing={3} align="stretch">
+                          <input type="hidden" name="stayId" value={stayId} />
+                          
+                          <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={3}>
+                            <Field.Root>
+                              <Field.Label fontSize="11px" opacity={0.6} mb={1}>
+                                Check-in (data + ora) <Text as="span" color="var(--accent-error)">*</Text>
+                              </Field.Label>
+                              <ChakraInput
+                                type="datetime-local"
+                                name="checkin"
+                                defaultValue={stayCheckin ?? ""}
+                                required
+                                borderRadius="xl"
+                                bg="var(--bg-secondary)"
+                                border="1px solid"
+                                borderColor="var(--border-light)"
+                                p={2}
+                              />
+                            </Field.Root>
+                            <Field.Root>
+                              <Field.Label fontSize="11px" opacity={0.6} mb={1}>
+                                Check-out (data + ora) <Text as="span" color="var(--accent-error)">*</Text>
+                              </Field.Label>
+                              <ChakraInput
+                                type="datetime-local"
+                                name="checkout"
+                                defaultValue={stayCheckout ?? ""}
+                                required
+                                borderRadius="xl"
+                                bg="var(--bg-secondary)"
+                                border="1px solid"
+                                borderColor="var(--border-light)"
+                                p={2}
+                              />
+                            </Field.Root>
+                          </Grid>
+
+                          <Button
+                            type="submit"
+                            variant="secondary"
+                            w="100%"
+                            borderRadius="xl"
+                            px={4}
+                            py={2}
+                            fontSize="sm"
+                            fontWeight="semibold"
+                          >
+                            Salva modifiche date
+                          </Button>
+                        </VStack>
+                      </Box>
+
+                      {/* Form per modificare il cleaner */}
+                      {(() => {
+                        async function updateCleaner(formData: FormData) {
+                          "use server";
+                          const stayId = formData.get("stayId")?.toString() ?? "";
+                          const newCleanerName = cleaners_normName(formData.get("cleaner")?.toString() ?? "");
+
+                          if (!stayId) {
+                            redirect(
+                              `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
+                            );
+                            return;
+                          }
+
+                          const stay = stays_get(stayId);
+                          if (!stay) {
+                            redirect(
+                              `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
+                            );
+                            return;
+                          }
+
+                          const oldCleanerName = stay.cleanerName;
+
+                          stays_updateCleaner(stayId, newCleanerName || null);
+                          updateJobsCleanerByStay(stayId, newCleanerName || null);
+
+                          let validFrom: number | null = null;
+                          let validTo: number | null = null;
+                          
+                          if (oldCleanerName) {
+                            const oldPins = Store.listPinsByStay(stayId).filter((p: any) => p.role === "cleaner");
+                            if (oldPins.length > 0) {
+                              validFrom = oldPins[0].validFrom ?? oldPins[0].createdAt;
+                              validTo = oldPins[0].validTo ?? oldPins[0].expiresAt ?? oldPins[0].createdAt;
+                            }
+                            Store.revokeCleanerPinsByStay(stayId);
+                          }
+
+                          if (validFrom === null || validTo === null) {
+                            const cfg = cleaners_getCfg(actualAptId);
+                            const dur = Math.max(15, Math.min(24 * 60, Math.round(cfg.durationMin ?? 60)));
+                            
+                            const calculateCleaningSlot = (checkOutAt: number, ranges: Array<{ from: string; to: string }>, durationMin: number): { from: number; to: number } => {
+                              if (!ranges || ranges.length === 0) {
+                                return { from: checkOutAt, to: checkOutAt + durationMin * 60_000 };
+                              }
+
+                              const checkoutDate = new Date(checkOutAt);
+                              const checkoutHour = checkoutDate.getHours();
+                              const checkoutMin = checkoutDate.getMinutes();
+                              const checkoutMinOfDay = checkoutHour * 60 + checkoutMin;
+
+                              const timeToMinutes = (timeStr: string): number => {
+                                const [h, m] = timeStr.split(":").map(Number);
+                                return h * 60 + m;
+                              };
+
+                              for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+                                for (const range of ranges) {
+                                  const rangeFrom = timeToMinutes(range.from);
+                                  const rangeTo = timeToMinutes(range.to);
+                                  
+                                  const rangeDate = new Date(checkoutDate);
+                                  rangeDate.setDate(rangeDate.getDate() + dayOffset);
+                                  rangeDate.setHours(0, 0, 0, 0);
+                                  
+                                  const rangeStart = rangeDate.getTime() + rangeFrom * 60_000;
+                                  const rangeEnd = rangeDate.getTime() + rangeTo * 60_000;
+                                  
+                                  if (dayOffset === 0) {
+                                    if (checkoutMinOfDay >= rangeFrom && checkoutMinOfDay < rangeTo) {
+                                      const cleaningStart = checkOutAt;
+                                      const cleaningEnd = Math.min(cleaningStart + durationMin * 60_000, rangeEnd);
+                                      return { from: cleaningStart, to: cleaningEnd };
+                                    }
+                                  }
+                                  
+                                  if (rangeStart >= checkOutAt) {
+                                    const cleaningStart = rangeStart;
+                                    const cleaningEnd = Math.min(cleaningStart + durationMin * 60_000, rangeEnd);
+                                    return { from: cleaningStart, to: cleaningEnd };
+                                  }
+                                }
+                              }
+                              
+                              return { from: checkOutAt, to: checkOutAt + durationMin * 60_000 };
+                            };
+
+                            const slot = calculateCleaningSlot(stay.checkOutAt, cfg.cleaningTimeRanges ?? [], dur);
+                            validFrom = slot.from;
+                            validTo = slot.to;
+                          }
+
+                          if (newCleanerName && validFrom !== null && validTo !== null) {
+                            const g0 = stay.guests[0] ?? { guestId: `g-${crypto.randomUUID()}`, name: "Ospite 1" };
+                            const normalizedCleanerName = cleaners_normName(newCleanerName);
+                            
+                            if (normalizedCleanerName) {
+                              Store.createPinForGuest({
+                                role: "cleaner",
+                                aptId: actualAptId,
+                                stayId,
+                                guestId: g0.guestId,
+                                guestName: normalizedCleanerName,
+                                validFrom,
+                                validTo,
+                                source: "manual",
+                              });
+                            }
+                          }
+
+                          redirect(
+                            `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
+                          );
+                        }
+
+                        const cfg = cleaners_getCfg(actualAptId);
+                        const cleanersList = cfg.cleaners ?? [];
+
+                        return (
+                          <Box mt={4} pt={4} borderTop="1px solid" borderColor="var(--border-light)">
+                            <Text fontSize="sm" opacity={0.7} mb={3}>
+                              Cleaner assegnato
+                            </Text>
+                            <Box as="form" action={updateCleaner}>
+                              <VStack spacing={3} align="stretch">
+                                <input type="hidden" name="stayId" value={stayId} />
+                                
+                                <Field.Root>
+                                  <Field.Label fontSize="11px" opacity={0.6} mb={1}>
+                                    Cleaner <Text as="span" color="var(--accent-error)">*</Text>
+                                  </Field.Label>
+                                  <Select
+                                    name="cleaner"
+                                    required
+                                    defaultValue={stayObj.cleanerName ?? ""}
+                                    borderRadius="xl"
+                                    bg="var(--bg-secondary)"
+                                    border="1px solid"
+                                    borderColor="var(--border-light)"
+                                    p={2}
+                                  >
+                                    <option value="">— Seleziona cleaner —</option>
+                                    {cleanersList.map((cleaner) => (
+                                      <option key={cleaner.name} value={cleaner.name}>
+                                        {cleaner.name} - {cleaner.phone}
+                                      </option>
+                                    ))}
+                                  </Select>
+                                </Field.Root>
+
+                                <Button
+                                  type="submit"
+                                  w="100%"
+                                  borderRadius="xl"
+                                  bg="rgba(6, 182, 212, 0.3)"
+                                  border="1px solid"
+                                  borderColor="rgba(6, 182, 212, 0.3)"
+                                  px={4}
+                                  py={2}
+                                  fontSize="sm"
+                                  fontWeight="semibold"
+                                >
+                                  Aggiorna cleaner
+                                </Button>
+                                <Text fontSize="xs" opacity={0.5}>
+                                  I PIN del vecchio cleaner verranno revocati e verrà creato un nuovo PIN per il cleaner selezionato. Il job esistente verrà aggiornato con il nuovo cleaner.
+                                </Text>
+                              </VStack>
+                            </Box>
+                          </Box>
+                        );
+                      })()}
+                    </VStack>
+                  );
+                })()}
+              </VStack>
+            </CardBody>
+          </Card>
+
+          {/* Guests management */}
+          <Card>
+            <CardBody p={4}>
+              <VStack spacing={3} align="stretch">
+                <Text fontSize="sm" opacity={0.7} mb={3}>
+                  Ospiti
+                </Text>
+
+                {stayObj.guests.length === 0 ? (
+                  <Text fontSize="sm" opacity={0.5}>
+                    Nessun ospite registrato.
+                  </Text>
+                ) : (
+                  <VStack spacing={3} align="stretch">
+                    {stayObj.guests.map((guest: any, idx: number) => {
+                      const guestPins = pins.filter((p: any) => p.guestId === guest.guestId && p.role === "guest");
+                      
+                      async function updateGuest(formData: FormData) {
+                        "use server";
+                        const guestId = formData.get("guestId")?.toString() ?? "";
+                        const firstName = (formData.get("firstName")?.toString() ?? "").trim();
+                        const lastName = (formData.get("lastName")?.toString() ?? "").trim();
+                        const phone = (formData.get("phone")?.toString() ?? "").trim();
+                        const email = (formData.get("email")?.toString() ?? "").trim();
+
+                        if (!guestId || !firstName || !lastName || !phone) {
+                          redirect(
+                            `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
+                          );
+                          return;
+                        }
+
+                        stays_updateGuest(stayId, guestId, {
+                          firstName,
+                          lastName,
+                          phone,
+                          email: email || undefined,
+                        });
+
+                        redirect(
+                          `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
+                        );
+                      }
+
+                      async function revokeGuestPins(formData: FormData) {
+                        "use server";
+                        const guestId = formData.get("guestId")?.toString() ?? "";
+                        if (!guestId) return;
+
+                        const guestPinsToRevoke = pins.filter((p: any) => p.guestId === guestId && p.role === "guest");
+                        guestPinsToRevoke.forEach((p: any) => {
+                          pins_revoke(Store, p.pin);
+                        });
+
+                        redirect(
+                          `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
+                        );
+                      }
+
+                      async function createGuestPin(formData: FormData) {
+                        "use server";
+                        const guestId = formData.get("guestId")?.toString() ?? "";
+                        if (!guestId) return;
+
+                        const stay = stays_get(stayId);
+                        if (!stay) return;
+                        const guest = stay.guests.find((g: any) => g.guestId === guestId);
+                        if (!guest) return;
+
+                        Store.createPinForGuest({
+                          role: "guest",
+                          aptId: actualAptId,
+                          stayId,
+                          guestId,
+                          guestName: guest.name,
+                          validFrom: stay.checkInAt,
+                          validTo: stay.checkOutAt,
+                          source: "manual",
+                        });
+
+                        redirect(
+                          `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
+                        );
+                      }
+
+                      async function removeGuest(formData: FormData) {
+                        "use server";
+                        const guestId = formData.get("guestId")?.toString() ?? "";
+                        if (!guestId) return;
+
+                        const stayPins = pins_listByStay(Store, stayId);
+                        const guestPinsToRevoke = stayPins.filter((p: any) => p.guestId === guestId && p.role === "guest");
+                        guestPinsToRevoke.forEach((p: any) => {
+                          pins_revoke(Store, p.pin);
+                        });
+
+                        stays_removeGuest(stayId, guestId);
+
+                        redirect(
+                          `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
+                        );
+                      }
+
+                      const canRemove = stayObj.guests.length > 1;
+
+                      return (
+                        <Card key={guest.guestId} variant="outlined">
+                          <CardBody p={4}>
+                            <VStack spacing={3} align="stretch">
+                              <HStack justify="space-between" gap={3} mb={3}>
+                                <Box>
+                                  <Text fontSize="sm" fontWeight="semibold">
+                                    {guest.firstName && guest.lastName
+                                      ? `${guest.firstName} ${guest.lastName}`
+                                      : guest.name}
+                                  </Text>
+                                  <Text mt={1} fontSize="xs" opacity={0.6}>
+                                    {idx === 0 ? 'Responsabile soggiorno' : `Ospite ${idx + 1}`}
+                                  </Text>
+                                </Box>
+                                <HStack spacing={2}>
+                                  <Text fontSize="xs" opacity={0.6}>
+                                    {guestPins.length} PIN
+                                  </Text>
+                                  {canRemove && (
+                                    <Box as="form" action={removeGuest}>
+                                      <input type="hidden" name="guestId" value={guest.guestId} />
+                                      <Button
+                                        type="submit"
+                                        size="xs"
+                                        borderRadius="md"
+                                        bg="rgba(239, 68, 68, 0.2)"
+                                        border="1px solid"
+                                        borderColor="rgba(239, 68, 68, 0.3)"
+                                        _hover={{ bg: "rgba(239, 68, 68, 0.3)" }}
+                                        px={2}
+                                        py={1}
+                                      >
+                                        Rimuovi
+                                      </Button>
+                                    </Box>
+                                  )}
+                                </HStack>
+                              </HStack>
+
+                              <Box as="form" action={updateGuest}>
+                                <VStack spacing={3} align="stretch">
+                                  <input type="hidden" name="guestId" value={guest.guestId} />
+                                  <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={2}>
+                                    <Field.Root>
+                                      <Field.Label fontSize="11px" opacity={0.6} mb={1}>Nome</Field.Label>
+                                      <ChakraInput
+                                        type="text"
+                                        name="firstName"
+                                        defaultValue={guest.firstName ?? guest.name.split(" ")[0] ?? ""}
+                                        required
+                                        borderRadius="xl"
+                                        bg="var(--bg-secondary)"
+                                        border="1px solid"
+                                        borderColor="var(--border-light)"
+                                        p={2}
+                                        fontSize="sm"
+                                      />
+                                    </Field.Root>
+                                    <Field.Root>
+                                      <Field.Label fontSize="11px" opacity={0.6} mb={1}>Cognome</Field.Label>
+                                      <ChakraInput
+                                        type="text"
+                                        name="lastName"
+                                        defaultValue={guest.lastName ?? guest.name.split(" ").slice(1).join(" ") ?? ""}
+                                        required
+                                        borderRadius="xl"
+                                        bg="var(--bg-secondary)"
+                                        border="1px solid"
+                                        borderColor="var(--border-light)"
+                                        p={2}
+                                        fontSize="sm"
+                                      />
+                                    </Field.Root>
+                                  </Grid>
+                                  <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={2}>
+                                    <Field.Root>
+                                      <Field.Label fontSize="11px" opacity={0.6} mb={1}>Telefono</Field.Label>
+                                      <ChakraInput
+                                        type="tel"
+                                        name="phone"
+                                        defaultValue={guest.phone ?? ""}
+                                        required
+                                        borderRadius="xl"
+                                        bg="var(--bg-secondary)"
+                                        border="1px solid"
+                                        borderColor="var(--border-light)"
+                                        p={2}
+                                        fontSize="sm"
+                                      />
+                                    </Field.Root>
+                                    <Field.Root>
+                                      <Field.Label fontSize="11px" opacity={0.6} mb={1}>Email (opzionale)</Field.Label>
+                                      <ChakraInput
+                                        type="email"
+                                        name="email"
+                                        defaultValue={guest.email ?? ""}
+                                        borderRadius="xl"
+                                        bg="var(--bg-secondary)"
+                                        border="1px solid"
+                                        borderColor="var(--border-light)"
+                                        p={2}
+                                        fontSize="sm"
+                                      />
+                                    </Field.Root>
+                                  </Grid>
+                                  <Button
+                                    type="submit"
+                                    variant="secondary"
+                                    w="100%"
+                                    borderRadius="xl"
+                                    px={4}
+                                    py={2}
+                                    fontSize="sm"
+                                    fontWeight="semibold"
+                                  >
+                                    Salva modifiche
+                                  </Button>
+                                </VStack>
+                              </Box>
+
+                              <Box mt={4} pt={4} borderTop="1px solid" borderColor="var(--border-light)">
+                                <Text fontSize="xs" opacity={0.6} mb={2}>
+                                  PIN di accesso
+                                </Text>
+                                {guestPins.length === 0 ? (
+                                  <Text fontSize="xs" opacity={0.5} mb={2}>
+                                    Nessun PIN attivo
+                                  </Text>
+                                ) : (
+                                  <VStack spacing={2} align="stretch" mb={2}>
+                                    {guestPins.map((p: any) => {
+                                      const vTo = p.validTo ?? p.expiresAt;
+                                      return (
+                                        <Card key={p.pin} variant="outlined">
+                                          <CardBody px={3} py={2}>
+                                            <HStack justify="space-between">
+                                              <Box>
+                                                <Text fontSize="xs" fontFamily="mono" fontWeight="semibold">
+                                                  {p.pin}
+                                                </Text>
+                                                <Text fontSize="11px" opacity={0.6}>
+                                                  Scade tra {timeLeftDHM(vTo ?? 0)}
+                                                </Text>
+                                              </Box>
+                                              <Box as="form" action={delPin}>
+                                                <input type="hidden" name="aptId" value={actualAptId} />
+                                                <input type="hidden" name="pin" value={p.pin} />
+                                                <Button
+                                                  type="submit"
+                                                  size="xs"
+                                                  borderRadius="md"
+                                                  bg="rgba(239, 68, 68, 0.2)"
+                                                  border="1px solid"
+                                                  borderColor="rgba(239, 68, 68, 0.3)"
+                                                  px={2}
+                                                  py={1}
+                                                >
+                                                  Revoca
+                                                </Button>
+                                              </Box>
+                                            </HStack>
+                                          </CardBody>
+                                        </Card>
+                                      );
+                                    })}
+                                  </VStack>
+                                )}
+                                <HStack spacing={2}>
+                                  {guestPins.length > 0 && (
+                                    <Box as="form" action={revokeGuestPins} flex={1}>
+                                      <input type="hidden" name="guestId" value={guest.guestId} />
+                                      <Button
+                                        type="submit"
+                                        size="sm"
+                                        w="100%"
+                                        borderRadius="lg"
+                                        bg="rgba(239, 68, 68, 0.2)"
+                                        border="1px solid"
+                                        borderColor="rgba(239, 68, 68, 0.3)"
+                                        px={3}
+                                        py={2}
+                                        fontSize="xs"
+                                      >
+                                        Revoca tutti i PIN
+                                      </Button>
+                                    </Box>
+                                  )}
+                                  <Box as="form" action={createGuestPin} flex={1}>
+                                    <input type="hidden" name="guestId" value={guest.guestId} />
+                                    <Button
+                                      type="submit"
+                                      size="sm"
+                                      w="100%"
+                                      borderRadius="lg"
+                                      bg="rgba(6, 182, 212, 0.2)"
+                                      border="1px solid"
+                                      borderColor="rgba(6, 182, 212, 0.3)"
+                                      px={3}
+                                      py={2}
+                                      fontSize="xs"
+                                    >
+                                      Crea nuovo PIN
+                                    </Button>
+                                  </Box>
+                                </HStack>
+                              </Box>
+                            </VStack>
+                          </CardBody>
+                        </Card>
+                      );
+                    })}
+                  </VStack>
+                )}
+
+                {/* Form per aggiungere nuovo ospite */}
+                <Box mt={4} pt={4} borderTop="1px solid" borderColor="var(--border-light)">
+                  <Text fontSize="sm" fontWeight="semibold" mb={3}>
+                    Aggiungi nuovo ospite
+                  </Text>
+                  {(() => {
+                    async function addGuest(formData: FormData) {
+                      "use server";
+                      const firstName = (formData.get("firstName")?.toString() ?? "").trim();
+                      const lastName = (formData.get("lastName")?.toString() ?? "").trim();
+                      const phone = (formData.get("phone")?.toString() ?? "").trim();
+                      const email = (formData.get("email")?.toString() ?? "").trim();
+
+                      if (!firstName || !lastName || !phone) {
+                        redirect(
+                          `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
+                        );
+                        return;
+                      }
+
+                      const newGuest = stays_addGuest(stayId, {
+                        firstName,
+                        lastName,
+                        phone,
+                        email: email || undefined,
+                      });
+
+                      if (!newGuest) {
+                        redirect(
+                          `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
+                        );
+                        return;
+                      }
+
+                      const stay = stays_get(stayId);
+                      if (stay) {
+                        Store.createPinForGuest({
+                          role: "guest",
+                          aptId: actualAptId,
+                          stayId,
+                          guestId: newGuest.guestId,
+                          guestName: newGuest.name,
+                          validFrom: stay.checkInAt,
+                          validTo: stay.checkOutAt,
+                          source: "auto",
+                        });
+                      }
+
+                      redirect(
+                        `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
+                      );
+                    }
+
+                    return (
+                      <Box as="form" action={addGuest}>
+                        <VStack spacing={3} align="stretch">
+                          <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={2}>
+                            <Field.Root>
+                              <Field.Label fontSize="11px" opacity={0.6} mb={1}>
+                                Nome <Text as="span" color="var(--accent-error)">*</Text>
+                              </Field.Label>
+                              <ChakraInput
+                                type="text"
+                                name="firstName"
+                                required
+                                placeholder="Nome"
+                                borderRadius="xl"
+                                bg="var(--bg-secondary)"
+                                border="1px solid"
+                                borderColor="var(--border-light)"
+                                p={2}
+                                fontSize="sm"
+                              />
+                            </Field.Root>
+                            <Field.Root>
+                              <Field.Label fontSize="11px" opacity={0.6} mb={1}>
+                                Cognome <Text as="span" color="var(--accent-error)">*</Text>
+                              </Field.Label>
+                              <ChakraInput
+                                type="text"
+                                name="lastName"
+                                required
+                                placeholder="Cognome"
+                                borderRadius="xl"
+                                bg="var(--bg-secondary)"
+                                border="1px solid"
+                                borderColor="var(--border-light)"
+                                p={2}
+                                fontSize="sm"
+                              />
+                            </Field.Root>
+                          </Grid>
+                          <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={2}>
+                            <Field.Root>
+                              <Field.Label fontSize="11px" opacity={0.6} mb={1}>
+                                Telefono <Text as="span" color="var(--accent-error)">*</Text>
+                              </Field.Label>
+                              <ChakraInput
+                                type="tel"
+                                name="phone"
+                                required
+                                placeholder="+39 123 456 7890"
+                                borderRadius="xl"
+                                bg="var(--bg-secondary)"
+                                border="1px solid"
+                                borderColor="var(--border-light)"
+                                p={2}
+                                fontSize="sm"
+                              />
+                            </Field.Root>
+                            <Field.Root>
+                              <Field.Label fontSize="11px" opacity={0.6} mb={1}>Email (opzionale)</Field.Label>
+                              <ChakraInput
+                                type="email"
+                                name="email"
+                                placeholder="email@example.com"
+                                borderRadius="xl"
+                                bg="var(--bg-secondary)"
+                                border="1px solid"
+                                borderColor="var(--border-light)"
+                                p={2}
+                                fontSize="sm"
+                              />
+                            </Field.Root>
+                          </Grid>
+                          <Button
+                            type="submit"
+                            w="100%"
+                            borderRadius="xl"
+                            bg="rgba(6, 182, 212, 0.3)"
+                            border="1px solid"
+                            borderColor="rgba(6, 182, 212, 0.3)"
+                            p={2}
+                            fontWeight="semibold"
+                          >
+                            Aggiungi ospite
+                          </Button>
+                          <Text fontSize="xs" opacity={0.5}>
+                            Un PIN di accesso verrà creato automaticamente per il nuovo ospite.
+                          </Text>
+                        </VStack>
+                      </Box>
+                    );
+                  })()}
+                </Box>
+              </VStack>
+            </CardBody>
+          </Card>
+
+          {/* Cleaner PINs section */}
+          <Card>
+            <CardBody p={4}>
+              <VStack spacing={4} align="stretch">
+                <Text fontSize="sm" opacity={0.7} mb={3}>
+                  PIN Cleaner
+                </Text>
+                {(() => {
+                  const cleanerPins = pins.filter((p: any) => p.role === "cleaner" && p.stayId === stayId);
+                  const assignedCleaner = stayObj.cleanerName || null;
+
+                  async function createCleanerPin(formData: FormData) {
+                    "use server";
+                    const stayId = formData.get("stayId")?.toString() ?? "";
+                    const validFromStr = formData.get("validFrom")?.toString() ?? "";
+                    const validToStr = formData.get("validTo")?.toString() ?? "";
 
                     if (!stayId) {
                       redirect(
@@ -441,849 +1133,381 @@ export default async function StayDetailPage({
                       return;
                     }
 
-                    const oldCleanerName = stay.cleanerName;
-
-                    // Aggiorna il cleaner nello stay
-                    stays_updateCleaner(stayId, newCleanerName || null);
-
-                    // Aggiorna i job associati
-                    updateJobsCleanerByStay(stayId, newCleanerName || null);
-
-                    // Recupera gli orari dal PIN del vecchio cleaner prima di revocarlo
-                    let validFrom: number | null = null;
-                    let validTo: number | null = null;
-                    
-                    if (oldCleanerName) {
-                      const oldPins = Store.listPinsByStay(stayId).filter((p: any) => p.role === "cleaner");
-                      if (oldPins.length > 0) {
-                        // Usa gli orari del PIN esistente
-                        validFrom = oldPins[0].validFrom ?? oldPins[0].createdAt;
-                        validTo = oldPins[0].validTo ?? oldPins[0].expiresAt ?? oldPins[0].createdAt;
-                      }
-                      // Revoca tutti i PIN del vecchio cleaner per questo stay
-                      Store.revokeCleanerPinsByStay(stayId);
+                    const cleanerName = stay.cleanerName;
+                    if (!cleanerName) {
+                      redirect(
+                        `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
+                      );
+                      return;
                     }
 
-                    // Se non abbiamo recuperato gli orari dal vecchio PIN, calcolali
-                    if (validFrom === null || validTo === null) {
-                      const cfg = cleaners_getCfg(actualAptId);
-                      const dur = Math.max(15, Math.min(24 * 60, Math.round(cfg.durationMin ?? 60)));
-                      
-                      // Calcola gli orari come fa createCleanerPinForStay
-                      const calculateCleaningSlot = (checkOutAt: number, ranges: Array<{ from: string; to: string }>, durationMin: number): { from: number; to: number } => {
-                        if (!ranges || ranges.length === 0) {
-                          return { from: checkOutAt, to: checkOutAt + durationMin * 60_000 };
-                        }
+                    const validFrom = parseDateTimeLocal(validFromStr)?.getTime() ?? Date.now();
+                    const validTo = parseDateTimeLocal(validToStr)?.getTime() ?? Date.now() + 2 * 60 * 60 * 1000;
 
-                        const checkoutDate = new Date(checkOutAt);
-                        const checkoutHour = checkoutDate.getHours();
-                        const checkoutMin = checkoutDate.getMinutes();
-                        const checkoutMinOfDay = checkoutHour * 60 + checkoutMin;
-
-                        const timeToMinutes = (timeStr: string): number => {
-                          const [h, m] = timeStr.split(":").map(Number);
-                          return h * 60 + m;
-                        };
-
-                        for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
-                          for (const range of ranges) {
-                            const rangeFrom = timeToMinutes(range.from);
-                            const rangeTo = timeToMinutes(range.to);
-                            
-                            const rangeDate = new Date(checkoutDate);
-                            rangeDate.setDate(rangeDate.getDate() + dayOffset);
-                            rangeDate.setHours(0, 0, 0, 0);
-                            
-                            const rangeStart = rangeDate.getTime() + rangeFrom * 60_000;
-                            const rangeEnd = rangeDate.getTime() + rangeTo * 60_000;
-                            
-                            if (dayOffset === 0) {
-                              if (checkoutMinOfDay >= rangeFrom && checkoutMinOfDay < rangeTo) {
-                                const cleaningStart = checkOutAt;
-                                const cleaningEnd = Math.min(cleaningStart + durationMin * 60_000, rangeEnd);
-                                return { from: cleaningStart, to: cleaningEnd };
-                              }
-                            }
-                            
-                            if (rangeStart >= checkOutAt) {
-                              const cleaningStart = rangeStart;
-                              const cleaningEnd = Math.min(cleaningStart + durationMin * 60_000, rangeEnd);
-                              return { from: cleaningStart, to: cleaningEnd };
-                            }
-                          }
-                        }
-                        
-                        return { from: checkOutAt, to: checkOutAt + durationMin * 60_000 };
-                      };
-
-                      const slot = calculateCleaningSlot(stay.checkOutAt, cfg.cleaningTimeRanges ?? [], dur);
-                      validFrom = slot.from;
-                      validTo = slot.to;
+                    if (validTo <= validFrom) {
+                      redirect(
+                        `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
+                      );
+                      return;
                     }
 
-                    // Crea un nuovo PIN per il nuovo cleaner (se specificato) senza creare un nuovo job
-                    if (newCleanerName && validFrom !== null && validTo !== null) {
-                      const g0 = stay.guests[0] ?? { guestId: `g-${crypto.randomUUID()}`, name: "Ospite 1" };
-                      const normalizedCleanerName = cleaners_normName(newCleanerName);
-                      
-                      if (normalizedCleanerName) {
-                        Store.createPinForGuest({
-                          role: "cleaner",
-                          aptId: actualAptId,
-                          stayId,
-                          guestId: g0.guestId,
-                          guestName: normalizedCleanerName,
-                          validFrom,
-                          validTo,
-                          source: "manual", // Usa "manual" per evitare la creazione automatica del job
-                        });
-                      }
-                    }
+                    const guest0 = stay.guests[0] ?? { guestId: `g-${crypto.randomUUID()}`, name: "Ospite 1" };
+                    Store.createPinForGuest({
+                      role: "cleaner",
+                      aptId: actualAptId,
+                      stayId,
+                      guestId: guest0.guestId,
+                      guestName: cleanerName,
+                      validFrom: validFrom,
+                      validTo: validTo,
+                      source: "manual",
+                    });
 
                     redirect(
                       `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
                     );
                   }
 
-                  const cfg = cleaners_getCfg(actualAptId);
-                  const cleanersList = cfg.cleaners ?? [];
+                  async function revokeCleanerPin(formData: FormData) {
+                    "use server";
+                    const pin = formData.get("pin")?.toString() ?? "";
+                    if (!pin) return;
+
+                    pins_revoke(Store, pin);
+                    redirect(
+                      `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
+                    );
+                  }
 
                   return (
-                    <div className="mt-4 pt-4 border-t border-[var(--border-light)]">
-                      <div className="text-sm opacity-70 mb-3">Cleaner assegnato</div>
-                      <form action={updateCleaner} className="space-y-3">
-                        <input type="hidden" name="stayId" value={stayId} />
-                        
-                        <div>
-                          <div className="text-[11px] opacity-60 mb-1">
-                            Cleaner <span className="text-red-400">*</span>
-                          </div>
-                          <select
-                            name="cleaner"
-                            required
-                            defaultValue={stayObj.cleanerName ?? ""}
-                            className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2">
-                            <option value="">— Seleziona cleaner —</option>
-                            {cleanersList.map((cleaner) => (
-                              <option key={cleaner.name} value={cleaner.name}>
-                                {cleaner.name} - {cleaner.phone}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <button
-                          type="submit"
-                          className="w-full rounded-xl bg-cyan-500/30 border border-cyan-400/30 px-4 py-2 text-sm font-semibold">
-                          Aggiorna cleaner
-                        </button>
-                        <div className="text-xs opacity-50">
-                          I PIN del vecchio cleaner verranno revocati e verrà creato un nuovo PIN per il cleaner selezionato. Il job esistente verrà aggiornato con il nuovo cleaner.
-                        </div>
-                      </form>
-                    </div>
-                  );
-                })()}
-              </div>
-            );
-          })()}
-        </section>
-
-        {/* Guests management */}
-        <section className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
-          <div className="text-sm opacity-70 mb-3">Ospiti</div>
-
-          {stayObj.guests.length === 0 ? (
-            <div className="text-sm opacity-50">Nessun ospite registrato.</div>
-          ) : (
-            <div className="space-y-3">
-              {stayObj.guests.map((guest: any, idx: number) => {
-                const guestPins = pins.filter((p: any) => p.guestId === guest.guestId && p.role === "guest");
-                
-                async function updateGuest(formData: FormData) {
-                  "use server";
-                  const guestId = formData.get("guestId")?.toString() ?? "";
-                  const firstName = (formData.get("firstName")?.toString() ?? "").trim();
-                  const lastName = (formData.get("lastName")?.toString() ?? "").trim();
-                  const phone = (formData.get("phone")?.toString() ?? "").trim();
-                  const email = (formData.get("email")?.toString() ?? "").trim();
-
-                  if (!guestId || !firstName || !lastName || !phone) {
-                    redirect(
-                      `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
-                    );
-                    return;
-                  }
-
-                  stays_updateGuest(stayId, guestId, {
-                    firstName,
-                    lastName,
-                    phone,
-                    email: email || undefined,
-                  });
-
-                  redirect(
-                    `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
-                  );
-                }
-
-                async function revokeGuestPins(formData: FormData) {
-                  "use server";
-                  const guestId = formData.get("guestId")?.toString() ?? "";
-                  if (!guestId) return;
-
-                  const guestPinsToRevoke = pins.filter((p: any) => p.guestId === guestId && p.role === "guest");
-                  guestPinsToRevoke.forEach((p: any) => {
-                    pins_revoke(Store, p.pin);
-                  });
-
-                  redirect(
-                    `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
-                  );
-                }
-
-                async function createGuestPin(formData: FormData) {
-                  "use server";
-                  const guestId = formData.get("guestId")?.toString() ?? "";
-                  if (!guestId) return;
-
-                  const stay = stays_get(stayId);
-                  if (!stay) return;
-                  const guest = stay.guests.find((g: any) => g.guestId === guestId);
-                  if (!guest) return;
-
-                  Store.createPinForGuest({
-                    role: "guest",
-                    aptId: actualAptId,
-                    stayId,
-                    guestId,
-                    guestName: guest.name,
-                    validFrom: stay.checkInAt,
-                    validTo: stay.checkOutAt,
-                    source: "manual",
-                  });
-
-                  redirect(
-                    `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
-                  );
-                }
-
-                async function removeGuest(formData: FormData) {
-                  "use server";
-                  const guestId = formData.get("guestId")?.toString() ?? "";
-                  if (!guestId) return;
-
-                  // Revoca tutti i PIN dell'ospite prima di rimuoverlo
-                  const stayPins = pins_listByStay(Store, stayId);
-                  const guestPinsToRevoke = stayPins.filter((p: any) => p.guestId === guestId && p.role === "guest");
-                  guestPinsToRevoke.forEach((p: any) => {
-                    pins_revoke(Store, p.pin);
-                  });
-
-                  // Rimuovi l'ospite (la funzione controlla che ci sia almeno un ospite)
-                  stays_removeGuest(stayId, guestId);
-
-                  redirect(
-                    `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
-                  );
-                }
-
-                const canRemove = stayObj.guests.length > 1;
-
-                return (
-                  <div key={guest.guestId} className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-4">
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div>
-                        <div className="text-sm font-semibold">
-                          {guest.firstName && guest.lastName
-                            ? `${guest.firstName} ${guest.lastName}`
-                            : guest.name}
-                        </div>
-                        <div className="mt-1 text-xs opacity-60">
-                          {idx === 0 ? 'Responsabile soggiorno' : `Ospite ${idx + 1}`}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="text-xs opacity-60">
-                          {guestPins.length} PIN
-                        </div>
-                        {canRemove && (
-                          <form action={removeGuest}>
-                            <input type="hidden" name="guestId" value={guest.guestId} />
-                            <button
-                              type="submit"
-                              className="text-xs px-2 py-1 rounded bg-red-500/20 border border-red-500/30 hover:bg-red-500/30">
-                              Rimuovi
-                            </button>
-                          </form>
-                        )}
-                      </div>
-                    </div>
-
-                    <form action={updateGuest} className="space-y-3">
-                      <input type="hidden" name="guestId" value={guest.guestId} />
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <div>
-                          <div className="text-[11px] opacity-60 mb-1">Nome</div>
-                          <input
-                            type="text"
-                            name="firstName"
-                            defaultValue={guest.firstName ?? guest.name.split(" ")[0] ?? ""}
-                            required
-                            className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2 text-sm"
-                          />
-                        </div>
-                        <div>
-                          <div className="text-[11px] opacity-60 mb-1">Cognome</div>
-                          <input
-                            type="text"
-                            name="lastName"
-                            defaultValue={guest.lastName ?? guest.name.split(" ").slice(1).join(" ") ?? ""}
-                            required
-                            className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2 text-sm"
-                          />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <div>
-                          <div className="text-[11px] opacity-60 mb-1">Telefono</div>
-                          <input
-                            type="tel"
-                            name="phone"
-                            defaultValue={guest.phone ?? ""}
-                            required
-                            className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2 text-sm"
-                          />
-                        </div>
-                        <div>
-                          <div className="text-[11px] opacity-60 mb-1">Email (opzionale)</div>
-                          <input
-                            type="email"
-                            name="email"
-                            defaultValue={guest.email ?? ""}
-                            className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2 text-sm"
-                          />
-                        </div>
-                      </div>
-                      <button
-                        type="submit"
-                        className="w-full rounded-xl bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-4 py-2 text-sm font-semibold"
-                      >
-                        Salva modifiche
-                      </button>
-                    </form>
-
-                    <div className="mt-4 pt-4 border-t border-[var(--border-light)]">
-                      <div className="text-xs opacity-60 mb-2">PIN di accesso</div>
-                      {guestPins.length === 0 ? (
-                        <div className="text-xs opacity-50 mb-2">Nessun PIN attivo</div>
+                    <VStack spacing={4} align="stretch">
+                      {/* Lista PIN esistenti */}
+                      {cleanerPins.length === 0 ? (
+                        <Text fontSize="sm" opacity={0.6}>
+                          Nessun PIN cleaner attivo per questo soggiorno.
+                        </Text>
                       ) : (
-                        <div className="space-y-2 mb-2">
-                          {guestPins.map((p: any) => {
+                        <VStack spacing={2} align="stretch">
+                          {cleanerPins.map((p: any) => {
+                            const vFrom = p.validFrom ?? p.createdAt;
                             const vTo = p.validTo ?? p.expiresAt;
+
                             return (
-                              <div
-                                key={p.pin}
-                                className="flex items-center justify-between rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-light)] px-3 py-2"
-                              >
-                                <div>
-                                  <div className="text-xs font-mono font-semibold">{p.pin}</div>
-                                  <div className="text-[11px] opacity-60">
-                                    Scade tra {timeLeftDHM(vTo ?? 0)}
-                                  </div>
-                                </div>
-                                <form action={delPin}>
-                                  <input type="hidden" name="aptId" value={actualAptId} />
-                                  <input type="hidden" name="pin" value={p.pin} />
-                                  <button
-                                    type="submit"
-                                    className="text-xs px-2 py-1 rounded bg-red-500/20 border border-red-500/30"
-                                  >
-                                    Revoca
-                                  </button>
-                                </form>
-                              </div>
+                              <Card key={p.pin} variant="outlined">
+                                <CardBody p={3}>
+                                  <HStack justify="space-between" gap={3} align="start">
+                                    <Box minW={0} flex={1}>
+                                      <Text fontWeight="semibold" letterSpacing="widest" fontSize="sm">
+                                        {p.pin}
+                                      </Text>
+                                      <Text mt={1} fontSize="xs" opacity={0.6}>
+                                        {p.guestName || "Cleaner"} • {p.source ?? "manual"}
+                                      </Text>
+                                      <Text mt={1} fontSize="xs" opacity={0.5}>
+                                        Valido: {fmtDT(vFrom)} → {fmtDT(vTo)}
+                                      </Text>
+                                      <Text mt={1} fontSize="xs" opacity={0.5}>
+                                        Scade tra: {timeLeftDHM(vTo ?? 0)}
+                                      </Text>
+                                    </Box>
+                                    <Box as="form" action={revokeCleanerPin}>
+                                      <input type="hidden" name="pin" value={p.pin} />
+                                      <Button
+                                        type="submit"
+                                        size="sm"
+                                        borderRadius="lg"
+                                        bg="rgba(239, 68, 68, 0.2)"
+                                        border="1px solid"
+                                        borderColor="rgba(239, 68, 68, 0.3)"
+                                        _hover={{ bg: "rgba(239, 68, 68, 0.3)" }}
+                                        px={3}
+                                        py={2}
+                                        fontSize="xs"
+                                        whiteSpace="nowrap"
+                                      >
+                                        Revoca
+                                      </Button>
+                                    </Box>
+                                  </HStack>
+                                </CardBody>
+                              </Card>
                             );
                           })}
-                        </div>
+                        </VStack>
                       )}
-                      <div className="flex gap-2">
-                        {guestPins.length > 0 && (
-                          <form action={revokeGuestPins} className="flex-1">
-                            <input type="hidden" name="guestId" value={guest.guestId} />
-                            <button
-                              type="submit"
-                              className="w-full text-xs px-3 py-2 rounded-lg bg-red-500/20 border border-red-500/30"
-                            >
-                              Revoca tutti i PIN
-                            </button>
-                          </form>
-                        )}
-                        <form action={createGuestPin} className="flex-1">
-                          <input type="hidden" name="guestId" value={guest.guestId} />
-                          <button
-                            type="submit"
-                            className="w-full text-xs px-3 py-2 rounded-lg bg-cyan-500/20 border border-cyan-500/30"
-                          >
-                            Crea nuovo PIN
-                          </button>
-                        </form>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
 
-          {/* Form per aggiungere nuovo ospite */}
-          <div className="mt-4 pt-4 border-t border-[var(--border-light)]">
-            <div className="text-sm font-semibold mb-3">Aggiungi nuovo ospite</div>
-            {(() => {
-              async function addGuest(formData: FormData) {
-                "use server";
-                const firstName = (formData.get("firstName")?.toString() ?? "").trim();
-                const lastName = (formData.get("lastName")?.toString() ?? "").trim();
-                const phone = (formData.get("phone")?.toString() ?? "").trim();
-                const email = (formData.get("email")?.toString() ?? "").trim();
+                      {/* Form per creare nuovo PIN */}
+                      {assignedCleaner ? (
+                        <Card variant="outlined">
+                          <CardBody p={4}>
+                            <VStack spacing={3} align="stretch">
+                              <Text fontSize="sm" fontWeight="semibold" mb={3}>
+                                Crea nuovo PIN cleaner
+                              </Text>
+                              <Box as="form" action={createCleanerPin}>
+                                <VStack spacing={3} align="stretch">
+                                  <input type="hidden" name="stayId" value={stayId} />
 
-                if (!firstName || !lastName || !phone) {
-                  redirect(
-                    `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
+                                  <Box>
+                                    <Text fontSize="11px" opacity={0.6} mb={1}>
+                                      Cleaner assegnato
+                                    </Text>
+                                    <Box
+                                      w="100%"
+                                      borderRadius="xl"
+                                      bg="var(--bg-secondary)"
+                                      border="1px solid"
+                                      borderColor="var(--border-light)"
+                                      p={2}
+                                      fontSize="sm"
+                                      fontWeight="semibold"
+                                    >
+                                      {assignedCleaner}
+                                    </Box>
+                                    <Text mt={1} fontSize="xs" opacity={0.5}>
+                                      Il cleaner è stato assegnato automaticamente alla creazione del soggiorno.
+                                    </Text>
+                                  </Box>
+
+                                  <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={3}>
+                                    <Field.Root>
+                                      <Field.Label fontSize="11px" opacity={0.6} mb={1}>
+                                        Validità da (data + ora)
+                                      </Field.Label>
+                                      <ChakraInput
+                                        type="datetime-local"
+                                        name="validFrom"
+                                        required
+                                        borderRadius="xl"
+                                        bg="var(--bg-secondary)"
+                                        border="1px solid"
+                                        borderColor="var(--border-light)"
+                                        p={2}
+                                      />
+                                    </Field.Root>
+                                    <Field.Root>
+                                      <Field.Label fontSize="11px" opacity={0.6} mb={1}>
+                                        Validità fino a (data + ora)
+                                      </Field.Label>
+                                      <ChakraInput
+                                        type="datetime-local"
+                                        name="validTo"
+                                        required
+                                        borderRadius="xl"
+                                        bg="var(--bg-secondary)"
+                                        border="1px solid"
+                                        borderColor="var(--border-light)"
+                                        p={2}
+                                      />
+                                    </Field.Root>
+                                  </Grid>
+
+                                  <Button
+                                    type="submit"
+                                    w="100%"
+                                    borderRadius="xl"
+                                    bg="rgba(6, 182, 212, 0.3)"
+                                    border="1px solid"
+                                    borderColor="rgba(6, 182, 212, 0.3)"
+                                    p={2}
+                                    fontWeight="semibold"
+                                  >
+                                    Crea PIN cleaner
+                                  </Button>
+                                </VStack>
+                              </Box>
+                            </VStack>
+                          </CardBody>
+                        </Card>
+                      ) : (
+                        <Card variant="outlined">
+                          <CardBody p={4}>
+                            <Text fontSize="sm" opacity={0.6}>
+                              Nessun cleaner assegnato a questo soggiorno.
+                            </Text>
+                          </CardBody>
+                        </Card>
+                      )}
+                    </VStack>
                   );
-                  return;
-                }
+                })()}
+              </VStack>
+            </CardBody>
+          </Card>
 
-                // Aggiungi l'ospite
-                const newGuest = stays_addGuest(stayId, {
-                  firstName,
-                  lastName,
-                  phone,
-                  email: email || undefined,
-                });
+          {/* PIN list */}
+          <Card>
+            <CardBody p={4}>
+              <VStack spacing={3} align="stretch">
+                <Text fontSize="sm" opacity={0.7} mb={3}>
+                  PIN attivi
+                </Text>
 
-                if (!newGuest) {
-                  redirect(
-                    `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
-                  );
-                  return;
-                }
-
-                // Crea automaticamente un PIN per il nuovo ospite
-                const stay = stays_get(stayId);
-                if (stay) {
-                  Store.createPinForGuest({
-                    role: "guest",
-                    aptId: actualAptId,
-                    stayId,
-                    guestId: newGuest.guestId,
-                    guestName: newGuest.name,
-                    validFrom: stay.checkInAt,
-                    validTo: stay.checkOutAt,
-                    source: "auto",
-                  });
-                }
-
-                redirect(
-                  `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
-                );
-              }
-
-              return (
-                <form action={addGuest} className="space-y-3">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    <div>
-                      <div className="text-[11px] opacity-60 mb-1">
-                        Nome <span className="text-red-400">*</span>
-                      </div>
-                      <input
-                        type="text"
-                        name="firstName"
-                        required
-                        placeholder="Nome"
-                        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2 text-sm"
-                      />
-                    </div>
-                    <div>
-                      <div className="text-[11px] opacity-60 mb-1">
-                        Cognome <span className="text-red-400">*</span>
-                      </div>
-                      <input
-                        type="text"
-                        name="lastName"
-                        required
-                        placeholder="Cognome"
-                        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2 text-sm"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    <div>
-                      <div className="text-[11px] opacity-60 mb-1">
-                        Telefono <span className="text-red-400">*</span>
-                      </div>
-                      <input
-                        type="tel"
-                        name="phone"
-                        required
-                        placeholder="+39 123 456 7890"
-                        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2 text-sm"
-                      />
-                    </div>
-                    <div>
-                      <div className="text-[11px] opacity-60 mb-1">Email (opzionale)</div>
-                      <input
-                        type="email"
-                        name="email"
-                        placeholder="email@example.com"
-                        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2 text-sm"
-                      />
-                    </div>
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full rounded-xl bg-cyan-500/30 border border-cyan-400/30 p-2 font-semibold">
-                    Aggiungi ospite
-                  </button>
-                  <div className="text-xs opacity-50">
-                    Un PIN di accesso verrà creato automaticamente per il nuovo ospite.
-                  </div>
-                </form>
-              );
-            })()}
-          </div>
-        </section>
-
-        {/* Cleaner PINs section */}
-        <section className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
-          <div className="text-sm opacity-70 mb-3">PIN Cleaner</div>
-          {(() => {
-            const cleanerPins = pins.filter((p: any) => p.role === "cleaner" && p.stayId === stayId);
-            // Recupera il cleaner assegnato allo stay (persistente, indipendente dai PIN)
-            const assignedCleaner = stayObj.cleanerName || null;
-
-            async function createCleanerPin(formData: FormData) {
-              "use server";
-              const stayId = formData.get("stayId")?.toString() ?? "";
-              const validFromStr = formData.get("validFrom")?.toString() ?? "";
-              const validToStr = formData.get("validTo")?.toString() ?? "";
-
-              if (!stayId) {
-                redirect(
-                  `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
-                );
-                return;
-              }
-
-              // Recupera il cleaner assegnato allo stay (persistente, indipendente dai PIN)
-              const stay = stays_get(stayId);
-              if (!stay) {
-                redirect(
-                  `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
-                );
-                return;
-              }
-
-              const cleanerName = stay.cleanerName;
-              if (!cleanerName) {
-                redirect(
-                  `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
-                );
-                return;
-              }
-
-              const validFrom = parseDateTimeLocal(validFromStr)?.getTime() ?? Date.now();
-              const validTo = parseDateTimeLocal(validToStr)?.getTime() ?? Date.now() + 2 * 60 * 60 * 1000;
-
-              if (validTo <= validFrom) {
-                redirect(
-                  `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
-                );
-                return;
-              }
-
-              // Usa createPinForGuest per creare il PIN con le date specificate
-              const guest0 = stay.guests[0] ?? { guestId: `g-${crypto.randomUUID()}`, name: "Ospite 1" };
-              Store.createPinForGuest({
-                role: "cleaner",
-                aptId: actualAptId,
-                stayId,
-                guestId: guest0.guestId,
-                guestName: cleanerName,
-                validFrom: validFrom,
-                validTo: validTo,
-                source: "manual",
-              });
-
-              redirect(
-                `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
-              );
-            }
-
-            async function revokeCleanerPin(formData: FormData) {
-              "use server";
-              const pin = formData.get("pin")?.toString() ?? "";
-              if (!pin) return;
-
-              pins_revoke(Store, pin);
-              redirect(
-                `/app/host/stay/${encodeURIComponent(stayId)}?client=${encodeURIComponent(finalClientId)}&apt=${encodeURIComponent(actualAptId)}`
-              );
-            }
-
-            return (
-              <div className="space-y-4">
-                {/* Lista PIN esistenti */}
-                {cleanerPins.length === 0 ? (
-                  <div className="text-sm opacity-60">Nessun PIN cleaner attivo per questo soggiorno.</div>
+                {pins.length === 0 ? (
+                  <Text fontSize="sm" opacity={0.5}>
+                    Nessun PIN attivo per questo stay.
+                  </Text>
                 ) : (
-                  <div className="space-y-2">
-                    {cleanerPins.map((p: any) => {
+                  <VStack spacing={2} align="stretch">
+                    {pins.map((p: any) => {
                       const vFrom = p.validFrom ?? p.createdAt;
                       const vTo = p.validTo ?? p.expiresAt;
 
                       return (
-                        <div key={p.pin} className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0 flex-1">
-                              <div className="font-semibold tracking-widest text-sm">{p.pin}</div>
-                              <div className="mt-1 text-xs opacity-60">
-                                {p.guestName || "Cleaner"} • {p.source ?? "manual"}
-                              </div>
-                              <div className="mt-1 text-xs opacity-50">
-                                Valido: {fmtDT(vFrom)} → {fmtDT(vTo)}
-                              </div>
-                              <div className="mt-1 text-xs opacity-50">Scade tra: {timeLeftDHM(vTo ?? 0)}</div>
-                            </div>
-                            <form action={revokeCleanerPin}>
-                              <input type="hidden" name="pin" value={p.pin} />
-                              <button
-                                type="submit"
-                                className="text-xs px-3 py-2 rounded-lg bg-red-500/20 border border-red-500/30 hover:bg-red-500/30 whitespace-nowrap">
-                                Revoca
-                              </button>
-                            </form>
-                          </div>
-                        </div>
+                        <PinCollapsible
+                          key={p.pin}
+                          pin={p.pin}
+                          role={p.role}
+                          source={p.source ?? "manual"}
+                          guestName={p.guestName}
+                          stayId={p.stayId}
+                          validFrom={vFrom}
+                          validTo={vTo}
+                          timeLeft={timeLeftDHM(vTo ?? 0)}
+                          revokeAction={delPin}
+                        />
                       );
                     })}
-                  </div>
+                  </VStack>
                 )}
+              </VStack>
+            </CardBody>
+          </Card>
 
-                {/* Form per creare nuovo PIN */}
-                {assignedCleaner ? (
-                  <div className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-4">
-                    <div className="text-sm font-semibold mb-3">Crea nuovo PIN cleaner</div>
-                    <form action={createCleanerPin} className="space-y-3">
-                      <input type="hidden" name="stayId" value={stayId} />
+          {/* Cleaning Jobs section */}
+          <Card>
+            <CardBody p={4}>
+              <VStack spacing={3} align="stretch">
+                <Text fontSize="sm" opacity={0.7} mb={3}>
+                  Pulizie assegnate
+                </Text>
 
-                      <div>
-                        <div className="text-[11px] opacity-60 mb-1">Cleaner assegnato</div>
-                        <div className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2 text-sm font-semibold">
-                          {assignedCleaner}
-                        </div>
-                        <div className="mt-1 text-xs opacity-50">Il cleaner è stato assegnato automaticamente alla creazione del soggiorno.</div>
-                      </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        <div className="text-[11px] opacity-60 mb-1">Validità da (data + ora)</div>
-                        <input
-                          type="datetime-local"
-                          name="validFrom"
-                          required
-                          className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2"
-                        />
-                      </div>
-                      <div>
-                        <div className="text-[11px] opacity-60 mb-1">Validità fino a (data + ora)</div>
-                        <input
-                          type="datetime-local"
-                          name="validTo"
-                          required
-                          className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2"
-                        />
-                      </div>
-                    </div>
-
-                      <button type="submit" className="w-full rounded-xl bg-cyan-500/30 border border-cyan-400/30 p-2 font-semibold">
-                        Crea PIN cleaner
-                      </button>
-                    </form>
-                  </div>
+                {jobs.length === 0 ? (
+                  <Text fontSize="sm" opacity={0.5}>
+                    Nessuna pulizia assegnata registrata per questo appartamento.
+                  </Text>
                 ) : (
-                  <div className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-4">
-                    <div className="text-sm opacity-60">Nessun cleaner assegnato a questo soggiorno.</div>
-                  </div>
+                  <VStack spacing={3} align="stretch">
+                    {jobs.map((job: CleaningJob) => {
+                      const statusVariant: Record<CleaningStatus, "warning" | "info" | "success" | "error"> = {
+                        todo: "warning",
+                        in_progress: "info",
+                        done: "success",
+                        problem: "error",
+                      };
+
+                      const statusLabels: Record<CleaningStatus, string> = {
+                        todo: "Da fare",
+                        in_progress: "In corso",
+                        done: "Completato",
+                        problem: "Problema",
+                      };
+
+                      return (
+                        <Card key={job.id} variant="outlined">
+                          <CardBody p={4}>
+                            <VStack spacing={3} align="stretch">
+                              <HStack justify="space-between" gap={3} mb={3} align="start">
+                                <Box minW={0} flex={1}>
+                                  <Text fontSize="sm" fontWeight="semibold">
+                                    {job.aptName}
+                                  </Text>
+                                  <Text mt={1} fontSize="xs" opacity={0.6}>
+                                    {job.windowLabel}
+                                  </Text>
+                                  {job.finalPhotos && job.finalPhotos.length > 0 && (
+                                    <Text mt={2} fontSize="xs" opacity={0.7}>
+                                      📷 {job.finalPhotos.length} foto finali
+                                    </Text>
+                                  )}
+                                  {job.status === "problem" && job.problemNote && (
+                                    <Box mt={2} fontSize="xs" color="rgba(254, 226, 226, 1)" bg="rgba(239, 68, 68, 0.1)" border="1px solid" borderColor="rgba(239, 68, 68, 0.2)" borderRadius="md" px={2} py={1}>
+                                      ⚠️ {job.problemNote.length > 50 ? job.problemNote.substring(0, 50) + "..." : job.problemNote}
+                                    </Box>
+                                  )}
+                                </Box>
+                                <Badge
+                                  variant={statusVariant[job.status]}
+                                  size="sm"
+                                  px={3}
+                                  py={1}
+                                  borderRadius="lg"
+                                  fontSize="xs"
+                                  fontWeight="semibold"
+                                >
+                                  {statusLabels[job.status]}
+                                </Badge>
+                              </HStack>
+
+                              {job.startedAt && (
+                                <Text mt={2} fontSize="xs" opacity={0.6}>
+                                  Iniziato: {fmtDT(job.startedAt)}
+                                </Text>
+                              )}
+                              {job.completedAt && (
+                                <Text mt={1} fontSize="xs" opacity={0.6}>
+                                  Completato: {fmtDT(job.completedAt)}
+                                </Text>
+                              )}
+
+                              {job.checklist && job.checklist.length > 0 && (
+                                <Box mt={3} pt={3} borderTop="1px solid" borderColor="var(--border-light)">
+                                  <Text fontSize="xs" opacity={0.6} mb={2}>
+                                    Checklist
+                                  </Text>
+                                  <VStack spacing={1} align="stretch">
+                                    {job.checklist.map((item) => (
+                                      <HStack key={item.id} spacing={2} fontSize="xs">
+                                        <Box
+                                          w={4}
+                                          h={4}
+                                          borderRadius="md"
+                                          border="2px solid"
+                                          borderColor={item.done ? "rgba(16, 185, 129, 0.5)" : "var(--border-light)"}
+                                          bg={item.done ? "rgba(16, 185, 129, 0.3)" : "var(--bg-secondary)"}
+                                          display="flex"
+                                          alignItems="center"
+                                          justifyContent="center"
+                                        >
+                                          {item.done && (
+                                            <CheckIcon size={12} color="rgba(16, 185, 129, 1)" />
+                                          )}
+                                        </Box>
+                                        <Text textDecoration={item.done ? "line-through" : "none"} opacity={item.done ? 0.5 : 1}>
+                                          {item.label}
+                                        </Text>
+                                      </HStack>
+                                    ))}
+                                  </VStack>
+                                </Box>
+                              )}
+
+                              <Box mt={3} pt={3} borderTop="1px solid" borderColor="var(--border-light)">
+                                <Button
+                                  as={Link}
+                                  href={`/app/host/job/${encodeURIComponent(job.id)}`}
+                                  size="sm"
+                                  borderRadius="lg"
+                                  variant="secondary"
+                                  px={3}
+                                  py={2}
+                                  fontSize="xs"
+                                >
+                                  Vedi dettaglio pulizia assegnata →
+                                </Button>
+                              </Box>
+                            </VStack>
+                          </CardBody>
+                        </Card>
+                      );
+                    })}
+                  </VStack>
                 )}
-              </div>
-            );
-          })()}
-        </section>
-
-        {/* PIN list */}
-        <section className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
-          <div className="text-sm opacity-70 mb-3">PIN attivi</div>
-
-          {pins.length === 0 ? (
-            <div className="text-sm opacity-50">Nessun PIN attivo per questo stay.</div>
-          ) : (
-            <div className="space-y-2">
-              {pins.map((p: any) => {
-                const vFrom = p.validFrom ?? p.createdAt;
-                const vTo = p.validTo ?? p.expiresAt;
-
-                return (
-                  <details
-                    key={p.pin}
-                    className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-3 py-2"
-                  >
-                    <summary className="cursor-pointer list-none flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="font-semibold tracking-widest truncate">{p.pin}</div>
-                        <div className="text-[11px] opacity-60 truncate">
-                          {p.role} • {p.source ?? "manual"}
-                          {p.guestName ? ` • ${p.guestName}` : ""}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-[11px] opacity-60">Scade tra</div>
-                        <div className="text-xs font-semibold">{timeLeftDHM(vTo ?? 0)}</div>
-                      </div>
-                    </summary>
-
-                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="text-xs opacity-80 space-y-1">
-                        <div>
-                          <span className="opacity-60">Validità:</span> {fmtDT(vFrom)} → {fmtDT(vTo)}
-                        </div>
-                        <div>
-                          <span className="opacity-60">Nome:</span> {p.guestName ?? "—"}
-                        </div>
-                        <div>
-                          <span className="opacity-60">Stay:</span> {p.stayId ?? "—"}
-                        </div>
-                      </div>
-
-                      <div className="flex items-end justify-end">
-                        <form action={delPin}>
-                          <input type="hidden" name="aptId" value={actualAptId} />
-                          <input type="hidden" name="pin" value={p.pin} />
-                          <button
-                            type="submit"
-                            className="text-xs px-3 py-2 rounded-lg bg-red-500/20 border border-red-500/30"
-                          >
-                            Revoca
-                          </button>
-                        </form>
-                      </div>
-                    </div>
-                  </details>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        {/* Cleaning Jobs section */}
-        <section className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
-          <div className="text-sm opacity-70 mb-3">Pulizie assegnate</div>
-
-          {jobs.length === 0 ? (
-            <div className="text-sm opacity-50">Nessuna pulizia assegnata registrata per questo appartamento.</div>
-          ) : (
-            <div className="space-y-3">
-              {jobs.map((job: CleaningJob) => {
-                const statusColors: Record<CleaningStatus, string> = {
-                  todo: "bg-yellow-100 border-yellow-300 text-yellow-900",
-                  in_progress: "bg-blue-50 border-blue-200 text-blue-700",
-                  done: "bg-green-50 border-green-200 text-green-700",
-                  problem: "bg-red-50 border-red-200 text-red-700",
-                };
-
-                const statusLabels: Record<CleaningStatus, string> = {
-                  todo: "Da fare",
-                  in_progress: "In corso",
-                  done: "Completato",
-                  problem: "Problema",
-                };
-
-                return (
-                  <div key={job.id} className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-4">
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-semibold">{job.aptName}</div>
-                        <div className="mt-1 text-xs opacity-60">
-                          {job.windowLabel}
-                        </div>
-                        {job.finalPhotos && job.finalPhotos.length > 0 && (
-                          <div className="mt-2 text-xs opacity-70">
-                            📷 {job.finalPhotos.length} foto finali
-                          </div>
-                        )}
-                        {job.status === "problem" && job.problemNote && (
-                          <div className="mt-2 text-xs text-red-300 bg-red-500/10 border border-red-500/20 rounded px-2 py-1">
-                            ⚠️ {job.problemNote.length > 50 ? job.problemNote.substring(0, 50) + "..." : job.problemNote}
-                          </div>
-                        )}
-                      </div>
-                      <div className={`px-3 py-1 rounded-lg text-xs font-semibold border ${statusColors[job.status]}`}>
-                        {statusLabels[job.status]}
-                      </div>
-                    </div>
-
-                    {job.startedAt && (
-                      <div className="mt-2 text-xs opacity-60">
-                        Iniziato: {fmtDT(job.startedAt)}
-                      </div>
-                    )}
-                    {job.completedAt && (
-                      <div className="mt-1 text-xs opacity-60">
-                        Completato: {fmtDT(job.completedAt)}
-                      </div>
-                    )}
-
-                    {job.checklist && job.checklist.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-[var(--border-light)]">
-                        <div className="text-xs opacity-60 mb-2">Checklist</div>
-                        <div className="space-y-1">
-                          {job.checklist.map((item) => (
-                            <div key={item.id} className="flex items-center gap-2 text-xs">
-                              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
-                                item.done 
-                                  ? "bg-green-500/30 border-green-500/50" 
-                                  : "bg-[var(--bg-secondary)] border-[var(--border-light)]"
-                              }`}>
-                                {item.done && (
-                                  <svg className="w-3 h-3 text-green-300" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                  </svg>
-                                )}
-                              </div>
-                              <span className={item.done ? "opacity-50 line-through" : ""}>
-                                {item.label}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="mt-3 pt-3 border-t border-[var(--border-light)]">
-                      <Link
-                        href={`/app/host/job/${encodeURIComponent(job.id)}`}
-                        className="text-xs px-3 py-2 rounded-lg bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] inline-block">
-                        Vedi dettaglio pulizia assegnata →
-                      </Link>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-      </div>
+              </VStack>
+            </CardBody>
+          </Card>
+        </VStack>
+      </Box>
     </AppLayout>
   );
 }
-

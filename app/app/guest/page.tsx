@@ -1,7 +1,6 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -19,12 +18,17 @@ import { events_listByApt, events_log } from "@/app/lib/domain/eventsDomain";
 import { door_getStateFromLog } from "@/app/lib/domain/doorStore";
 import { Badge } from "@/app/components/ui/Badge";
 import { AppLayout } from "@/app/components/layouts/AppLayout";
+import { Box, VStack, HStack, Text, Heading, Grid, GridItem } from "@chakra-ui/react";
+import { Card, CardBody } from "@/app/components/ui/Card";
+import { Button } from "@/app/components/ui/Button";
+import { Link } from "@/app/components/ui/Link";
+import { Alert } from "@/app/components/ui/Alert";
 
 function badge(outcome: "ok" | "retrying" | "fail" | null) {
-  if (outcome === "ok") return { t: "Accesso disponibile", c: "bg-emerald-500/15 border-emerald-400/20 text-emerald-900" };
-  if (outcome === "fail") return { t: "Problema accesso", c: "bg-red-500/15 border-red-400/20 text-red-900" };
-  if (outcome === "retrying") return { t: "In corso…", c: "bg-yellow-500/20 border-yellow-400/30 text-yellow-900" };
-  return { t: "Pronto", c: "bg-[var(--bg-secondary)] border-[var(--border-light)] text-[var(--text-secondary)]" };
+  if (outcome === "ok") return { t: "Accesso disponibile", variant: "success" as const };
+  if (outcome === "fail") return { t: "Problema accesso", variant: "error" as const };
+  if (outcome === "retrying") return { t: "In corso…", variant: "warning" as const };
+  return { t: "Pronto", variant: "default" as const };
 }
 
 export default async function GuestPage({
@@ -41,10 +45,22 @@ export default async function GuestPage({
   const sess = cookieStore.get("sess")?.value;
   const me = readSession(sess);
 
-  if (!me || me.role !== "guest") return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
+  if (!me || me.role !== "guest") {
+    return (
+      <Box p={6} color="var(--text-primary)">
+        Non autorizzato
+      </Box>
+    );
+  }
 
   const aptId = me.aptId;
-  if (!aptId) return <div className="p-6 text-[var(--text-primary)]">AptId non disponibile</div>;
+  if (!aptId) {
+    return (
+      <Box p={6} color="var(--text-primary)">
+        AptId non disponibile
+      </Box>
+    );
+  }
   
   const state = getGuestState(aptId);
   const allEvents = events_listByApt(Store, aptId, 5);
@@ -142,123 +158,235 @@ export default async function GuestPage({
 
   return (
     <AppLayout role="guest">
-      <div className="mx-auto w-full max-w-md p-5 space-y-4">
-        <div className="mb-2">
-          <Badge variant="default" size="sm">GUEST</Badge>
-          <div className="mt-1 text-lg font-semibold">{state.apt.aptName}</div>
-          <div className="text-xs opacity-60">{state.apt.addressShort}</div>
-        </div>
+      <Box mx="auto" w="100%" maxW="md" p={5}>
+        <VStack spacing={4} align="stretch">
+          <Box mb={2}>
+            <Badge variant={b.variant} size="sm">{b.t}</Badge>
+            <Heading as="h1" size="lg" fontWeight="semibold" mt={1} color="var(--text-primary)">
+              {state.apt.aptName}
+            </Heading>
+            <Text fontSize="xs" opacity={0.6} color="var(--text-secondary)">
+              {state.apt.addressShort}
+            </Text>
+          </Box>
 
-        {/* Toast */}
-        {toast && (
-          <div
-            className={`rounded-2xl border p-3 text-sm ${
-              toast.endsWith("_ok")
-                ? "bg-[var(--toast-success-bg)] border-[var(--toast-success-border)] text-[var(--toast-success-text)]"
-                : "bg-[var(--toast-error-bg)] border-[var(--toast-error-border)] text-[var(--toast-error-text)]"
-            }`}
-          >
-            {toast === "open_ok" && "Porta sbloccata ✅"}
-            {toast === "close_ok" && "Porta chiusa ✅"}
-            {toast === "open_fail" &&
-              "Non riesco ad aprire. Prova ancora o contatta supporto."}
-            {toast === "close_fail" &&
-              "Non riesco a chiudere. Prova ancora o contatta supporto."}
-            {toast === "gate_open_ok" && "Portone sbloccato ✅"}
-            {toast === "gate_open_fail" &&
-              "Non riesco ad aprire il portone. Prova ancora o contatta supporto."}
-          </div>
-        )}
+          {/* Toast */}
+          {toast && (
+            <Alert variant={toast.endsWith("_ok") ? "success" : "error"}>
+              {toast === "open_ok" && "Porta sbloccata ✅"}
+              {toast === "close_ok" && "Porta chiusa ✅"}
+              {toast === "open_fail" &&
+                "Non riesco ad aprire. Prova ancora o contatta supporto."}
+              {toast === "close_fail" &&
+                "Non riesco a chiudere. Prova ancora o contatta supporto."}
+              {toast === "gate_open_ok" && "Portone sbloccato ✅"}
+              {toast === "gate_open_fail" &&
+                "Non riesco ad aprire il portone. Prova ancora o contatta supporto."}
+            </Alert>
+          )}
 
-        {/* Controllo Porta */}
-        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="text-sm font-semibold">Porta</div>
-            <div
-              className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold ${
-                doorIsOpen
-                  ? "bg-emerald-50 border-emerald-200 text-emerald-900"
-                  : "bg-gray-100 border-gray-300 text-gray-900"
-              }`}
-            >
-              <span
-                className={`h-2 w-2 rounded-full flex-shrink-0 ${
-                  doorIsOpen ? "bg-emerald-600" : "bg-gray-600"
-                }`}
-              />
-              {doorIsOpen ? "SBLOCCATA" : "BLOCCATA"}
-            </div>
-          </div>
+          {/* Controllo Porta */}
+          <Card>
+            <CardBody>
+              <VStack spacing={4} align="stretch">
+                <HStack justify="space-between">
+                  <Text fontSize="sm" fontWeight="semibold">Porta</Text>
+                  <Badge
+                    variant={doorIsOpen ? "success" : "default"}
+                    size="sm"
+                    display="inline-flex"
+                    alignItems="center"
+                    gap={2}
+                    borderRadius="xl"
+                    px={3}
+                    py={1.5}
+                  >
+                    <Box
+                      w={2}
+                      h={2}
+                      borderRadius="full"
+                      bg={doorIsOpen ? "var(--accent-success)" : "var(--text-secondary)"}
+                      flexShrink={0}
+                    />
+                    {doorIsOpen ? "SBLOCCATA" : "BLOCCATA"}
+                  </Badge>
+                </HStack>
 
-          <div className="space-y-2">
-            {doorIsOpen ? (
-              <form action={actCloseDoor}>
-                <button className="w-full rounded-xl bg-emerald-500/25 hover:bg-emerald-500/35 border border-emerald-400/30 py-3 text-base font-semibold">
-                  Chiudi porta
-                </button>
-              </form>
-            ) : (
-              <form action={actOpenDoor}>
-                <button className="w-full rounded-xl bg-emerald-500/25 hover:bg-emerald-500/35 border border-emerald-400/30 py-3 text-base font-semibold">
-                  Apri porta
-                </button>
-              </form>
-            )}
-            <form action={actOpenGate}>
-              <button className="w-full rounded-xl bg-emerald-500/25 hover:bg-emerald-500/35 border border-emerald-400/30 py-3 text-base font-semibold">
-                Apri portone
-              </button>
-            </form>
-          </div>
-        </div>
+                <VStack spacing={2}>
+                  {doorIsOpen ? (
+                    <Box as="form" action={actCloseDoor} w="100%">
+                      <Button
+                        type="submit"
+                        w="100%"
+                        borderRadius="xl"
+                        bg="rgba(16, 185, 129, 0.25)"
+                        border="1px solid"
+                        borderColor="rgba(16, 185, 129, 0.3)"
+                        _hover={{ bg: "rgba(16, 185, 129, 0.35)" }}
+                        py={3}
+                        fontSize="base"
+                        fontWeight="semibold"
+                      >
+                        Chiudi porta
+                      </Button>
+                    </Box>
+                  ) : (
+                    <Box as="form" action={actOpenDoor} w="100%">
+                      <Button
+                        type="submit"
+                        w="100%"
+                        borderRadius="xl"
+                        bg="rgba(16, 185, 129, 0.25)"
+                        border="1px solid"
+                        borderColor="rgba(16, 185, 129, 0.3)"
+                        _hover={{ bg: "rgba(16, 185, 129, 0.35)" }}
+                        py={3}
+                        fontSize="base"
+                        fontWeight="semibold"
+                      >
+                        Apri porta
+                      </Button>
+                    </Box>
+                  )}
+                  <Box as="form" action={actOpenGate} w="100%">
+                    <Button
+                      type="submit"
+                      w="100%"
+                      borderRadius="xl"
+                      bg="rgba(16, 185, 129, 0.25)"
+                      border="1px solid"
+                      borderColor="rgba(16, 185, 129, 0.3)"
+                      _hover={{ bg: "rgba(16, 185, 129, 0.35)" }}
+                      py={3}
+                      fontSize="base"
+                      fontWeight="semibold"
+                    >
+                      Apri portone
+                    </Button>
+                  </Box>
+                </VStack>
+              </VStack>
+            </CardBody>
+          </Card>
 
-        {/* Informazioni Appartamento */}
-        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4 space-y-4">
-          <div className="text-sm font-semibold">Informazioni</div>
-          
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3">
-              <div className="text-xs text-[var(--text-secondary)] mb-1">Wi-Fi</div>
-              <div className="font-semibold text-[var(--text-primary)] text-sm">{state.apt.wifiSsid}</div>
-              <div className="text-xs text-[var(--text-secondary)] mt-1">Pass: {state.apt.wifiPass}</div>
-            </div>
-            <div className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3">
-              <div className="text-xs text-[var(--text-secondary)] mb-1">Orari</div>
-              <div className="text-xs text-[var(--text-secondary)]">Check-in: <span className="font-semibold text-[var(--text-primary)]">{state.apt.checkIn}</span></div>
-              <div className="text-xs text-[var(--text-secondary)] mt-1">Check-out: <span className="font-semibold text-[var(--text-primary)]">{state.apt.checkOut}</span></div>
-            </div>
-          </div>
+          {/* Informazioni Appartamento */}
+          <Card>
+            <CardBody>
+              <VStack spacing={4} align="stretch">
+                <Text fontSize="sm" fontWeight="semibold">Informazioni</Text>
+                
+                <Grid templateColumns="repeat(2, 1fr)" gap={3}>
+                  <Card variant="outlined">
+                    <CardBody p={3}>
+                      <VStack align="stretch" spacing={1}>
+                        <Text fontSize="xs" color="var(--text-secondary)">Wi-Fi</Text>
+                        <Text fontWeight="semibold" fontSize="sm" color="var(--text-primary)">
+                          {state.apt.wifiSsid}
+                        </Text>
+                        <Text fontSize="xs" color="var(--text-secondary)" mt={1}>
+                          Pass: {state.apt.wifiPass}
+                        </Text>
+                      </VStack>
+                    </CardBody>
+                  </Card>
+                  <Card variant="outlined">
+                    <CardBody p={3}>
+                      <VStack align="stretch" spacing={1}>
+                        <Text fontSize="xs" color="var(--text-secondary)">Orari</Text>
+                        <Text fontSize="xs" color="var(--text-secondary)">
+                          Check-in: <Text as="span" fontWeight="semibold" color="var(--text-primary)">{state.apt.checkIn}</Text>
+                        </Text>
+                        <Text fontSize="xs" color="var(--text-secondary)" mt={1}>
+                          Check-out: <Text as="span" fontWeight="semibold" color="var(--text-primary)">{state.apt.checkOut}</Text>
+                        </Text>
+                      </VStack>
+                    </CardBody>
+                  </Card>
+                </Grid>
 
-          <div className="flex gap-3 pt-2">
-            <Link className="flex-1 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-3 text-center text-sm text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors flex items-center justify-center" href="/app/guest/apartment">
-              Dettagli appartamento
-            </Link>
-            <Link className="flex-1 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-3 text-center text-sm text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors flex items-center justify-center" href="/app/guest/support">
-              Supporto
-            </Link>
-          </div>
-        </div>
+                <HStack spacing={3} pt={2}>
+                  <Box
+                    as={Link}
+                    href="/app/guest/apartment"
+                    flex={1}
+                    borderRadius="xl"
+                    bg="var(--bg-secondary)"
+                    border="1px solid"
+                    borderColor="var(--border-light)"
+                    px={4}
+                    py={3}
+                    textAlign="center"
+                    fontSize="sm"
+                    color="var(--text-primary)"
+                    _hover={{ bg: "var(--bg-tertiary)" }}
+                    transition="colors"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    Dettagli appartamento
+                  </Box>
+                  <Box
+                    as={Link}
+                    href="/app/guest/support"
+                    flex={1}
+                    borderRadius="xl"
+                    bg="var(--bg-secondary)"
+                    border="1px solid"
+                    borderColor="var(--border-light)"
+                    px={4}
+                    py={3}
+                    textAlign="center"
+                    fontSize="sm"
+                    color="var(--text-primary)"
+                    _hover={{ bg: "var(--bg-tertiary)" }}
+                    transition="colors"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    Supporto
+                  </Box>
+                </HStack>
+              </VStack>
+            </CardBody>
+          </Card>
 
-        {/* Live events */}
-        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] overflow-hidden">
-          <div className="p-4 border-b border-[var(--border-light)]">
-            <div className="text-sm font-semibold text-[var(--text-primary)]">Attività recente</div>
-          </div>
-          <div className="p-4 space-y-2">
-            {events.map((e) => (
-              <div key={e.id} className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3">
-                <div className="text-xs text-[var(--text-secondary)]">{new Date(e.ts).toLocaleString()}</div>
-                <div className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{e.label}</div>
-                <div className="mt-1 text-xs text-[var(--text-secondary)]">{e.type}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+          {/* Live events */}
+          <Card>
+            <Box p={4} borderBottom="1px solid" borderColor="var(--border-light)">
+              <Text fontSize="sm" fontWeight="semibold" color="var(--text-primary)">
+                Attività recente
+              </Text>
+            </Box>
+            <Box p={4}>
+              <VStack spacing={2} align="stretch">
+                {events.map((e) => (
+                  <Card key={e.id} variant="outlined">
+                    <CardBody p={3}>
+                      <VStack align="stretch" spacing={1}>
+                        <Text fontSize="xs" color="var(--text-secondary)">
+                          {new Date(e.ts).toLocaleString()}
+                        </Text>
+                        <Text fontSize="sm" fontWeight="semibold" color="var(--text-primary)" mt={1}>
+                          {e.label}
+                        </Text>
+                        <Text fontSize="xs" color="var(--text-secondary)" mt={1}>
+                          {e.type}
+                        </Text>
+                      </VStack>
+                    </CardBody>
+                  </Card>
+                ))}
+              </VStack>
+            </Box>
+          </Card>
 
-        <div className="text-[11px] text-[var(--text-tertiary)] text-center">
-          Prototipo: nessun servizio reale. Tutto mock.
-        </div>
-      </div>
+          <Text fontSize="11px" color="var(--text-tertiary)" textAlign="center">
+            Prototipo: nessun servizio reale. Tutto mock.
+          </Text>
+        </VStack>
+      </Box>
     </AppLayout>
   );
 }

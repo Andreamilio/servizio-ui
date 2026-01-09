@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Bell, BellOff } from "lucide-react";
+import { Box, HStack, Text, IconButton } from "@chakra-ui/react";
 
 export function PushNotificationToggle() {
   const [mounted, setMounted] = useState(false);
@@ -47,7 +48,6 @@ export function PushNotificationToggle() {
     setError(null);
 
     try {
-      // 1. Richiedi permesso notifiche
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
         setError("Permesso notifiche negato");
@@ -55,21 +55,18 @@ export function PushNotificationToggle() {
         return;
       }
 
-      // 2. Registra service worker se non già registrato
       let registration = await navigator.serviceWorker.ready;
       if (!registration) {
         registration = await navigator.serviceWorker.register("/sw.js");
         await navigator.serviceWorker.ready;
       }
 
-      // 3. Ottieni VAPID public key
       const vapidRes = await fetch("/api/push/vapid-public-key");
       if (!vapidRes.ok) {
         throw new Error("Errore ottenimento VAPID key");
       }
       const { publicKey } = await vapidRes.json();
 
-      // 4. Elimina subscription esistente se presente (per evitare conflitti con VAPID key cambiata)
       try {
         const existingSubscription = await registration.pushManager.getSubscription();
         if (existingSubscription) {
@@ -78,19 +75,15 @@ export function PushNotificationToggle() {
         }
       } catch (err) {
         console.warn("[PushNotificationToggle] Errore eliminazione subscription esistente:", err);
-        // Continua comunque, potrebbe non essere critico
       }
 
-      // 5. Converti VAPID key da base64 a Uint8Array
       const applicationServerKey = urlBase64ToUint8Array(publicKey);
 
-      // 6. Crea nuova subscription
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: applicationServerKey as BufferSource,
       });
 
-      // 7. Invia subscription al server
       const subData = {
         endpoint: subscription.endpoint,
         keys: {
@@ -128,9 +121,6 @@ export function PushNotificationToggle() {
 
       if (subscription) {
         await subscription.unsubscribe();
-        
-        // Notifica il server (opzionale, per cleanup)
-        // Potremmo chiamare DELETE /api/push/subscribe se lo implementiamo
       }
 
       setIsSubscribed(false);
@@ -147,34 +137,51 @@ export function PushNotificationToggle() {
   }
 
   if (!isSupported) {
-    return null; // Non mostrare nulla se non supportato
+    return null;
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <HStack spacing={2}>
       {error && (
-        <span className="text-xs text-red-400 max-w-[150px] truncate" title={error}>
+        <Text
+          fontSize="xs"
+          color="var(--accent-error)"
+          maxW="150px"
+          isTruncated
+          title={error}
+        >
           {error}
-        </span>
+        </Text>
       )}
-      <button
+      <IconButton
         onClick={isSubscribed ? disableNotifications : enableNotifications}
         disabled={isLoading}
-        className="flex items-center justify-center w-10 h-10 rounded-full bg-[var(--bg-card)] border border-[var(--border-light)] hover:opacity-80 transition-opacity disabled:opacity-50"
         aria-label={isSubscribed ? "Disabilita notifiche" : "Abilita notifiche"}
         title={isSubscribed ? "Notifiche abilitate" : "Abilita notifiche"}
-      >
-        {isSubscribed ? (
-          <Bell className="w-5 h-5 text-[var(--accent-primary)]" />
-        ) : (
-          <BellOff className="w-5 h-5 text-[var(--text-primary)] opacity-60" />
-        )}
-      </button>
-    </div>
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        w={10}
+        h={10}
+        borderRadius="full"
+        bg="var(--bg-card)"
+        border="1px solid"
+        borderColor="var(--border-light)"
+        _hover={{ opacity: 0.8 }}
+        transition="opacity"
+        opacity={isLoading ? 0.5 : 1}
+        icon={
+          isSubscribed ? (
+            <Bell size={20} color="var(--accent-primary)" />
+          ) : (
+            <BellOff size={20} color="var(--text-primary)" style={{ opacity: 0.6 }} />
+          )
+        }
+      />
+    </HStack>
   );
 }
 
-// Helper functions
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -194,4 +201,3 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   }
   return window.btoa(binary);
 }
-

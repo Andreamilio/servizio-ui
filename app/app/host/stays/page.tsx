@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
@@ -14,6 +13,9 @@ import { stays_listByApt } from '@/app/lib/domain/staysDomain';
 
 import { stays_createWithGuestsAndCleaner } from '@/app/lib/domain/pinsDomain';
 import { CreateStayModal } from '../components/CreateStayModal';
+import { Box, VStack, HStack, Heading, Text } from "@chakra-ui/react";
+import { Card, CardBody, CardHeader } from "@/app/components/ui/Card";
+import { Link } from "@/app/components/ui/Link";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -64,7 +66,11 @@ export default async function HostStaysPage({ searchParams }: { searchParams?: S
     const me = validateSessionUser(session);
 
     if (!me || me.role !== 'host') {
-        return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
+        return (
+            <Box p={6} color="var(--text-primary)">
+                Non autorizzato
+            </Box>
+        );
     }
 
     if (!aptId) {
@@ -106,7 +112,6 @@ export default async function HostStaysPage({ searchParams }: { searchParams?: S
 
         const selectedCleaner = cleaners_normName(formData.get('cleaner')?.toString() ?? '');
 
-        // Validazione: cleaner obbligatorio
         if (!selectedCleaner) {
             redirect(`/app/host/stays?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
             return;
@@ -120,10 +125,8 @@ export default async function HostStaysPage({ searchParams }: { searchParams?: S
             return;
         }
 
-        // Raccogli i dati degli ospiti
         const guests: Array<{ firstName: string; lastName: string; phone: string; email?: string }> = [];
 
-        // Prova prima a cercare dinamicamente i campi inviati
         const allKeys = Array.from(formData.keys());
         const guestIndices = new Set<number>();
 
@@ -134,7 +137,6 @@ export default async function HostStaysPage({ searchParams }: { searchParams?: S
             }
         }
 
-        // Se non trova campi dinamicamente, usa il numero dal select
         const indicesToCheck = guestIndices.size > 0 ? Array.from(guestIndices).sort((a, b) => a - b) : Array.from({ length: guestsCount }, (_, i) => i + 1);
 
         for (const i of indicesToCheck) {
@@ -143,20 +145,15 @@ export default async function HostStaysPage({ searchParams }: { searchParams?: S
             const phone = (formData.get(`guest_${i}_phone`)?.toString() ?? '').trim();
             const email = (formData.get(`guest_${i}_email`)?.toString() ?? '').trim();
 
-            // Se tutti i campi sono vuoti, salta questo ospite (potrebbe essere nascosto o disabilitato)
             if (!firstName && !lastName && !phone) {
                 continue;
             }
 
-            // Validazione: nome, cognome e telefono obbligatori per ogni ospite
-            // Se almeno un campo è presente ma mancano altri, è un errore
             if ((firstName || lastName || phone) && (!firstName || !lastName || !phone)) {
-                // Se mancano dati obbligatori, redirect senza creare lo stay
                 redirect(`/app/host/stays?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
                 return;
             }
 
-            // Se tutti i campi obbligatori sono presenti, aggiungi l'ospite
             if (firstName && lastName && phone) {
                 guests.push({
                     firstName,
@@ -167,15 +164,7 @@ export default async function HostStaysPage({ searchParams }: { searchParams?: S
             }
         }
 
-        // Validazione: deve esserci almeno un ospite
         if (guests.length === 0) {
-            // Log per debug: verifica cosa è stato inviato
-            console.error('Nessun ospite valido trovato', {
-                guestsCount,
-                allKeys: Array.from(formData.keys()),
-                guestIndices: Array.from(guestIndices),
-                indicesToCheck,
-            });
             redirect(`/app/host/stays?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
             return;
         }
@@ -183,7 +172,6 @@ export default async function HostStaysPage({ searchParams }: { searchParams?: S
         const vf = ci.getTime();
         const vt = co.getTime();
 
-        // Crea lo stay
         let st;
         try {
             st = stays_createWithGuestsAndCleaner(Store, {
@@ -205,13 +193,11 @@ export default async function HostStaysPage({ searchParams }: { searchParams?: S
             return;
         }
 
-        // Verifica che lo stay sia stato salvato
         const verifyStay = stays_listByApt(aptId).find((s: any) => s.stayId === st.stayId);
         if (!verifyStay) {
             console.error('Stay creato ma non trovato nella lista:', st.stayId);
         }
 
-        // Redirect alla pagina di dettaglio dello stay
         redirect(`/app/host/stay/${encodeURIComponent(st.stayId)}?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
     }
 
@@ -224,76 +210,108 @@ export default async function HostStaysPage({ searchParams }: { searchParams?: S
                 profileImageUrl: hostUserForLayout.profileImageUrl,
             } : undefined}
         >
-            <div className='max-w-3xl mx-auto space-y-5 p-4 sm:p-6'>
-                <div className='flex items-center justify-between gap-3'>
-                    <div>
-                        <Link 
-                            href={`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`}
-                            className='text-sm opacity-70 hover:opacity-100'
-                        >
-                            ← Torna alla dashboard
-                        </Link>
-                        <div className='mt-2'>
-                            <div className='text-lg font-semibold'>Soggiorni</div>
-                            <div className='text-sm opacity-70'>{apartment.name}</div>
-                        </div>
-                    </div>
-                </div>
+            <Box maxW="3xl" mx="auto" p={{ base: 4, sm: 6 }}>
+                <VStack spacing={5} align="stretch">
+                    <HStack justify="space-between" gap={3}>
+                        <Box>
+                            <Link
+                                href={`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`}
+                                fontSize="sm"
+                                opacity={0.7}
+                                _hover={{ opacity: 1 }}
+                            >
+                                ← Torna alla dashboard
+                            </Link>
+                            <Box mt={2}>
+                                <Heading as="h2" size="lg" fontWeight="semibold">
+                                    Soggiorni
+                                </Heading>
+                                <Text fontSize="sm" opacity={0.7}>
+                                    {apartment.name}
+                                </Text>
+                            </Box>
+                        </Box>
+                    </HStack>
 
-                {/* Stay list */}
-                <section className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
-                    <div className='flex items-center justify-between gap-3 mb-3'>
-                        <div className='text-sm opacity-70'>Soggiorni</div>
-                        <div className='text-xs opacity-50'>{stays.length} stay</div>
-                    </div>
+                    {/* Stay list */}
+                    <Card>
+                        <CardBody p={4}>
+                            <VStack spacing={3} align="stretch">
+                                <HStack justify="space-between" gap={3} mb={3}>
+                                    <Text fontSize="sm" opacity={0.7}>
+                                        Soggiorni
+                                    </Text>
+                                    <Text fontSize="xs" opacity={0.5}>
+                                        {stays.length} stay
+                                    </Text>
+                                </HStack>
 
-                    {stays.length === 0 ? (
-                        <div className='text-sm opacity-60 mb-4'>Nessun soggiorno registrato.</div>
-                    ) : (
-                        <div className='space-y-2 mb-4'>
-                            {stays.map((st: any) => {
-                                const sid = String(st?.stayId ?? '');
-                                const g = Array.isArray(st?.guests) ? st.guests.length : 0;
-                                const checkin = st?.checkInAt ? fmtDTMedium(st.checkInAt) : '—';
-                                const checkout = st?.checkOutAt ? fmtDTMedium(st.checkOutAt) : '—';
-                                const responsabileName = getResponsabileName(st?.guests || []);
-                                const stayTitle = `${responsabileName} - ${checkin} - ${checkout}`;
+                                {stays.length === 0 ? (
+                                    <Text fontSize="sm" opacity={0.6} mb={4}>
+                                        Nessun soggiorno registrato.
+                                    </Text>
+                                ) : (
+                                    <VStack spacing={2} align="stretch" mb={4}>
+                                        {stays.map((st: any) => {
+                                            const sid = String(st?.stayId ?? '');
+                                            const g = Array.isArray(st?.guests) ? st.guests.length : 0;
+                                            const checkin = st?.checkInAt ? fmtDTMedium(st.checkInAt) : '—';
+                                            const checkout = st?.checkOutAt ? fmtDTMedium(st.checkOutAt) : '—';
+                                            const responsabileName = getResponsabileName(st?.guests || []);
+                                            const stayTitle = `${responsabileName} - ${checkin} - ${checkout}`;
 
-                                return (
-                                    <Link
-                                        key={sid}
-                                        href={`/app/host/stay/${encodeURIComponent(sid)}?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`}
-                                        className='block rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3 hover:border-[var(--border-medium)] transition-colors'>
-                                        <div className='flex items-center justify-between gap-3'>
-                                            <div className='min-w-0 flex-1'>
-                                                <div className='font-semibold text-sm truncate'>{stayTitle}</div>
-                                                {g > 0 && <div className='mt-1 text-xs opacity-50'>{g} ospiti</div>}
-                                            </div>
-                                            <div className='text-xs opacity-50'>→</div>
-                                        </div>
-                                    </Link>
-                                );
-                            })}
-                        </div>
-                    )}
+                                            return (
+                                                <Box
+                                                    key={sid}
+                                                    as={Link}
+                                                    href={`/app/host/stay/${encodeURIComponent(sid)}?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`}
+                                                    display="block"
+                                                    borderRadius="xl"
+                                                    bg="var(--bg-secondary)"
+                                                    border="1px solid"
+                                                    borderColor="var(--border-light)"
+                                                    p={3}
+                                                    _hover={{ borderColor: "var(--border-medium)" }}
+                                                    transition="colors"
+                                                >
+                                                    <HStack justify="space-between" gap={3}>
+                                                        <Box minW={0} flex={1}>
+                                                            <Text fontWeight="semibold" fontSize="sm" isTruncated>
+                                                                {stayTitle}
+                                                            </Text>
+                                                            {g > 0 && (
+                                                                <Text mt={1} fontSize="xs" opacity={0.5}>
+                                                                    {g} ospiti
+                                                                </Text>
+                                                            )}
+                                                        </Box>
+                                                        <Text fontSize="xs" opacity={0.5}>→</Text>
+                                                    </HStack>
+                                                </Box>
+                                            );
+                                        })}
+                                    </VStack>
+                                )}
 
-                    {/* Bottone per aprire modale creazione soggiorno */}
-                    <div className='pt-4'>
-                        {(() => {
-                            const cfg = cleaners_getCfg(aptId);
-                            return (
-                                <CreateStayModal
-                                    aptId={aptId}
-                                    clientId={clientId}
-                                    cleaners={cfg.cleaners}
-                                    createStayAction={createStay}
-                                />
-                            );
-                        })()}
-                    </div>
-                </section>
-            </div>
+                                {/* Bottone per aprire modale creazione soggiorno */}
+                                <Box pt={4}>
+                                    {(() => {
+                                        const cfg = cleaners_getCfg(aptId);
+                                        return (
+                                            <CreateStayModal
+                                                aptId={aptId}
+                                                clientId={clientId}
+                                                cleaners={cfg.cleaners}
+                                                createStayAction={createStay}
+                                            />
+                                        );
+                                    })()}
+                                </Box>
+                            </VStack>
+                        </CardBody>
+                    </Card>
+                </VStack>
+            </Box>
         </AppLayout>
     );
 }
-

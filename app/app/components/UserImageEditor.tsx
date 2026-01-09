@@ -2,6 +2,8 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { Box, VStack, HStack, Text, Image, Input as ChakraInput } from "@chakra-ui/react";
+import { Button } from "@/app/components/ui/Button";
 import { updateProfileImage, removeProfileImage } from "./userProfileActions";
 
 type UserImageEditorProps = {
@@ -31,7 +33,6 @@ export function UserImageEditor({ userId, username, currentImageUrl }: UserImage
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      // 2MB limit
       alert("L'immagine deve essere inferiore a 2MB");
       return;
     }
@@ -49,7 +50,6 @@ export function UserImageEditor({ userId, username, currentImageUrl }: UserImage
     setSavingImage(true);
     try {
       await updateProfileImage(userId, profileImage);
-      // Use router.refresh() instead of window.location.reload() to avoid hydration issues
       router.refresh();
     } catch (error) {
       console.error("Error saving profile image:", error);
@@ -67,7 +67,6 @@ export function UserImageEditor({ userId, username, currentImageUrl }: UserImage
     try {
       await removeProfileImage(userId);
       setProfileImage(null);
-      // Use router.refresh() instead of window.location.reload() to avoid hydration issues
       router.refresh();
     } catch (error) {
       console.error("Error removing profile image:", error);
@@ -80,66 +79,100 @@ export function UserImageEditor({ userId, username, currentImageUrl }: UserImage
   const hasUnsavedChanges = profileImage !== currentImageUrl;
 
   return (
-    <div className="space-y-4">
-      <div className="text-sm font-semibold text-[var(--text-primary)]">Immagine Profilo</div>
+    <VStack spacing={4} align="stretch">
+      <Text fontSize="sm" fontWeight="semibold" color="var(--text-primary)">
+        Immagine Profilo
+      </Text>
       
-      <div className="flex items-center gap-4">
-        <div className="relative">
+      <HStack spacing={4} align="start">
+        <Box position="relative">
           {profileImage ? (
-            <img
+            <Image
               src={profileImage}
               alt="Profile"
-              className="w-20 h-20 rounded-full object-cover border-2 border-[var(--border-light)]"
+              w={20}
+              h={20}
+              borderRadius="full"
+              objectFit="cover"
+              border="2px solid"
+              borderColor="var(--border-light)"
             />
           ) : (
-            <div className="w-20 h-20 rounded-full bg-[var(--pastel-blue)] border-2 border-[var(--border-light)] flex items-center justify-center">
-              <span className="text-xl font-semibold text-[var(--accent-primary)]">
+            <Box
+              w={20}
+              h={20}
+              borderRadius="full"
+              bg="var(--pastel-blue)"
+              border="2px solid"
+              borderColor="var(--border-light)"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+            >
+              <Text fontSize="xl" fontWeight="semibold" color="var(--accent-primary)">
                 {getInitials(username)}
-              </span>
-            </div>
+              </Text>
+            </Box>
           )}
-        </div>
+        </Box>
         
-        <div className="flex-1 space-y-2">
-          <input
+        <VStack spacing={2} align="stretch" flex={1}>
+          <ChakraInput
             ref={fileInputRef}
             type="file"
             accept="image/*"
             onChange={handleImageChange}
-            className="hidden"
+            display="none"
           />
-          <button
+          <Button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="block w-full rounded-xl bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition-colors"
+            variant="secondary"
+            w="100%"
+            borderRadius="xl"
+            px={4}
+            py={2}
+            fontSize="sm"
+            fontWeight="semibold"
           >
             {profileImage ? "Cambia immagine" : "Carica immagine"}
-          </button>
+          </Button>
           
           {hasUnsavedChanges && profileImage && (
-            <button
+            <Button
               type="button"
               onClick={handleSaveImage}
               disabled={savingImage}
-              className="block w-full rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white px-4 py-2 text-sm font-semibold disabled:opacity-50 transition-colors"
+              variant="primary"
+              w="100%"
+              borderRadius="xl"
+              px={4}
+              py={2}
+              fontSize="sm"
+              fontWeight="semibold"
             >
               {savingImage ? "Salvataggio..." : "Salva immagine"}
-            </button>
+            </Button>
           )}
           
           {(currentImageUrl || profileImage) && (
-            <button
+            <Button
               type="button"
               onClick={handleRemoveImage}
               disabled={removingImage || savingImage}
-              className="block w-full rounded-xl bg-[var(--accent-error)] hover:opacity-90 text-white px-4 py-2 text-sm font-semibold disabled:opacity-50 transition-colors"
+              variant="danger"
+              w="100%"
+              borderRadius="xl"
+              px={4}
+              py={2}
+              fontSize="sm"
+              fontWeight="semibold"
             >
               {removingImage ? "Rimozione..." : "Rimuovi immagine"}
-            </button>
+            </Button>
           )}
-        </div>
-      </div>
-    </div>
+        </VStack>
+      </HStack>
+    </VStack>
   );
 }
-

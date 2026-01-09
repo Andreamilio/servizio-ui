@@ -1,31 +1,71 @@
-import { ReactNode, HTMLAttributes } from "react";
+"use client";
 
-interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
+import { ReactNode, HTMLAttributes } from "react";
+import { Badge as ChakraBadge, BadgeProps as ChakraBadgeProps } from "@chakra-ui/react";
+
+interface BadgeProps extends Omit<HTMLAttributes<HTMLSpanElement>, "color"> {
   variant?: "default" | "success" | "warning" | "error" | "info";
   size?: "sm" | "md" | "lg";
   children: ReactNode;
 }
 
-export function Badge({ variant = "default", size = "md", className = "", children, ...props }: BadgeProps) {
-  const baseClasses = "inline-flex items-center justify-center font-semibold rounded-full";
-  
-  const variantClasses = {
-    default: "bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--border-light)]",
-    success: "bg-[var(--pastel-green)] text-[var(--accent-success)]",
-    warning: "bg-[var(--pastel-amber)] text-[var(--accent-warning)]",
-    error: "bg-red-100 text-[var(--accent-error)]",
-    info: "bg-[var(--pastel-blue)] text-[var(--accent-info)]",
+export function Badge({ variant = "default", size = "md", children, ...props }: BadgeProps) {
+  const getVariantStyles = (): ChakraBadgeProps => {
+    const baseStyles: ChakraBadgeProps = {
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontWeight: "semibold",
+      borderRadius: "full",
+    };
+
+    switch (variant) {
+      case "default":
+        return {
+          ...baseStyles,
+          bg: "var(--bg-secondary)",
+          color: "var(--text-primary)",
+          border: "1px solid",
+          borderColor: "var(--border-light)",
+        };
+      case "success":
+        return {
+          ...baseStyles,
+          bg: "var(--pastel-green)",
+          color: "var(--accent-success)",
+        };
+      case "warning":
+        return {
+          ...baseStyles,
+          bg: "var(--pastel-amber)",
+          color: "var(--accent-warning)",
+        };
+      case "error":
+        return {
+          ...baseStyles,
+          bg: "rgba(239, 68, 68, 0.1)",
+          color: "var(--accent-error)",
+        };
+      case "info":
+        return {
+          ...baseStyles,
+          bg: "var(--pastel-blue)",
+          color: "var(--accent-info)",
+        };
+      default:
+        return baseStyles;
+    }
   };
-  
-  const sizeClasses = {
-    sm: "px-2 py-0.5 text-xs",
-    md: "px-2.5 py-1 text-sm",
-    lg: "px-3 py-1.5 text-base",
+
+  const sizeMap = {
+    sm: { px: 2, py: 0.5, fontSize: "xs" },
+    md: { px: 2.5, py: 1, fontSize: "sm" },
+    lg: { px: 3, py: 1.5, fontSize: "base" },
   };
-  
+
   return (
-    <span className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`} {...props}>
+    <ChakraBadge {...getVariantStyles()} {...sizeMap[size]} {...(props as ChakraBadgeProps)}>
       {children}
-    </span>
+    </ChakraBadge>
   );
 }

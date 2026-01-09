@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode, useEffect, useRef } from "react";
+import { Box, VStack } from "@chakra-ui/react";
 import { HeaderNav } from "../navigation/HeaderNav";
 import { BottomNav } from "../navigation/BottomNav";
 import type { Role } from "@/app/lib/store";
@@ -44,12 +45,26 @@ export function AppLayout({ children, role, userInfo }: AppLayoutProps) {
   // #endregion
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] flex flex-col">
+    <Box
+      minH="100vh"
+      bg="var(--bg-primary)"
+      display="flex"
+      flexDirection="column"
+    >
       <HeaderNav role={role} userInfo={userInfo} />
-      <main ref={mainRef} className="flex-1 pb-bottom-nav overflow-x-hidden">
+      <Box
+        ref={mainRef}
+        as="main"
+        flex="1"
+        pb={{
+          base: "calc(4rem + max(env(safe-area-inset-bottom, 0), 16px))",
+          lg: 0,
+        }}
+        overflowX="hidden"
+      >
         {children}
-      </main>
+      </Box>
       <BottomNav role={role} />
-    </div>
+    </Box>
   );
 }

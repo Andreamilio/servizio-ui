@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { VStack, Text } from "@chakra-ui/react";
+import { Select } from "@/app/components/ui/Select";
 import { Button } from "@/app/components/ui/Button";
+import { Alert } from "@/app/components/ui/Alert";
 import { Bell } from "lucide-react";
 
 const notificationTypes = [
@@ -77,7 +80,6 @@ export function TestPushButton() {
       });
     } finally {
       setIsLoading(false);
-      // Rimuovi il messaggio dopo 5 secondi
       setTimeout(() => setResult(null), 5000);
     }
   }
@@ -85,19 +87,28 @@ export function TestPushButton() {
   const selectedNotification = notificationTypes.find((n) => n.id === selectedType) || notificationTypes[0];
 
   return (
-    <div className="space-y-2">
-      <select
+    <VStack spacing={2} align="stretch">
+      <Select
         value={selectedType}
         onChange={(e) => setSelectedType(e.target.value)}
         disabled={isLoading}
-        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+        borderRadius="xl"
+        bg="var(--bg-secondary)"
+        border="1px solid"
+        borderColor="var(--border-light)"
+        px={4}
+        py={2.5}
+        fontSize="sm"
+        color="var(--text-primary)"
+        _focus={{ outline: "none", ring: "2px", ringColor: "var(--accent-primary)", borderColor: "transparent" }}
+        _disabled={{ opacity: 0.5, cursor: "not-allowed" }}
       >
         {notificationTypes.map((notif) => (
           <option key={notif.id} value={notif.id}>
             {notif.message}
           </option>
         ))}
-      </select>
+      </Select>
       
       <Button
         onClick={handleTestPush}
@@ -106,22 +117,17 @@ export function TestPushButton() {
         size="sm"
         icon={Bell}
         iconPosition="left"
-        className="w-full"
+        fullWidth
       >
         {isLoading ? "Invio in corso..." : `Invia: ${selectedNotification.message}`}
       </Button>
       {result && (
-        <div
-          className={`text-xs p-2 rounded-lg ${
-            result.success
-              ? "bg-emerald-500/10 border border-emerald-400/20 text-emerald-200"
-              : "bg-red-500/10 border border-red-400/20 text-red-200"
-          }`}
-        >
-          {result.message}
-        </div>
+        <Alert variant={result.success ? "success" : "error"}>
+          <Text fontSize="xs">
+            {result.message}
+          </Text>
+        </Alert>
       )}
-    </div>
+    </VStack>
   );
 }
-

@@ -1,6 +1,8 @@
 "use client";
 
 import { A2HS_OPEN_EVENT } from "@/app/lib/a2hsStorage";
+import { Box } from "@chakra-ui/react";
+import { Button } from "./ui/Button";
 
 interface OpenA2HSLinkProps {
   variant?: "default" | "header";
@@ -13,24 +15,31 @@ export function OpenA2HSLink({ variant = "default" }: OpenA2HSLinkProps) {
 
   if (variant === "header") {
     return (
-      <button
+      <Button
         onClick={handleClick}
-        className="text-xs sm:text-sm text-[var(--accent-primary)] hover:underline font-medium"
+        variant="ghost"
+        fontSize={{ base: "xs", sm: "sm" }}
+        color="var(--accent-primary)"
+        _hover={{ textDecoration: "underline" }}
+        fontWeight="medium"
       >
         Come installare l'app
-      </button>
+      </Button>
     );
   }
 
   return (
-    <div className="text-center pt-2 lg:hidden">
-      <button
+    <Box textAlign="center" pt={2} display={{ base: "block", lg: "none" }}>
+      <Button
         onClick={handleClick}
-        className="text-sm text-[var(--accent-primary)] hover:underline font-medium"
+        variant="ghost"
+        fontSize="sm"
+        color="var(--accent-primary)"
+        _hover={{ textDecoration: "underline" }}
+        fontWeight="medium"
       >
         Come installare l'app
-      </button>
-    </div>
+      </Button>
+    </Box>
   );
 }
-

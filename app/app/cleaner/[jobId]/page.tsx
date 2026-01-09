@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { cookies } from "next/headers";
 import { readSession, validateSessionUser } from "@/app/lib/session";
 import { redirect } from "next/navigation";
@@ -19,6 +18,12 @@ import { door_open, door_close, door_getStateFromLog } from "@/app/lib/domain/do
 import { gate_open } from "@/app/lib/domain/gateStore";
 import { ProblemModal } from "./ProblemModal";
 import { AppLayout } from "@/app/components/layouts/AppLayout";
+import { Box, VStack, HStack, Heading, Text, Grid, GridItem, Image } from "@chakra-ui/react";
+import { Card, CardBody } from "@/app/components/ui/Card";
+import { Alert } from "@/app/components/ui/Alert";
+import { Link } from "@/app/components/ui/Link";
+import { Button } from "@/app/components/ui/Button";
+import { Badge } from "@/app/components/ui/Badge";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -27,7 +32,6 @@ export default async function CleanerJobPage({
   params,
   searchParams,
 }: {
-  // In alcune versioni/setting di Next il `params` e/o `searchParams` possono arrivare come Promise.
   params: { jobId: string } | Promise<{ jobId: string }>;
   searchParams?:
     | Record<string, string | string[] | undefined>
@@ -40,13 +44,17 @@ export default async function CleanerJobPage({
 
   if (!me || me.role !== "cleaner") {
     redirect("/?err=session_expired");
-      return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
+    return (
+      <Box p={6} color="var(--text-primary)">
+        Non autorizzato
+      </Box>
+    );
   }
 
   const resolvedParams = await Promise.resolve(params as any);
   const jobIdRaw = (resolvedParams as any)?.jobId;
   const jobId = Array.isArray(jobIdRaw) ? jobIdRaw[0] : jobIdRaw;
-  const jobIdStr = String(jobId ?? ""); // es: "job-017-1"
+  const jobIdStr = String(jobId ?? "");
 
   const spResolved = (await Promise.resolve(searchParams as any)) ?? {};
   const sp = spResolved as Record<string, string | string[] | undefined>;
@@ -61,7 +69,7 @@ export default async function CleanerJobPage({
         ? sp.toggle[0]
         : undefined;
 
-  // Mutazioni server-side (MVP) guidate da querystring, poi redirect per vedere l'aggiornamento.
+  // Mutazioni server-side
   if (start) {
     startJob(jobIdStr);
     redirect(`/app/cleaner/${jobIdStr}`);
@@ -76,9 +84,8 @@ export default async function CleanerJobPage({
   }
   if (toggle) {
     const currentJob = getJob(jobIdStr);
-    // Blocca il toggle se il job non è stato avviato
     if (currentJob && currentJob.status === "todo") {
-      // Non fare nulla, il job non è stato avviato
+      // Non fare nulla
     } else {
       toggleChecklist(jobIdStr, toggle);
     }
@@ -94,62 +101,62 @@ export default async function CleanerJobPage({
   if (!job) {
     return (
       <AppLayout role="cleaner">
-        <div className="max-w-2xl mx-auto space-y-3 p-4 sm:p-6">
-          <Link className="text-sm opacity-70 hover:opacity-100" href="/app/cleaner">
-            ← Torna a Pulizie
-          </Link>
-          <div className="text-lg font-semibold">Pulizia assegnata non trovata</div>
-          <div className="text-sm opacity-60">Pulizia assegnata richiesta: {jobIdStr}</div>
-          <div className="text-xs opacity-50 mt-2">
-            Store keys: {Array.from(cleaningStore.keys()).join(", ")}
-          </div>
-        </div>
+        <Box maxW="2xl" mx="auto" p={{ base: 4, sm: 6 }}>
+          <VStack spacing={3} align="stretch">
+            <Link href="/app/cleaner" fontSize="sm" opacity={0.7} _hover={{ opacity: 1 }}>
+              ← Torna a Pulizie
+            </Link>
+            <Heading as="h2" size="lg" fontWeight="semibold">
+              Pulizia assegnata non trovata
+            </Heading>
+            <Text fontSize="sm" opacity={0.6}>
+              Pulizia assegnata richiesta: {jobIdStr}
+            </Text>
+            <Text fontSize="xs" opacity={0.5} mt={2}>
+              Store keys: {Array.from(cleaningStore.keys()).join(", ")}
+            </Text>
+          </VStack>
+        </Box>
       </AppLayout>
     );
   }
 
-  // sicurezza: un cleaner vede solo i job associati ai suoi stay (tramite PIN)
-  // Verifica se il job è associato a uno stay per cui il cleaner ha un PIN valido
   const cleanerPins = listPinsByApt(me.aptId).filter((p) => p.role === "cleaner");
   const hasAccess = job.aptId === me.aptId || (job.stayId && cleanerPins.some((p) => p.stayId === job.stayId));
   
   if (!hasAccess) {
     return (
       <AppLayout role="cleaner">
-        <div className="max-w-2xl mx-auto space-y-3 p-4 sm:p-6">
-          <Link className="text-sm opacity-70 hover:opacity-100" href="/app/cleaner">
-            ← Torna a Pulizie
-          </Link>
-          <div className="text-lg font-semibold">Non autorizzato</div>
-        </div>
+        <Box maxW="2xl" mx="auto" p={{ base: 4, sm: 6 }}>
+          <VStack spacing={3} align="stretch">
+            <Link href="/app/cleaner" fontSize="sm" opacity={0.7} _hover={{ opacity: 1 }}>
+              ← Torna a Pulizie
+            </Link>
+            <Heading as="h2" size="lg" fontWeight="semibold">
+              Non autorizzato
+            </Heading>
+          </VStack>
+        </Box>
       </AppLayout>
     );
   }
 
   const aptId = job.aptId;
-  
-  // Leggi stato porta dal log condiviso
   const doorState = door_getStateFromLog(Store, aptId);
   const doorIsOpen = doorState === "open";
-  
-  // Verifica se "Foto finali" è nella checklist e se è done
   const photoItem = job.checklist.find((it) => it.label.includes("Foto finali"));
   const photoItemDone = photoItem?.done ?? false;
   const hasFinalPhotos = job.finalPhotos && job.finalPhotos.length > 0;
-  
-  // Verifica se tutti gli item della checklist sono completati
   const allChecklistDone = job.checklist.every((it) => it.done);
 
   async function actOpenDoor() {
     "use server";
     const outcome = door_open(aptId);
-    
     if (outcome === "ok") {
       Store.logAccessEvent(aptId, "door_opened", "[cleaner] Porta aperta dal cleaner");
     } else {
       Store.logAccessEvent(aptId, "guest_access_ko", "[cleaner] Tentativo apertura porta fallito");
     }
-
     revalidatePath(`/app/cleaner/${jobIdStr}`);
     redirect(`/app/cleaner/${jobIdStr}`);
   }
@@ -157,13 +164,11 @@ export default async function CleanerJobPage({
   async function actCloseDoor() {
     "use server";
     const outcome = door_close(aptId);
-    
     if (outcome === "ok") {
       Store.logAccessEvent(aptId, "door_closed", "[cleaner] Porta chiusa dal cleaner");
     } else {
       Store.logAccessEvent(aptId, "guest_access_ko", "[cleaner] Tentativo chiusura porta fallito");
     }
-
     revalidatePath(`/app/cleaner/${jobIdStr}`);
     redirect(`/app/cleaner/${jobIdStr}`);
   }
@@ -171,17 +176,14 @@ export default async function CleanerJobPage({
   async function actOpenGate() {
     "use server";
     const outcome = gate_open(aptId);
-    
     if (outcome === "ok") {
       Store.logAccessEvent(aptId, "gate_opened", "[cleaner] Portone aperto dal cleaner");
     } else {
       Store.logAccessEvent(aptId, "guest_access_ko", "[cleaner] Tentativo apertura portone fallito");
     }
-
     revalidatePath(`/app/cleaner/${jobIdStr}`);
     redirect(`/app/cleaner/${jobIdStr}`);
   }
-
 
   async function actUploadFinalPhotos() {
     "use server";
@@ -190,18 +192,13 @@ export default async function CleanerJobPage({
       redirect(`/app/cleaner/${jobIdStr}`);
       return;
     }
-
-    // Genera automaticamente 2-3 foto placeholder
-    const photoCount = 2 + Math.floor(Math.random() * 2); // 2 o 3 foto
+    const photoCount = 2 + Math.floor(Math.random() * 2);
     const photos: string[] = [];
     for (let i = 0; i < photoCount; i++) {
       photos.push(generatePlaceholderPhoto(i + 1));
     }
-
-    // Salva le foto nel job
     currentJob.finalPhotos = photos;
     cleaningStore.set(jobIdStr, currentJob);
-
     revalidatePath(`/app/cleaner/${jobIdStr}`);
     redirect(`/app/cleaner/${jobIdStr}`);
   }
@@ -210,19 +207,15 @@ export default async function CleanerJobPage({
     "use server";
     const note = formData.get("note")?.toString() || "";
     const formJobId = formData.get("jobId")?.toString() || jobIdStr;
-    
-    // Genera automaticamente 2-3 foto placeholder
-    const photoCount = 2 + Math.floor(Math.random() * 2); // 2 o 3 foto
+    const photoCount = 2 + Math.floor(Math.random() * 2);
     const photos: string[] = [];
     for (let i = 0; i < photoCount; i++) {
       photos.push(generatePlaceholderPhoto(i + 1));
     }
-
     markProblem(formJobId, {
       note: note.trim() || undefined,
       photos: photos,
     });
-
     revalidatePath(`/app/cleaner/${formJobId}`);
     redirect(`/app/cleaner/${formJobId}`);
   }
@@ -236,234 +229,406 @@ export default async function CleanerJobPage({
 
   return (
     <AppLayout role="cleaner">
-      <div className="max-w-2xl mx-auto space-y-4 p-4 sm:p-6">
-        <Link className="text-sm opacity-70 hover:opacity-100" href="/app/cleaner">
-          ← Torna a Pulizie
-        </Link>
+      <Box maxW="2xl" mx="auto" p={{ base: 4, sm: 6 }}>
+        <VStack spacing={4} align="stretch">
+          <Link href="/app/cleaner" fontSize="sm" opacity={0.7} _hover={{ opacity: 1 }}>
+            ← Torna a Pulizie
+          </Link>
 
-        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="text-lg font-semibold">{job.aptName}</div>
-              <div className="text-sm opacity-70">{job.windowLabel}</div>
-            </div>
+          <Card>
+            <CardBody p={4}>
+              <HStack justify="space-between" gap={3} align="start">
+                <Box>
+                  <Heading as="h2" size="md" fontWeight="semibold">
+                    {job.aptName}
+                  </Heading>
+                  <Text fontSize="sm" opacity={0.7}>
+                    {job.windowLabel}
+                  </Text>
+                </Box>
+                <Box textAlign="right" fontSize="sm">
+                  <Text opacity={0.7}>Stato</Text>
+                  <Text fontWeight="semibold">
+                    {job.status === "todo" && "Da fare"}
+                    {job.status === "in_progress" && "In corso"}
+                    {job.status === "done" && "Completato"}
+                    {job.status === "problem" && "Problema"}
+                  </Text>
+                </Box>
+              </HStack>
+            </CardBody>
+          </Card>
 
-            <div className="text-right text-sm">
-              <div className="opacity-70">Stato</div>
-              <div className="font-semibold">
-                {job.status === "todo" && "Da fare"}
-                {job.status === "in_progress" && "In corso"}
-                {job.status === "done" && "Completato"}
-                {job.status === "problem" && "Problema"}
-              </div>
-            </div>
-          </div>
-        </div>
+          <Card>
+            <CardBody p={4}>
+              <VStack spacing={3} align="stretch">
+                <Text fontSize="sm" opacity={0.7}>Checklist</Text>
 
-        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4 space-y-3">
-          <div className="text-sm opacity-70">Checklist</div>
+                {job.status === "todo" && (
+                  <Alert variant="warning" mb={2}>
+                    <Text fontSize="sm">
+                      ⚠️ Avvia la pulizia assegnata per poter spuntare gli elementi della checklist
+                    </Text>
+                  </Alert>
+                )}
 
-          {job.status === "todo" && (
-            <div className="rounded-xl bg-yellow-500/10 border border-yellow-400/20 p-3 mb-2">
-              <div className="text-sm text-gray-900">
-                ⚠️ Avvia la pulizia assegnata per poter spuntare gli elementi della checklist
-              </div>
-            </div>
-          )}
+                <VStack spacing={2} align="stretch">
+                  {job.checklist.map((it) => {
+                    const canToggle = job.status !== "todo" && job.status !== "done";
+                    return (
+                      <Box
+                        key={it.id}
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="space-between"
+                        gap={3}
+                        borderRadius="xl"
+                        px={2}
+                        py={2}
+                        bg={canToggle ? "transparent" : "var(--bg-secondary)"}
+                        opacity={canToggle ? 1 : 0.5}
+                        cursor={canToggle ? "pointer" : "not-allowed"}
+                        _hover={canToggle ? { bg: "var(--bg-card)" } : {}}
+                      >
+                        {canToggle ? (
+                          <Box
+                            as={Link}
+                            href={`/app/cleaner/${jobIdStr}?toggle=${encodeURIComponent(it.id)}`}
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="space-between"
+                            gap={3}
+                            w="100%"
+                          >
+                            <HStack spacing={3}>
+                              <Box
+                                h={5}
+                                w={5}
+                                borderRadius="md"
+                                border="1px solid"
+                                borderColor={it.done ? "rgba(6, 182, 212, 0.4)" : "var(--border-light)"}
+                                bg={it.done ? "rgba(6, 182, 212, 0.4)" : "transparent"}
+                              />
+                              <Text textDecoration={it.done ? "line-through" : "none"} opacity={it.done ? 0.6 : 1}>
+                                {it.label}
+                              </Text>
+                            </HStack>
+                            <Text fontSize="sm" opacity={0.7} _hover={{ opacity: 1 }}>
+                              {it.done ? "Undo" : "Fatto"}
+                            </Text>
+                          </Box>
+                        ) : (
+                          <>
+                            <HStack spacing={3}>
+                              <Box
+                                h={5}
+                                w={5}
+                                borderRadius="md"
+                                border="1px solid"
+                                borderColor={it.done ? "rgba(6, 182, 212, 0.4)" : "var(--border-light)"}
+                                bg={it.done ? "rgba(6, 182, 212, 0.4)" : "transparent"}
+                              />
+                              <Text textDecoration={it.done ? "line-through" : "none"} opacity={it.done ? 0.6 : 1}>
+                                {it.label}
+                              </Text>
+                            </HStack>
+                            {job.status === "done" ? (
+                              <Text fontSize="xs" opacity={0.5}>
+                                Completato
+                              </Text>
+                            ) : (
+                              <Text fontSize="sm" opacity={0.5}>
+                                {it.done ? "Undo" : "Fatto"}
+                              </Text>
+                            )}
+                          </>
+                        )}
+                      </Box>
+                    );
+                  })}
+                </VStack>
+              </VStack>
+            </CardBody>
+          </Card>
 
-          <div className="space-y-2">
-            {job.checklist.map((it) => {
-              const canToggle = job.status !== "todo" && job.status !== "done";
-              return (
-                <div
-                  key={it.id}
-                  className={`flex items-center justify-between gap-3 rounded-xl px-2 py-2 ${
-                    canToggle
-                      ? "bg-transparent hover:bg-[var(--bg-card)] cursor-pointer"
-                      : "bg-[var(--bg-secondary)] opacity-50 cursor-not-allowed"
-                  }`}
-                >
-                  {canToggle ? (
-                    <a
-                      href={`/app/cleaner/${jobIdStr}?toggle=${encodeURIComponent(it.id)}`}
-                      className="flex items-center justify-between gap-3 w-full"
+          <Card>
+            <CardBody p={4}>
+              <VStack spacing={3} align="stretch">
+                <Text fontSize="sm" opacity={0.7} mb={2}>Controllo accessi</Text>
+                
+                <VStack spacing={3} align="stretch">
+                  <Box>
+                    <Text fontSize="xs" opacity={0.6} mb={2}>Porta</Text>
+                    <Badge
+                      variant={doorIsOpen ? "success" : "default"}
+                      size="sm"
+                      display="inline-flex"
+                      alignItems="center"
+                      gap={2}
+                      borderRadius="xl"
+                      px={3}
+                      py={1.5}
                     >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`h-5 w-5 rounded border ${
-                            it.done ? "bg-cyan-500/40 border-cyan-400/40" : "border-[var(--border-light)]"
-                          }`}
-                        />
-                        <div className={`${it.done ? "opacity-60 line-through" : ""}`}>{it.label}</div>
-                      </div>
-                      <span className="text-sm opacity-70 hover:opacity-100">
-                        {it.done ? "Undo" : "Fatto"}
-                      </span>
-                    </a>
+                      <Box
+                        w={2}
+                        h={2}
+                        borderRadius="full"
+                        bg={doorIsOpen ? "var(--accent-success)" : "var(--text-secondary)"}
+                        flexShrink={0}
+                      />
+                      {doorIsOpen ? "SBLOCCATA" : "BLOCCATA"}
+                    </Badge>
+                  </Box>
+
+                  <HStack spacing={2} flexWrap="wrap">
+                    {doorIsOpen ? (
+                      <Box as="form" action={actCloseDoor}>
+                        <Button
+                          type="submit"
+                          borderRadius="xl"
+                          bg="rgba(16, 185, 129, 0.25)"
+                          border="1px solid"
+                          borderColor="rgba(16, 185, 129, 0.3)"
+                          _hover={{ bg: "rgba(16, 185, 129, 0.35)" }}
+                          px={4}
+                          py={2}
+                          fontSize="sm"
+                          fontWeight="semibold"
+                        >
+                          Chiudi porta
+                        </Button>
+                      </Box>
+                    ) : (
+                      <Box as="form" action={actOpenDoor}>
+                        <Button
+                          type="submit"
+                          borderRadius="xl"
+                          bg="rgba(16, 185, 129, 0.25)"
+                          border="1px solid"
+                          borderColor="rgba(16, 185, 129, 0.3)"
+                          _hover={{ bg: "rgba(16, 185, 129, 0.35)" }}
+                          px={4}
+                          py={2}
+                          fontSize="sm"
+                          fontWeight="semibold"
+                        >
+                          Apri porta
+                        </Button>
+                      </Box>
+                    )}
+
+                    <Box as="form" action={actOpenGate}>
+                      <Button
+                        type="submit"
+                        borderRadius="xl"
+                        bg="rgba(16, 185, 129, 0.25)"
+                        border="1px solid"
+                        borderColor="rgba(16, 185, 129, 0.3)"
+                        _hover={{ bg: "rgba(16, 185, 129, 0.35)" }}
+                        px={4}
+                        py={2}
+                        fontSize="sm"
+                        fontWeight="semibold"
+                      >
+                        Apri portone
+                      </Button>
+                    </Box>
+                  </HStack>
+                </VStack>
+              </VStack>
+            </CardBody>
+          </Card>
+
+          {/* Foto finali */}
+          {photoItemDone && job.status === "in_progress" && (
+            <Card>
+              <CardBody p={4}>
+                <VStack spacing={3} align="stretch">
+                  <Text fontSize="sm" opacity={0.7} mb={2}>Foto finali</Text>
+                  
+                  {hasFinalPhotos ? (
+                    <VStack spacing={3} align="stretch">
+                      <Grid templateColumns={{ base: "repeat(2, 1fr)", sm: "repeat(3, 1fr)" }} gap={2}>
+                        {job.finalPhotos?.map((photo, idx) => (
+                          <Box
+                            key={idx}
+                            position="relative"
+                            aspectRatio="1"
+                            borderRadius="lg"
+                            overflow="hidden"
+                            border="1px solid"
+                            borderColor="var(--border-light)"
+                          >
+                            <Image src={photo} alt={`Foto ${idx + 1}`} w="100%" h="100%" objectFit="cover" />
+                          </Box>
+                        ))}
+                      </Grid>
+                      <Box as="form" action={actUploadFinalPhotos}>
+                        <Button
+                          type="submit"
+                          w="100%"
+                          borderRadius="xl"
+                          bg="var(--bg-card)"
+                          _hover={{ bg: "var(--bg-tertiary)" }}
+                          border="1px solid"
+                          borderColor="var(--border-light)"
+                          px={4}
+                          py={2}
+                          fontSize="sm"
+                          fontWeight="semibold"
+                        >
+                          Sostituisci foto
+                        </Button>
+                      </Box>
+                    </VStack>
                   ) : (
-                    <>
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`h-5 w-5 rounded border ${
-                            it.done ? "bg-cyan-500/40 border-cyan-400/40" : "border-[var(--border-light)]"
-                          }`}
-                        />
-                        <div className={`${it.done ? "opacity-60 line-through" : ""}`}>{it.label}</div>
-                      </div>
-                      {job.status === "done" ? (
-                        <span className="text-xs opacity-50">Completato</span>
-                      ) : (
-                        <span className="text-sm opacity-50">
-                          {it.done ? "Undo" : "Fatto"}
-                        </span>
-                      )}
-                    </>
+                    <VStack spacing={3} align="stretch">
+                      <Grid templateColumns="repeat(3, 1fr)" gap={2}>
+                        {[1, 2, 3].map((num) => (
+                          <Box
+                            key={num}
+                            position="relative"
+                            aspectRatio="1"
+                            borderRadius="lg"
+                            overflow="hidden"
+                            border="1px solid"
+                            borderColor="var(--border-light)"
+                            bg="#4a5568"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                          >
+                            <Text fontSize="sm" color="#a0aec0" fontWeight="semibold">
+                              Foto {num}
+                            </Text>
+                          </Box>
+                        ))}
+                      </Grid>
+                      <Box as="form" action={actUploadFinalPhotos}>
+                        <Button
+                          type="submit"
+                          w="100%"
+                          borderRadius="xl"
+                          bg="rgba(6, 182, 212, 0.25)"
+                          _hover={{ bg: "rgba(6, 182, 212, 0.35)" }}
+                          border="1px solid"
+                          borderColor="rgba(6, 182, 212, 0.3)"
+                          px={4}
+                          py={2}
+                          fontSize="sm"
+                          fontWeight="semibold"
+                        >
+                          Genera foto finali
+                        </Button>
+                      </Box>
+                    </VStack>
                   )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+                </VStack>
+              </CardBody>
+            </Card>
+          )}
 
-        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4 space-y-3">
-          <div className="text-sm opacity-70 mb-2">Controllo accessi</div>
-          
-          <div className="space-y-3">
-            <div>
-              <div className="text-xs opacity-60 mb-2">Porta</div>
-              <div
-                className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold ${
-                  doorIsOpen
-                    ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-                    : "bg-[var(--bg-card)] border-[var(--border-light)] text-[var(--text-primary)]"
-                }`}
+          <HStack spacing={3} flexWrap="wrap">
+            {job.status === "todo" && (
+              <Button
+                as={Link}
+                href={`/app/cleaner/${jobIdStr}?start=1`}
+                borderRadius="xl"
+                bg="rgba(6, 182, 212, 0.25)"
+                _hover={{ bg: "rgba(6, 182, 212, 0.35)" }}
+                border="1px solid"
+                borderColor="rgba(6, 182, 212, 0.3)"
+                px={4}
+                py={2}
+                fontWeight="semibold"
               >
-                <span
-                  className={`h-2 w-2 rounded-full flex-shrink-0 ${
-                    doorIsOpen 
-                      ? "bg-emerald-600" 
-                      : "bg-gray-600"
-                  }`}
-                />
-                {doorIsOpen ? "SBLOCCATA" : "BLOCCATA"}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {doorIsOpen ? (
-                <form action={actCloseDoor}>
-                  <button className="rounded-xl bg-emerald-500/25 hover:bg-emerald-500/35 border border-emerald-400/30 px-4 py-2 text-sm font-semibold">
-                    Chiudi porta
-                  </button>
-                </form>
-              ) : (
-                <form action={actOpenDoor}>
-                  <button className="rounded-xl bg-emerald-500/25 hover:bg-emerald-500/35 border border-emerald-400/30 px-4 py-2 text-sm font-semibold">
-                    Apri porta
-                  </button>
-                </form>
-              )}
-
-              <form action={actOpenGate}>
-                <button className="rounded-xl bg-emerald-500/25 hover:bg-emerald-500/35 border border-emerald-400/30 px-4 py-2 text-sm font-semibold">
-                  Apri portone
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-
-        {/* Foto finali - solo se checklist item "Foto finali" è done */}
-        {photoItemDone && job.status === "in_progress" && (
-          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4 space-y-3">
-            <div className="text-sm opacity-70 mb-2">Foto finali</div>
-            
-            {hasFinalPhotos ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {job.finalPhotos?.map((photo, idx) => (
-                    <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-[var(--border-light)]">
-                      <img src={photo} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
-                    </div>
-                  ))}
-                </div>
-                <form action={actUploadFinalPhotos}>
-                  <button type="submit" className="w-full rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-4 py-2 text-sm font-semibold">
-                    Sostituisci foto
-                  </button>
-                </form>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="grid grid-cols-3 gap-2">
-                  {[1, 2, 3].map((num) => (
-                    <div key={num} className="relative aspect-square rounded-lg overflow-hidden border border-[var(--border-light)] bg-[#4a5568] flex items-center justify-center">
-                      <span className="text-sm text-[#a0aec0] font-semibold">Foto {num}</span>
-                    </div>
-                  ))}
-                </div>
-                <form action={actUploadFinalPhotos}>
-                  <button type="submit" className="w-full rounded-xl bg-cyan-500/25 hover:bg-cyan-500/35 border border-cyan-400/30 px-4 py-2 text-sm font-semibold">
-                    Genera foto finali
-                  </button>
-                </form>
-              </div>
+                Avvia
+              </Button>
             )}
-          </div>
-        )}
 
-        <div className="flex flex-wrap gap-3">
-          {job.status === "todo" && (
-            <a
-              href={`/app/cleaner/${jobIdStr}?start=1`}
-              className="rounded-xl bg-cyan-500/25 hover:bg-cyan-500/35 border border-cyan-400/30 px-4 py-2 font-semibold inline-block"
-            >
-              Avvia
-            </a>
-          )}
+            {job.status === "in_progress" && (
+              <>
+                {!allChecklistDone ? (
+                  <VStack align="stretch" spacing={2}>
+                    <Box
+                      borderRadius="xl"
+                      bg="rgba(107, 114, 128, 0.2)"
+                      border="1px solid"
+                      borderColor="rgba(156, 163, 175, 0.3)"
+                      opacity={0.5}
+                      cursor="not-allowed"
+                      px={4}
+                      py={2}
+                      fontWeight="semibold"
+                      display="inline-block"
+                    >
+                      Completa (checklist incompleta)
+                    </Box>
+                    <Text fontSize="xs" color="var(--accent-warning)" opacity={0.9}>
+                      ⚠️ Devi completare tutti gli item della checklist prima di completare la pulizia assegnata
+                    </Text>
+                  </VStack>
+                ) : photoItemDone && !hasFinalPhotos ? (
+                  <VStack align="stretch" spacing={2}>
+                    <Box
+                      borderRadius="xl"
+                      bg="rgba(107, 114, 128, 0.2)"
+                      border="1px solid"
+                      borderColor="rgba(156, 163, 175, 0.3)"
+                      opacity={0.5}
+                      cursor="not-allowed"
+                      px={4}
+                      py={2}
+                      fontWeight="semibold"
+                      display="inline-block"
+                    >
+                      Completa (foto finali obbligatorie)
+                    </Box>
+                    <Text fontSize="xs" color="var(--accent-warning)" opacity={0.9}>
+                      ⚠️ Devi caricare le foto finali prima di completare la pulizia assegnata
+                    </Text>
+                  </VStack>
+                ) : (
+                  <Button
+                    as={Link}
+                    href={`/app/cleaner/${jobIdStr}?done=1`}
+                    borderRadius="xl"
+                    bg="rgba(16, 185, 129, 0.2)"
+                    _hover={{ bg: "rgba(16, 185, 129, 0.3)" }}
+                    border="1px solid"
+                    borderColor="rgba(16, 185, 129, 0.3)"
+                    px={4}
+                    py={2}
+                    fontWeight="semibold"
+                  >
+                    Completa
+                  </Button>
+                )}
+              </>
+            )}
 
-          {job.status === "in_progress" && (
-            <>
-              {!allChecklistDone ? (
-                <div className="flex flex-col gap-2">
-                  <span className="rounded-xl bg-gray-500/20 border border-gray-400/30 opacity-50 cursor-not-allowed px-4 py-2 font-semibold inline-block">
-                    Completa (checklist incompleta)
-                  </span>
-                  <div className="text-xs text-[var(--accent-warning)] opacity-90">
-                    ⚠️ Devi completare tutti gli item della checklist prima di completare la pulizia assegnata
-                  </div>
-                </div>
-              ) : photoItemDone && !hasFinalPhotos ? (
-                <div className="flex flex-col gap-2">
-                  <span className="rounded-xl bg-gray-500/20 border border-gray-400/30 opacity-50 cursor-not-allowed px-4 py-2 font-semibold inline-block">
-                    Completa (foto finali obbligatorie)
-                  </span>
-                  <div className="text-xs text-[var(--accent-warning)] opacity-90">
-                    ⚠️ Devi caricare le foto finali prima di completare la pulizia assegnata
-                  </div>
-                </div>
-              ) : (
-                <a
-                  href={`/app/cleaner/${jobIdStr}?done=1`}
-                  className="rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 px-4 py-2 font-semibold inline-block"
+            {job.status === "problem" ? (
+              <Box as="form" action={actResolveProblem}>
+                <Button
+                  type="submit"
+                  borderRadius="xl"
+                  bg="rgba(16, 185, 129, 0.2)"
+                  _hover={{ bg: "rgba(16, 185, 129, 0.3)" }}
+                  border="1px solid"
+                  borderColor="rgba(16, 185, 129, 0.3)"
+                  px={4}
+                  py={2}
+                  fontWeight="semibold"
                 >
-                  Completa
-                </a>
-              )}
-            </>
-          )}
-
-          {job.status === "problem" ? (
-            <form action={actResolveProblem}>
-              <button type="submit" className="rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 px-4 py-2 font-semibold">
-                Risolvi problema
-              </button>
-            </form>
-          ) : (
-            <ProblemModal jobId={jobIdStr} onReport={handleReportProblem} />
-          )}
-        </div>
-      </div>
+                  Risolvi problema
+                </Button>
+              </Box>
+            ) : (
+              <ProblemModal jobId={jobIdStr} onReport={handleReportProblem} />
+            )}
+          </HStack>
+        </VStack>
+      </Box>
     </AppLayout>
   );
 }

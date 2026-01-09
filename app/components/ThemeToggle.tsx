@@ -3,6 +3,7 @@
 import { useContext, useEffect, useState } from "react";
 import { Sun, Moon } from "lucide-react";
 import { ThemeContext } from "@/app/lib/theme";
+import { Box, IconButton } from "@chakra-ui/react";
 
 export function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
@@ -12,28 +13,42 @@ export function ThemeToggle() {
     setMounted(true);
   }, []);
 
-  // Durante SSR o se il context non è disponibile, renderizza un placeholder
   if (!mounted || !context) {
     return (
-      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[var(--bg-card)] border border-[var(--border-light)]">
-        <Sun className="w-5 h-5 text-[var(--text-primary)] opacity-50" />
-      </div>
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        w={10}
+        h={10}
+        borderRadius="full"
+        bg="var(--bg-card)"
+        border="1px solid"
+        borderColor="var(--border-light)"
+      >
+        <Sun size={20} color="var(--text-primary)" style={{ opacity: 0.5 }} />
+      </Box>
     );
   }
 
   const { theme, toggleTheme } = context;
 
   return (
-    <button
+    <IconButton
       onClick={toggleTheme}
-      className="flex items-center justify-center w-10 h-10 rounded-full bg-[var(--bg-card)] border border-[var(--border-light)] hover:opacity-80 transition-opacity"
       aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
-    >
-      {theme === "light" ? (
-        <Moon className="w-5 h-5 text-[var(--text-primary)]" />
-      ) : (
-        <Sun className="w-5 h-5 text-[var(--text-primary)]" />
-      )}
-    </button>
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      w={10}
+      h={10}
+      borderRadius="full"
+      bg="var(--bg-card)"
+      border="1px solid"
+      borderColor="var(--border-light)"
+      _hover={{ opacity: 0.8 }}
+      transition="opacity"
+      icon={theme === "light" ? <Moon size={20} color="var(--text-primary)" /> : <Sun size={20} color="var(--text-primary)" />}
+    />
   );
 }

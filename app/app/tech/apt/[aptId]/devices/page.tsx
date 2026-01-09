@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -20,6 +19,11 @@ import {
   type DeviceController,
 } from "@/app/lib/devicePackageStore";
 import { DeviceTable } from "./DeviceTable";
+import { Box, VStack, HStack, Heading, Text } from "@chakra-ui/react";
+import { Card, CardBody, CardHeader } from "@/app/components/ui/Card";
+import { Link } from "@/app/components/ui/Link";
+import { Button } from "@/app/components/ui/Button";
+import { Badge } from "@/app/components/ui/Badge";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +39,11 @@ export default async function TechDevicesPage({
   const me = readSession(sess);
 
   if (!me || me.role !== "tech") {
-    return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
+    return (
+      <Box p={6} color="var(--text-primary)">
+        Non autorizzato
+      </Box>
+    );
   }
 
   const techUser = me.userId ? getUser(me.userId) : null;
@@ -52,12 +60,14 @@ export default async function TechDevicesPage({
           profileImageUrl: techUser.profileImageUrl,
         } : undefined}
       >
-        <div className="p-4 lg:p-6">
-          <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
+        <Box p={{ base: 4, lg: 6 }}>
+          <Link href="/app/tech" fontSize="sm" opacity={0.7} _hover={{ opacity: 1 }}>
             ← Back
           </Link>
-          <div className="mt-3 text-lg font-semibold">AptId mancante</div>
-        </div>
+          <Heading as="h2" size="lg" fontWeight="semibold" mt={3}>
+            AptId mancante
+          </Heading>
+        </Box>
       </AppLayout>
     );
   }
@@ -73,13 +83,17 @@ export default async function TechDevicesPage({
           profileImageUrl: techUser.profileImageUrl,
         } : undefined}
       >
-        <div className="p-4 lg:p-6">
-          <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
+        <Box p={{ base: 4, lg: 6 }}>
+          <Link href="/app/tech" fontSize="sm" opacity={0.7} _hover={{ opacity: 1 }}>
             ← Back
           </Link>
-          <div className="mt-3 text-lg font-semibold">Appartamento non trovato</div>
-          <div className="text-sm opacity-60">AptId: {aptId}</div>
-        </div>
+          <Heading as="h2" size="lg" fontWeight="semibold" mt={3}>
+            Appartamento non trovato
+          </Heading>
+          <Text fontSize="sm" opacity={0.6}>
+            AptId: {aptId}
+          </Text>
+        </Box>
       </AppLayout>
     );
   }
@@ -91,7 +105,6 @@ export default async function TechDevicesPage({
   const allDevicesMap = getAllDevices(aptId);
   const deviceTypes = getAllDeviceTypes();
   
-  // Convert Map to array for client component (Maps are not serializable)
   const allDevices = Array.from(allDevicesMap.entries()).map(([deviceType, item]) => ({
     deviceType,
     ...item,
@@ -110,13 +123,12 @@ export default async function TechDevicesPage({
       const controllerValue = formData.get(controllerKey) as string;
       const controller: DeviceController = (controllerValue && controllerValue !== "") 
         ? (controllerValue as DeviceController)
-        : "home_assistant"; // Default
+        : "home_assistant";
 
       setDeviceEnabled(aptId, deviceType, enabled);
       if (enabled) {
         if (deviceType !== "ups") {
           setDeviceControllable(aptId, deviceType, controllable);
-          // Controller può essere impostato anche se non controllabile (per leggere stato)
           setDeviceController(aptId, deviceType, controller);
         }
       }
@@ -141,73 +153,111 @@ export default async function TechDevicesPage({
           profileImageUrl: techUser.profileImageUrl,
         } : undefined}
       >
-        <div className="max-w-4xl mx-auto space-y-4 p-4 lg:p-6">
-          <div className="lg:hidden">
-            <Link className="text-sm opacity-70 hover:opacity-100" href={`/app/tech/apt/${aptId}`}>
+        <Box maxW="4xl" mx="auto" p={{ base: 4, lg: 6 }}>
+          <VStack spacing={4} align="stretch">
+            <Box display={{ base: "block", lg: "none" }}>
+              <Link href={`/app/tech/apt/${aptId}`} fontSize="sm" opacity={0.7} _hover={{ opacity: 1 }}>
+                ← Torna a {apt.aptName}
+              </Link>
+            </Box>
+
+            <Link
+              href={`/app/tech/apt/${aptId}`}
+              fontSize="sm"
+              opacity={0.7}
+              _hover={{ opacity: 1 }}
+              display={{ base: "none", lg: "inline-block" }}
+            >
               ← Torna a {apt.aptName}
             </Link>
-          </div>
 
-          <Link className="hidden lg:inline-block text-sm opacity-70 hover:opacity-100" href={`/app/tech/apt/${aptId}`}>
-            ← Torna a {apt.aptName}
-          </Link>
-
-          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <div className="text-lg font-semibold text-[var(--text-primary)]">Device Package</div>
-                <div className="text-sm opacity-70">{apt.aptName}</div>
-              </div>
-              <Link
-                href={`/app/tech/apt/${aptId}/devices?edit=1`}
-                className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-4 py-2 font-semibold text-sm"
-              >
-                Modifica
-              </Link>
-            </div>
-
-            {enabledDevices.length === 0 ? (
-              <div className="text-sm opacity-60 py-8 text-center">
-                Nessun device configurato. Clicca "Modifica" per aggiungere device.
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {enabledDevices.map((deviceType) => {
-                  const controllable = isDeviceControllable(aptId, deviceType);
-                  const state = getDeviceState(aptId, deviceType);
-                  const label = getDeviceLabel(deviceType);
-                  const isOnline = state === "online";
-
-                  return (
-                    <div
-                      key={deviceType}
-                      className="flex items-center justify-between gap-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3"
+            <Card>
+              <CardBody p={4}>
+                <VStack spacing={4} align="stretch">
+                  <HStack justify="space-between" mb={4}>
+                    <Box>
+                      <Heading as="h2" size="md" fontWeight="semibold" color="var(--text-primary)">
+                        Device Package
+                      </Heading>
+                      <Text fontSize="sm" opacity={0.7}>
+                        {apt.aptName}
+                      </Text>
+                    </Box>
+                    <Button
+                      as={Link}
+                      href={`/app/tech/apt/${aptId}/devices?edit=1`}
+                      borderRadius="xl"
+                      bg="rgba(6, 182, 212, 0.2)"
+                      _hover={{ bg: "rgba(6, 182, 212, 0.3)" }}
+                      border="1px solid"
+                      borderColor="rgba(6, 182, 212, 0.3)"
+                      px={4}
+                      py={2}
+                      fontWeight="semibold"
+                      fontSize="sm"
                     >
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-semibold">{label}</div>
-                        <div className="text-xs opacity-60 mt-0.5">{deviceType}</div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={`text-xs px-3 py-1 rounded-lg border ${
-                            isOnline
-                              ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-                              : "bg-red-50 border-red-200 text-red-700"
-                          }`}
-                        >
-                          {state.toUpperCase()}
-                        </div>
-                        <div className="text-xs px-3 py-1 rounded-lg bg-[var(--bg-card)] border border-[var(--border-light)]">
-                          {controllable ? "Controllabile" : "Solo lettura"}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
+                      Modifica
+                    </Button>
+                  </HStack>
+
+                  {enabledDevices.length === 0 ? (
+                    <Text fontSize="sm" opacity={0.6} py={8} textAlign="center">
+                      Nessun device configurato. Clicca "Modifica" per aggiungere device.
+                    </Text>
+                  ) : (
+                    <VStack spacing={2} align="stretch">
+                      {enabledDevices.map((deviceType) => {
+                        const controllable = isDeviceControllable(aptId, deviceType);
+                        const state = getDeviceState(aptId, deviceType);
+                        const label = getDeviceLabel(deviceType);
+                        const isOnline = state === "online";
+
+                        return (
+                          <Card key={deviceType} variant="outlined">
+                            <CardBody p={3}>
+                              <HStack justify="space-between" gap={3}>
+                                <Box flex={1} minW={0}>
+                                  <Text fontSize="sm" fontWeight="semibold">
+                                    {label}
+                                  </Text>
+                                  <Text fontSize="xs" opacity={0.6} mt={0.5}>
+                                    {deviceType}
+                                  </Text>
+                                </Box>
+                                <HStack spacing={2}>
+                                  <Badge
+                                    variant={isOnline ? "success" : "error"}
+                                    size="sm"
+                                    px={3}
+                                    py={1}
+                                    borderRadius="lg"
+                                    fontSize="xs"
+                                  >
+                                    {state.toUpperCase()}
+                                  </Badge>
+                                  <Badge
+                                    variant="default"
+                                    size="sm"
+                                    px={3}
+                                    py={1}
+                                    borderRadius="lg"
+                                    fontSize="xs"
+                                  >
+                                    {controllable ? "Controllabile" : "Solo lettura"}
+                                  </Badge>
+                                </HStack>
+                              </HStack>
+                            </CardBody>
+                          </Card>
+                        );
+                      })}
+                    </VStack>
+                  )}
+                </VStack>
+              </CardBody>
+            </Card>
+          </VStack>
+        </Box>
       </AppLayout>
     );
   }
@@ -222,48 +272,77 @@ export default async function TechDevicesPage({
         profileImageUrl: techUser.profileImageUrl,
       } : undefined}
     >
-      <div className="max-w-4xl mx-auto space-y-4 p-4 lg:p-6">
-        <div className="lg:hidden">
-          <Link className="text-sm opacity-70 hover:opacity-100" href={`/app/tech/apt/${aptId}`}>
+      <Box maxW="4xl" mx="auto" p={{ base: 4, lg: 6 }}>
+        <VStack spacing={4} align="stretch">
+          <Box display={{ base: "block", lg: "none" }}>
+            <Link href={`/app/tech/apt/${aptId}`} fontSize="sm" opacity={0.7} _hover={{ opacity: 1 }}>
+              ← Torna a {apt.aptName}
+            </Link>
+          </Box>
+
+          <Link
+            href={`/app/tech/apt/${aptId}`}
+            fontSize="sm"
+            opacity={0.7}
+            _hover={{ opacity: 1 }}
+            display={{ base: "none", lg: "inline-block" }}
+          >
             ← Torna a {apt.aptName}
           </Link>
-        </div>
 
-        <Link className="hidden lg:inline-block text-sm opacity-70 hover:opacity-100" href={`/app/tech/apt/${aptId}`}>
-          ← Torna a {apt.aptName}
-        </Link>
+          <Card>
+            <CardBody p={4}>
+              <VStack spacing={4} align="stretch">
+                <Box mb={4}>
+                  <Heading as="h2" size="md" fontWeight="semibold" color="var(--text-primary)">
+                    Device Package
+                  </Heading>
+                  <Text fontSize="sm" opacity={0.7} color="var(--text-secondary)">
+                    {apt.aptName}
+                  </Text>
+                </Box>
 
-        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
-          <div className="mb-4">
-            <div className="text-lg font-semibold text-[var(--text-primary)]">Device Package</div>
-            <div className="text-sm opacity-70 text-[var(--text-secondary)]">{apt.aptName}</div>
-          </div>
+                <Box as="form" action={updateDevicePackage}>
+                  <VStack spacing={4} align="stretch">
+                    <DeviceTable deviceTypes={deviceTypes} allDevices={allDevices} />
 
-          <form action={updateDevicePackage} className="space-y-4">
-            <DeviceTable deviceTypes={deviceTypes} allDevices={allDevices} />
+                    <HStack spacing={3} pt={4} borderTop="1px solid" borderColor="var(--border-light)">
+                      <Button
+                        type="submit"
+                        borderRadius="xl"
+                        bg="rgba(6, 182, 212, 0.2)"
+                        _hover={{ bg: "rgba(6, 182, 212, 0.3)" }}
+                        border="1px solid"
+                        borderColor="rgba(6, 182, 212, 0.3)"
+                        px={6}
+                        py={3}
+                        fontWeight="semibold"
+                      >
+                        Salva configurazione
+                      </Button>
+                      <Button
+                        as={Link}
+                        href={`/app/tech/apt/${aptId}/devices`}
+                        variant="secondary"
+                        borderRadius="xl"
+                        px={6}
+                        py={3}
+                        fontWeight="semibold"
+                      >
+                        Annulla
+                      </Button>
+                    </HStack>
+                  </VStack>
+                </Box>
 
-            <div className="flex gap-3 pt-4 border-t border-[var(--border-light)]">
-              <button
-                type="submit"
-                className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-6 py-3 font-semibold"
-              >
-                Salva configurazione
-              </button>
-              <Link
-                href={`/app/tech/apt/${aptId}/devices`}
-                className="rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-6 py-3 font-semibold"
-              >
-                Annulla
-              </Link>
-            </div>
-          </form>
-
-          <div className="mt-4 text-xs opacity-60">
-            Nota: La checkbox "Controllabile" è disponibile solo se "Presente" è selezionata. Se un device non è presente, non verrà mostrato nelle viste Tech/Host/Guest.
-          </div>
-        </div>
-      </div>
+                <Text mt={4} fontSize="xs" opacity={0.6}>
+                  Nota: La checkbox "Controllabile" è disponibile solo se "Presente" è selezionata. Se un device non è presente, non verrà mostrato nelle viste Tech/Host/Guest.
+                </Text>
+              </VStack>
+            </CardBody>
+          </Card>
+        </VStack>
+      </Box>
     </AppLayout>
   );
 }
-

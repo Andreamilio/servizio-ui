@@ -1,30 +1,71 @@
-import { TextareaHTMLAttributes } from "react";
+"use client";
 
-interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
+import { TextareaHTMLAttributes, useId } from "react";
+import {
+  Textarea as ChakraTextarea,
+  TextareaProps as ChakraTextareaProps,
+  Field,
+} from "@chakra-ui/react";
+
+interface TextareaProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "size" | "color"> {
   label?: string;
   error?: string;
   helperText?: string;
 }
 
-export function Textarea({ label, error, helperText, className = "", ...props }: TextareaProps) {
-  const textareaClasses = `w-full rounded-xl bg-[var(--bg-secondary)] border px-4 py-2.5 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed resize-none ${
-    error ? "border-[var(--accent-error)] focus:ring-[var(--accent-error)]" : "border-[var(--border-light)]"
-  } ${className}`;
+export function Textarea({ label, error, helperText, id, ...props }: TextareaProps) {
+  const generatedId = useId();
+  const textareaId = id || generatedId;
   
+  const textareaStyles: ChakraTextareaProps = {
+    width: "100%",
+    borderRadius: "xl",
+    bg: "var(--bg-secondary)",
+    border: "1px solid",
+    borderColor: error ? "var(--accent-error)" : "var(--border-light)",
+    px: 4,
+    py: 2.5,
+    color: "var(--text-primary)",
+    _placeholder: {
+      color: "var(--text-tertiary)",
+    },
+    transition: "colors",
+    resize: "none",
+    _focus: {
+      outline: "none",
+      ring: "2px",
+      ringColor: error ? "var(--accent-error)" : "var(--accent-primary)",
+      borderColor: "transparent",
+    },
+    _disabled: {
+      opacity: 0.5,
+      cursor: "not-allowed",
+    },
+  };
+
   return (
-    <div className="w-full">
+    <Field.Root id={textareaId} invalid={!!error} w="100%">
       {label && (
-        <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
+        <Field.Label
+          fontSize="sm"
+          fontWeight="medium"
+          color="var(--text-primary)"
+          mb={2}
+        >
           {label}
-        </label>
+        </Field.Label>
       )}
-      <textarea className={textareaClasses} {...props} />
+      <ChakraTextarea id={textareaId} {...textareaStyles} {...(props as ChakraTextareaProps)} />
       {error && (
-        <p className="mt-1.5 text-sm text-[var(--accent-error)]">{error}</p>
+        <Field.ErrorText mt={1.5} fontSize="sm" color="var(--accent-error)">
+          {error}
+        </Field.ErrorText>
       )}
       {helperText && !error && (
-        <p className="mt-1.5 text-sm text-[var(--text-secondary)]">{helperText}</p>
+        <Field.HelperText mt={1.5} fontSize="sm" color="var(--text-secondary)">
+          {helperText}
+        </Field.HelperText>
       )}
-    </div>
+    </Field.Root>
   );
 }

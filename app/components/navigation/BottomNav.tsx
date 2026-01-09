@@ -1,9 +1,11 @@
 "use client";
 
-import Link from "next/link";
+import NextLink from "next/link";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { Home, Users, Building2, Calendar, Sparkles, HelpCircle, LogOut } from "lucide-react";
+import { Home, Users, Building2, Calendar, Sparkles, HelpCircle } from "lucide-react";
+import { Box, HStack, VStack, Text } from "@chakra-ui/react";
+import { Button } from "../ui/Button";
 import type { Role } from "@/app/lib/store";
 
 interface NavItem {
@@ -161,13 +163,24 @@ export function BottomNav({ role }: BottomNavProps) {
   if (allItems.length === 0) return null;
 
   return (
-    <nav ref={navRef} className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-[var(--bg-card)] border-t border-[var(--border-light)] shadow-lg" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0), 16px)' }}>
-      <div className="flex items-center justify-around h-16 px-2">
+    <Box
+      as="nav"
+      ref={navRef}
+      position="fixed"
+      bottom={0}
+      left={0}
+      right={0}
+      zIndex={50}
+      display={{ base: "block", lg: "none" }}
+      bg="var(--bg-card)"
+      borderTop="1px solid"
+      borderColor="var(--border-light)"
+      boxShadow="lg"
+      pb="max(env(safe-area-inset-bottom, 0), 16px)"
+    >
+      <HStack h={16} justify="space-around" px={2}>
         {allItems.map((item) => {
           const Icon = item.icon;
-          // Per "/app/guest" (Home), attiva solo se pathname è esattamente "/app/guest"
-          // Per "/app/host/stays" e "/app/host/cleaners", attiva solo se l'href corrisponde esattamente
-          // Per altre route, usa la logica normale ma escludi route specifiche
           let isActive = false;
           let href = item.href;
           
@@ -187,13 +200,10 @@ export function BottomNav({ role }: BottomNavProps) {
           if (item.href === "/app/guest") {
             isActive = pathname === item.href;
           } else if (item.href.includes("/app/host/stays")) {
-            // Per "Soggiorni", controlla se siamo sulla route stays
             isActive = pathname === "/app/host/stays";
           } else if (item.href.includes("/app/host/cleaners")) {
-            // Per "Cleaner", controlla se siamo sulla route cleaners
             isActive = pathname === "/app/host/cleaners";
           } else if (item.href === "/app/host") {
-            // Per "Dashboard", attiva solo se siamo su /app/host e NON su altre route host
             isActive = pathname === item.href || (
               pathname.startsWith(item.href + "/") && 
               !pathname.startsWith("/app/host/stays") && 
@@ -204,7 +214,6 @@ export function BottomNav({ role }: BottomNavProps) {
               !pathname.startsWith("/app/host/support")
             );
           } else if (item.href === "/app/tech") {
-            // Per "Dashboard" tech, attiva solo se siamo su /app/tech e NON su /app/tech/users o /app/tech/clients
             if (pathname.startsWith("/app/tech/users") || pathname.startsWith("/app/tech/clients")) {
               isActive = false;
             } else {
@@ -214,7 +223,6 @@ export function BottomNav({ role }: BottomNavProps) {
             isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           }
           
-          // Check if this is a Dashboard/Home item that should use back navigation
           const isDashboardItem = item.href === "/app/tech" || 
                                   item.href === "/app/host" || 
                                   item.href === "/app/guest";
@@ -222,37 +230,55 @@ export function BottomNav({ role }: BottomNavProps) {
           if (isDashboardItem) {
             const dashboardHref = getDashboardHref(role, pathname, searchParams);
             return (
-              <button
+              <Button
                 key={item.href}
                 onClick={() => router.push(dashboardHref)}
-                className={`flex flex-col items-center justify-center gap-1 flex-1 h-full rounded-lg transition-colors ${
-                  isActive
-                    ? "text-[var(--accent-primary)]"
-                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                }`}
+                variant="ghost"
+                flex={1}
+                h="100%"
+                borderRadius="lg"
+                transition="colors"
+                color={isActive ? "var(--accent-primary)" : "var(--text-secondary)"}
+                _hover={{
+                  color: "var(--text-primary)",
+                }}
               >
-                <Icon size={20} className={isActive ? "stroke-[2.5]" : ""} />
-                <span className="text-xs font-medium">{item.label}</span>
-              </button>
+                <VStack spacing={1}>
+                  <Icon size={20} style={{ strokeWidth: isActive ? 2.5 : undefined }} />
+                  <Text fontSize="xs" fontWeight="medium">
+                    {item.label}
+                  </Text>
+                </VStack>
+              </Button>
             );
           }
           
           return (
-            <Link
+            <Button
               key={item.href}
-              href={href}
-              className={`flex flex-col items-center justify-center gap-1 flex-1 h-full rounded-lg transition-colors ${
-                isActive
-                  ? "text-[var(--accent-primary)]"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              }`}
+              asChild
+              variant="ghost"
+              flex={1}
+              h="100%"
+              borderRadius="lg"
+              transition="colors"
+              color={isActive ? "var(--accent-primary)" : "var(--text-secondary)"}
+              _hover={{
+                color: "var(--text-primary)",
+              }}
             >
-              <Icon size={20} className={isActive ? "stroke-[2.5]" : ""} />
-              <span className="text-xs font-medium">{item.label}</span>
-            </Link>
+              <NextLink href={href}>
+                <VStack spacing={1}>
+                  <Icon size={20} style={{ strokeWidth: isActive ? 2.5 : undefined }} />
+                  <Text fontSize="xs" fontWeight="medium">
+                    {item.label}
+                  </Text>
+                </VStack>
+              </NextLink>
+            </Button>
           );
         })}
-      </div>
-    </nav>
+      </HStack>
+    </Box>
   );
 }

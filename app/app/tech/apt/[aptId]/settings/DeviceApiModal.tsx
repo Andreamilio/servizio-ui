@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { VStack, HStack, Text, Box } from "@chakra-ui/react";
 import { getDeviceLabel, type DeviceType } from "@/app/lib/devicePackageTypes";
 import type { DeviceApiSettings } from "@/app/lib/technicalSettingsStore";
 import { Modal } from "@/app/components/ui/Modal";
@@ -52,56 +53,61 @@ export function DeviceApiModal({
       title="Configurazione API"
       size="lg"
     >
-      <div className="mb-4">
-        <p className="text-sm text-[var(--text-secondary)]">{getDeviceLabel(deviceType)}</p>
-      </div>
+      <VStack spacing={4} align="stretch">
+        <Box mb={4}>
+          <Text fontSize="sm" color="var(--text-secondary)">
+            {getDeviceLabel(deviceType)}
+          </Text>
+        </Box>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Input
-          label="Endpoint"
-          type="text"
-          value={endpoint}
-          onChange={(e) => setEndpoint(e.target.value)}
-          placeholder="https://api.example.com"
-          required
-        />
+        <Box as="form" onSubmit={handleSubmit}>
+          <VStack spacing={4} align="stretch">
+            <Input
+              label="Endpoint"
+              type="text"
+              value={endpoint}
+              onChange={(e) => setEndpoint(e.target.value)}
+              placeholder="https://api.example.com"
+              required
+            />
 
-        <Input
-          label="Token / API Key"
-          type="password"
-          value={token}
-          onChange={(e) => setToken(e.target.value)}
-          placeholder="API token"
-        />
+            <Input
+              label="Token / API Key"
+              type="password"
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              placeholder="API token"
+            />
 
-        <Input
-          label="Device ID"
-          type="text"
-          value={deviceId}
-          onChange={(e) => setDeviceId(e.target.value)}
-          placeholder="ID del device nell'API esterna"
-        />
+            <Input
+              label="Device ID"
+              type="text"
+              value={deviceId}
+              onChange={(e) => setDeviceId(e.target.value)}
+              placeholder="ID del device nell'API esterna"
+            />
 
-        <div className="flex gap-3 pt-4 border-t border-[var(--border-light)]">
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={saving}
-            fullWidth
-          >
-            {saving ? "Salvataggio..." : "Salva configurazione"}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={onClose}
-            fullWidth
-          >
-            Annulla
-          </Button>
-        </div>
-      </form>
+            <HStack spacing={3} pt={4} borderTop="1px solid" borderColor="var(--border-light)">
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={saving}
+                fullWidth
+              >
+                {saving ? "Salvataggio..." : "Salva configurazione"}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={onClose}
+                fullWidth
+              >
+                Annulla
+              </Button>
+            </HStack>
+          </VStack>
+        </Box>
+      </VStack>
     </Modal>
   );
 }
-

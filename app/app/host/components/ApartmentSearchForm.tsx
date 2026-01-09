@@ -1,6 +1,9 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
+import { HStack, Box } from "@chakra-ui/react";
+import { Input } from "@/app/components/ui/Input";
+import { Button } from "@/app/components/ui/Button";
 
 type ApartmentSearchFormProps = {
     clientId: string;
@@ -18,15 +21,12 @@ export function ApartmentSearchForm({ clientId, initialQuery = '' }: ApartmentSe
         let timeoutId: NodeJS.Timeout;
 
         const handleInput = () => {
-            // Cancella il timeout precedente
             clearTimeout(timeoutId);
-            
-            // Fai submit automatico dopo un breve delay (debounce)
             timeoutId = setTimeout(() => {
                 if (formRef.current) {
                     formRef.current.submit();
                 }
-            }, 500); // Delay di 500ms per evitare troppi submit durante la digitazione
+            }, 500);
         };
 
         input.addEventListener('input', handleInput);
@@ -38,27 +38,31 @@ export function ApartmentSearchForm({ clientId, initialQuery = '' }: ApartmentSe
     }, []);
 
     return (
-        <form 
+        <Box
+            as="form"
             ref={formRef}
             action='/app/host' 
-            method='get' 
-            className='flex items-center gap-2 w-full'
+            method='get'
+            display="flex"
+            alignItems="center"
+            gap={2}
+            w="100%"
         >
             <input type='hidden' name='client' value={clientId} />
-            <input
+            <Input
                 ref={inputRef}
                 name='q'
                 defaultValue={initialQuery}
                 placeholder='Cerca appartamento…'
-                className='flex-1 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-3 py-2 text-sm outline-none focus:border-cyan-400/60'
+                flex={1}
             />
-            <button 
+            <Button 
                 type='submit'
-                className='rounded-xl bg-[var(--bg-card)] border border-[var(--border-light)] px-3 py-2 text-sm opacity-90'
+                variant="secondary"
+                size="sm"
             >
                 Cerca
-            </button>
-        </form>
+            </Button>
+        </Box>
     );
 }
-

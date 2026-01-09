@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -19,15 +18,27 @@ import { events_listByApt, events_log } from "@/app/lib/domain/eventsDomain";
 import { getAllEnabledDevices, getDeviceState } from "@/app/lib/devicePackageStore";
 import { getUser } from "@/app/lib/userStore";
 import { AppLayout } from "@/app/components/layouts/AppLayout";
+import { Box, VStack, HStack, Heading, Text, Grid, GridItem } from "@chakra-ui/react";
+import { Card, CardBody, CardHeader } from "@/app/components/ui/Card";
+import { Link } from "@/app/components/ui/Link";
+import { Button } from "@/app/components/ui/Button";
+import { StatusPill } from "@/app/components/ui/StatusPill";
+import { Alert } from "@/app/components/ui/Alert";
 
 export const dynamic = "force-dynamic";
 
 function Chip({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider opacity-60">{label}</div>
-      <div className="text-sm font-semibold">{value}</div>
-    </div>
+    <Card variant="outlined">
+      <CardBody px={3} py={2}>
+        <Text fontSize="10px" textTransform="uppercase" letterSpacing="wider" opacity={0.6}>
+          {label}
+        </Text>
+        <Text fontSize="sm" fontWeight="semibold">
+          {value}
+        </Text>
+      </CardBody>
+    </Card>
   );
 }
 
@@ -42,11 +53,14 @@ export default async function TechAptPage({
   const me = validateSessionUser(session);
 
   if (!me || me.role !== "tech") {
-    // Se la sessione era valida ma l'utente è disabilitato, fai logout
     if (session && session.userId && session.role === "tech") {
       redirect("/api/auth/logout");
     }
-    return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
+    return (
+      <Box p={6} color="var(--text-primary)">
+        Non autorizzato
+      </Box>
+    );
   }
 
   const p = await Promise.resolve(params);
@@ -64,27 +78,24 @@ export default async function TechAptPage({
           profileImageUrl: techUser.profileImageUrl,
         } : undefined}
       >
-        <div className="p-4 lg:p-6">
-          <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
+        <Box p={{ base: 4, lg: 6 }}>
+          <Link href="/app/tech" fontSize="sm" opacity={0.7} _hover={{ opacity: 1 }}>
             ← Back
           </Link>
-          <div className="mt-3 text-lg font-semibold">AptId mancante (routing)</div>
-          <div className="text-sm opacity-60">
+          <Heading as="h2" size="lg" fontWeight="semibold" mt={3}>
+            AptId mancante (routing)
+          </Heading>
+          <Text fontSize="sm" opacity={0.6}>
             La route non sta passando correttamente il parametro: prova ad aprire
-            <span className="font-semibold"> /app/tech/apt/101</span>
-          </div>
-        </div>
+            <Text as="span" fontWeight="semibold"> /app/tech/apt/101</Text>
+          </Text>
+        </Box>
       </AppLayout>
     );
   }
 
   const apt = getApt(aptId);
-
-  // ✅ LOG: single source of truth (store.ts via eventsDomain)
   const aptLog = events_listByApt(Store, aptId, 20);
-  
-
-  // Device Package stats
   const enabledDevices = getAllEnabledDevices(aptId);
   const deviceOnlineCount = enabledDevices.filter((dt) => getDeviceState(aptId, dt) === "online").length;
 
@@ -98,13 +109,17 @@ export default async function TechAptPage({
           profileImageUrl: techUser.profileImageUrl,
         } : undefined}
       >
-        <div className="p-4 lg:p-6">
-          <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
+        <Box p={{ base: 4, lg: 6 }}>
+          <Link href="/app/tech" fontSize="sm" opacity={0.7} _hover={{ opacity: 1 }}>
             ← Back
           </Link>
-          <div className="mt-3 text-lg font-semibold">Appartamento non trovato</div>
-          <div className="text-sm opacity-60">AptId: {aptId}</div>
-        </div>
+          <Heading as="h2" size="lg" fontWeight="semibold" mt={3}>
+            Appartamento non trovato
+          </Heading>
+          <Text fontSize="sm" opacity={0.6}>
+            AptId: {aptId}
+          </Text>
+        </Box>
       </AppLayout>
     );
   }
@@ -112,14 +127,12 @@ export default async function TechAptPage({
   async function actOpenDoor() {
     "use server";
     openDoor(aptId);
-
     events_log(Store, {
       aptId,
       type: "door_opened",
       actor: "tech",
       label: "Porta aperta (azione Tech)",
     });
-
     revalidatePath("/app/tech");
     revalidatePath(`/app/tech/apt/${aptId}`);
     redirect(`/app/tech/apt/${aptId}?r=${Date.now()}`);
@@ -128,14 +141,12 @@ export default async function TechAptPage({
   async function actCloseDoor() {
     "use server";
     closeDoor(aptId);
-
     events_log(Store, {
       aptId,
       type: "door_closed",
       actor: "tech",
       label: "Porta chiusa (azione Tech)",
     });
-
     revalidatePath("/app/tech");
     revalidatePath(`/app/tech/apt/${aptId}`);
     redirect(`/app/tech/apt/${aptId}?r=${Date.now()}`);
@@ -144,36 +155,27 @@ export default async function TechAptPage({
   async function actOpenGate() {
     "use server";
     openGate(aptId);
-
     events_log(Store, {
       aptId,
       type: "gate_opened",
       actor: "tech",
       label: "Portone aperto (azione Tech)",
     });
-
     revalidatePath("/app/tech");
     revalidatePath(`/app/tech/apt/${aptId}`);
     redirect(`/app/tech/apt/${aptId}?r=${Date.now()}`);
   }
 
-
   async function actRevoke() {
     "use server";
-
-    // ✅ revoke reale PIN nello store centrale
     Store.revokePinsByApt(aptId);
-
-    // (manteniamo anche il mock techstore, così la UI “Tech monitoring” resta coerente)
     revokeAccess(aptId);
-
     events_log(Store, {
       aptId,
       type: "pin_revoked",
       actor: "tech",
       label: "Revocati accessi (azione Tech)",
     });
-
     revalidatePath("/app/tech");
     revalidatePath(`/app/tech/apt/${aptId}`);
     redirect(`/app/tech/apt/${aptId}?r=${Date.now()}`);
@@ -182,7 +184,6 @@ export default async function TechAptPage({
   async function actWan() {
     "use server";
     const apt = toggleWan(aptId);
-    
     if (apt) {
       events_log(Store, {
         aptId,
@@ -191,7 +192,6 @@ export default async function TechAptPage({
         label: `WAN switched to ${apt.network === "main" ? "MAIN WAN" : "BACKUP WAN"}`,
       });
     }
-
     revalidatePath("/app/tech");
     revalidatePath(`/app/tech/apt/${aptId}`);
     redirect(`/app/tech/apt/${aptId}?r=${Date.now()}`);
@@ -200,7 +200,6 @@ export default async function TechAptPage({
   async function actVpn() {
     "use server";
     const apt = toggleVpn(aptId);
-    
     if (apt) {
       events_log(Store, {
         aptId,
@@ -209,12 +208,10 @@ export default async function TechAptPage({
         label: `VPN toggled ${apt.vpn.toUpperCase()}`,
       });
     }
-
     revalidatePath("/app/tech");
     revalidatePath(`/app/tech/apt/${aptId}`);
     redirect(`/app/tech/apt/${aptId}?r=${Date.now()}`);
   }
-
 
   return (
     <AppLayout 
@@ -225,173 +222,302 @@ export default async function TechAptPage({
         profileImageUrl: techUser.profileImageUrl,
       } : undefined}
     >
-      <div className="p-4 lg:p-6">
-      <div className="max-w-3xl mx-auto space-y-4">
-        <div className="lg:hidden rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4 space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <div className="text-xs opacity-60">TECH</div>
-              <div className="text-sm font-semibold truncate">{apt.aptName}</div>
-              <div className="text-xs opacity-60 truncate">{apt.group}</div>
-            </div>
-            <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
-              ← Back
-            </Link>
-          </div>
-        </div>
-
-        <Link className="hidden lg:inline-block text-sm opacity-70 hover:opacity-100" href="/app/tech">
-          ← Torna a Tech
-        </Link>
-
-        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-            <div>
-              <div className="text-lg font-semibold">{apt.aptName}</div>
-              <div className="text-sm opacity-70">{apt.group}</div>
-            </div>
-
-            <div className="text-left sm:text-right text-sm">
-              <div className="opacity-60">Last access</div>
-              <div className="font-semibold">{apt.lastAccessLabel}</div>
-            </div>
-          </div>
-
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-            <div className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3">
-              <div className="opacity-60 text-xs">WAN</div>
-              <div className="font-semibold">{apt.network === "main" ? "MAIN WAN" : "BACKUP WAN"}</div>
-            </div>
-            <div className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3">
-              <div className="opacity-60 text-xs">VPN</div>
-              <div className="font-semibold">{apt.vpn.toUpperCase()}</div>
-            </div>
-            <div className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3">
-              <div className="opacity-60 text-xs">DOOR</div>
-              <div className="font-semibold">{apt.door.toUpperCase()}</div>
-            </div>
-
-            {apt.door === "unknown" && (
-              <div className="col-span-full mt-3 rounded-xl bg-[var(--warning-bg)] border border-[var(--warning-border)] p-3">
-                <div className="flex items-start gap-2">
-                  <span className="text-[var(--warning-text-icon)]">⚠️</span>
-                  <div className="flex-1">
-                    <div className="text-sm font-semibold text-[var(--warning-text)]">Stato porta sconosciuto</div>
-                    <div className="text-xs text-[var(--text-primary)] mt-1">
-                      Non ci sono eventi nel log per questo appartamento. Lo stato della porta verrà aggiornato quando ci sono eventi di apertura/chiusura.
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
+      <Box p={{ base: 4, lg: 6 }}>
+        <Box maxW="3xl" mx="auto">
+          <VStack spacing={4} align="stretch">
+            <Card display={{ base: "block", lg: "none" }}>
+              <CardBody p={4}>
+                <HStack justify="space-between" gap={3}>
+                  <Box minW={0}>
+                    <Text fontSize="xs" opacity={0.6}>TECH</Text>
+                    <Text fontSize="sm" fontWeight="semibold" isTruncated>
+                      {apt.aptName}
+                    </Text>
+                    <Text fontSize="xs" opacity={0.6} isTruncated>
+                      {apt.group}
+                    </Text>
+                  </Box>
+                  <Link href="/app/tech" fontSize="sm" opacity={0.7} _hover={{ opacity: 1 }}>
+                    ← Back
+                  </Link>
+                </HStack>
+              </CardBody>
+            </Card>
 
             <Link
-              href={`/app/tech/apt/${aptId}/devices`}
-              className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border-2 border-cyan-400/40 p-3 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              href="/app/tech"
+              fontSize="sm"
+              opacity={0.7}
+              _hover={{ opacity: 1 }}
+              display={{ base: "none", lg: "inline-block" }}
             >
-              <div className="text-xs font-semibold text-[var(--text-primary)]">DEVICES</div>
-              <div className="font-semibold text-sm mt-1 text-[var(--text-primary)]">
-                {enabledDevices.length === 0
-                  ? "Nessun device"
-                  : `${enabledDevices.length} device, ${deviceOnlineCount} online`}
-              </div>
+              ← Torna a Tech
             </Link>
-            <Link
-              href={`/app/tech/apt/${aptId}/settings`}
-              className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border-2 border-cyan-400/40 p-3 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-            >
-              <div className="text-xs font-semibold text-[var(--text-primary)]">TECHNICAL SETTINGS</div>
-              <div className="font-semibold text-sm mt-1 text-[var(--text-primary)]">Configura API</div>
-            </Link>
-          </div>
-        </div>
 
-        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
-          <div className="text-sm opacity-70 mb-4">Azioni rapide</div>
+            <Card>
+              <CardBody p={4}>
+                <VStack spacing={4} align="stretch">
+                  <HStack justify="space-between" gap={3} flexDir={{ base: "column", sm: "row" }} align={{ base: "start", sm: "start" }}>
+                    <Box>
+                      <Heading as="h2" size="md" fontWeight="semibold">
+                        {apt.aptName}
+                      </Heading>
+                      <Text fontSize="sm" opacity={0.7}>
+                        {apt.group}
+                      </Text>
+                    </Box>
 
-          <div className="space-y-4">
-            {/* Azioni principali: Porta e Portone */}
-            {apt.door === "unlocked" ? (
-              <form action={actCloseDoor}>
-                <button className="w-full rounded-xl bg-[var(--success-button-bg)] hover:bg-[var(--success-button-bg-hover)] border border-[var(--success-button-border)] text-[var(--success-button-text)] px-4 py-2 font-semibold text-sm">
-                  Chiudi porta
-                </button>
-              </form>
-            ) : (
-              <form action={actOpenDoor}>
-                <button className="w-full rounded-xl bg-[var(--success-button-bg)] hover:bg-[var(--success-button-bg-hover)] border border-[var(--success-button-border)] text-[var(--success-button-text)] px-4 py-2 font-semibold text-sm">
-                  Apri porta
-                </button>
-              </form>
-            )}
+                    <Box textAlign={{ base: "left", sm: "right" }} fontSize="sm">
+                      <Text opacity={0.6}>Last access</Text>
+                      <Text fontWeight="semibold">
+                        {apt.lastAccessLabel}
+                      </Text>
+                    </Box>
+                  </HStack>
 
-            <form action={actOpenGate}>
-              <button className="w-full rounded-xl bg-[var(--success-button-bg)] hover:bg-[var(--success-button-bg-hover)] border border-[var(--success-button-border)] text-[var(--success-button-text)] px-4 py-2 font-semibold text-sm">
-                Apri portone
-              </button>
-            </form>
+                  <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)" }} gap={3} fontSize="sm">
+                    <Chip label="WAN" value={apt.network === "main" ? "MAIN WAN" : "BACKUP WAN"} />
+                    <Chip label="VPN" value={apt.vpn.toUpperCase()} />
+                    <Chip label="DOOR" value={apt.door.toUpperCase()} />
 
-            {/* Azioni secondarie */}
-            <div className="pt-2 border-t border-[var(--border-light)]">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <form action={actRevoke}>
-                  <button className="w-full rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 px-4 py-2 font-semibold text-sm">
-                    Revoca accessi
-                  </button>
-                </form>
+                    {apt.door === "unknown" && (
+                      <GridItem colSpan={2}>
+                        <Alert variant="warning" mt={3}>
+                          <HStack spacing={2} align="start">
+                            <Text>⚠️</Text>
+                            <VStack align="stretch" spacing={1} flex={1}>
+                              <Text fontSize="sm" fontWeight="semibold" color="var(--warning-text)">
+                                Stato porta sconosciuto
+                              </Text>
+                              <Text fontSize="xs" color="var(--text-primary)" mt={1}>
+                                Non ci sono eventi nel log per questo appartamento. Lo stato della porta verrà aggiornato quando ci sono eventi di apertura/chiusura.
+                              </Text>
+                            </VStack>
+                          </HStack>
+                        </Alert>
+                      </GridItem>
+                    )}
 
-                <form action={actWan}>
-                  <button className="w-full rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-4 py-2 font-semibold text-sm">
-                    Switch WAN
-                  </button>
-                </form>
+                    <Box
+                      as={Link}
+                      href={`/app/tech/apt/${aptId}/devices`}
+                      borderRadius="xl"
+                      bg="rgba(6, 182, 212, 0.2)"
+                      _hover={{ bg: "rgba(6, 182, 212, 0.3)" }}
+                      border="2px solid"
+                      borderColor="rgba(6, 182, 212, 0.4)"
+                      p={3}
+                      transition="all"
+                      _active={{ transform: "scale(0.98)" }}
+                      cursor="pointer"
+                    >
+                      <Text fontSize="xs" fontWeight="semibold" color="var(--text-primary)">
+                        DEVICES
+                      </Text>
+                      <Text fontWeight="semibold" fontSize="sm" mt={1} color="var(--text-primary)">
+                        {enabledDevices.length === 0
+                          ? "Nessun device"
+                          : `${enabledDevices.length} device, ${deviceOnlineCount} online`}
+                      </Text>
+                    </Box>
+                    <Box
+                      as={Link}
+                      href={`/app/tech/apt/${aptId}/settings`}
+                      borderRadius="xl"
+                      bg="rgba(6, 182, 212, 0.2)"
+                      _hover={{ bg: "rgba(6, 182, 212, 0.3)" }}
+                      border="2px solid"
+                      borderColor="rgba(6, 182, 212, 0.4)"
+                      p={3}
+                      transition="all"
+                      _active={{ transform: "scale(0.98)" }}
+                      cursor="pointer"
+                    >
+                      <Text fontSize="xs" fontWeight="semibold" color="var(--text-primary)">
+                        TECHNICAL SETTINGS
+                      </Text>
+                      <Text fontWeight="semibold" fontSize="sm" mt={1} color="var(--text-primary)">
+                        Configura API
+                      </Text>
+                    </Box>
+                  </Grid>
+                </VStack>
+              </CardBody>
+            </Card>
 
-                <form action={actVpn}>
-                  <button className="w-full rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-4 py-2 font-semibold text-sm">
-                    Toggle VPN
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
+            <Card>
+              <CardBody p={4}>
+                <VStack spacing={4} align="stretch">
+                  <Text fontSize="sm" opacity={0.7} mb={4}>
+                    Azioni rapide
+                  </Text>
 
-        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] overflow-hidden">
-          <div className="p-4 border-b border-[var(--border-light)]">
-            <div className="text-sm font-semibold">LOG — {apt.aptName}</div>
-          </div>
+                  <VStack spacing={4} align="stretch">
+                    {apt.door === "unlocked" ? (
+                      <Box as="form" action={actCloseDoor} w="100%">
+                        <Button
+                          type="submit"
+                          w="100%"
+                          borderRadius="xl"
+                          bg="var(--success-button-bg)"
+                          _hover={{ bg: "var(--success-button-bg-hover)" }}
+                          border="1px solid"
+                          borderColor="var(--success-button-border)"
+                          color="var(--success-button-text)"
+                          px={4}
+                          py={2}
+                          fontWeight="semibold"
+                          fontSize="sm"
+                        >
+                          Chiudi porta
+                        </Button>
+                      </Box>
+                    ) : (
+                      <Box as="form" action={actOpenDoor} w="100%">
+                        <Button
+                          type="submit"
+                          w="100%"
+                          borderRadius="xl"
+                          bg="var(--success-button-bg)"
+                          _hover={{ bg: "var(--success-button-bg-hover)" }}
+                          border="1px solid"
+                          borderColor="var(--success-button-border)"
+                          color="var(--success-button-text)"
+                          px={4}
+                          py={2}
+                          fontWeight="semibold"
+                          fontSize="sm"
+                        >
+                          Apri porta
+                        </Button>
+                      </Box>
+                    )}
 
-          <div className="p-4 space-y-2">
-            {aptLog.length === 0 ? (
-              <div className="text-sm opacity-60">Nessun evento.</div>
-            ) : (
-              aptLog.map((e) => (
-                <div key={e.id} className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="text-xs opacity-60">
-                      {new Date(e.ts).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </div>
-                    <div className="text-[10px] opacity-50">Apt {aptId}</div>
-                  </div>
-                  <div className="mt-1 text-sm font-semibold leading-snug">{e.label}</div>
-                  <div className="mt-1 text-xs opacity-70 leading-snug">
-                    {e.type} • {e.actor}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+                    <Box as="form" action={actOpenGate} w="100%">
+                      <Button
+                        type="submit"
+                        w="100%"
+                        borderRadius="xl"
+                        bg="var(--success-button-bg)"
+                        _hover={{ bg: "var(--success-button-bg-hover)" }}
+                        border="1px solid"
+                        borderColor="var(--success-button-border)"
+                        color="var(--success-button-text)"
+                        px={4}
+                        py={2}
+                        fontWeight="semibold"
+                        fontSize="sm"
+                      >
+                        Apri portone
+                      </Button>
+                    </Box>
 
-        <div className="text-xs opacity-60">
-          Nota: store in memoria (dev). Ogni azione forza refresh via redirect.
-        </div>
-      </div>
-      </div>
+                    <Box pt={2} borderTop="1px solid" borderColor="var(--border-light)">
+                      <Grid templateColumns={{ base: "1fr", sm: "repeat(3, 1fr)" }} gap={3}>
+                        <Box as="form" action={actRevoke}>
+                          <Button
+                            type="submit"
+                            w="100%"
+                            borderRadius="xl"
+                            bg="rgba(239, 68, 68, 0.2)"
+                            _hover={{ bg: "rgba(239, 68, 68, 0.3)" }}
+                            border="1px solid"
+                            borderColor="rgba(239, 68, 68, 0.3)"
+                            px={4}
+                            py={2}
+                            fontWeight="semibold"
+                            fontSize="sm"
+                          >
+                            Revoca accessi
+                          </Button>
+                        </Box>
+
+                        <Box as="form" action={actWan}>
+                          <Button
+                            type="submit"
+                            variant="secondary"
+                            w="100%"
+                            borderRadius="xl"
+                            px={4}
+                            py={2}
+                            fontWeight="semibold"
+                            fontSize="sm"
+                          >
+                            Switch WAN
+                          </Button>
+                        </Box>
+
+                        <Box as="form" action={actVpn}>
+                          <Button
+                            type="submit"
+                            variant="secondary"
+                            w="100%"
+                            borderRadius="xl"
+                            px={4}
+                            py={2}
+                            fontWeight="semibold"
+                            fontSize="sm"
+                          >
+                            Toggle VPN
+                          </Button>
+                        </Box>
+                      </Grid>
+                    </Box>
+                  </VStack>
+                </VStack>
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardHeader p={4} borderBottom="1px solid" borderColor="var(--border-light)">
+                <Text fontSize="sm" fontWeight="semibold">
+                  LOG — {apt.aptName}
+                </Text>
+              </CardHeader>
+
+              <Box p={4}>
+                <VStack spacing={2} align="stretch">
+                  {aptLog.length === 0 ? (
+                    <Text fontSize="sm" opacity={0.6}>
+                      Nessun evento.
+                    </Text>
+                  ) : (
+                    aptLog.map((e) => (
+                      <Card key={e.id} variant="outlined">
+                        <CardBody p={3}>
+                          <VStack align="stretch" spacing={1}>
+                            <HStack justify="space-between" gap={3}>
+                              <Text fontSize="xs" opacity={0.6}>
+                                {new Date(e.ts).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </Text>
+                              <Text fontSize="10px" opacity={0.5}>
+                                Apt {aptId}
+                              </Text>
+                            </HStack>
+                            <Text mt={1} fontSize="sm" fontWeight="semibold" lineHeight="snug">
+                              {e.label}
+                            </Text>
+                            <Text mt={1} fontSize="xs" opacity={0.7} lineHeight="snug">
+                              {e.type} • {e.actor}
+                            </Text>
+                          </VStack>
+                        </CardBody>
+                      </Card>
+                    ))
+                  )}
+                </VStack>
+              </Box>
+            </Card>
+
+            <Text fontSize="xs" opacity={0.6}>
+              Nota: store in memoria (dev). Ogni azione forza refresh via redirect.
+            </Text>
+          </VStack>
+        </Box>
+      </Box>
     </AppLayout>
   );
 }

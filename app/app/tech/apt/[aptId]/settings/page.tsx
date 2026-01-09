@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -18,6 +17,13 @@ import {
 } from "@/app/lib/technicalSettingsStore";
 import { getAllEnabledDevices, getAllDevices, getDeviceLabel, type DeviceType } from "@/app/lib/devicePackageStore";
 import { ApiDevicesSection } from "./ApiDevicesSection";
+import { Box, VStack, HStack, Heading, Text } from "@chakra-ui/react";
+import { Card, CardBody, CardHeader } from "@/app/components/ui/Card";
+import { Link } from "@/app/components/ui/Link";
+import { Button } from "@/app/components/ui/Button";
+import { Input } from "@/app/components/ui/Input";
+import { Textarea } from "@/app/components/ui/Textarea";
+import { Alert } from "@/app/components/ui/Alert";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +39,11 @@ export default async function TechSettingsPage({
   const me = readSession(sess);
 
   if (!me || me.role !== "tech") {
-    return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
+    return (
+      <Box p={6} color="var(--text-primary)">
+        Non autorizzato
+      </Box>
+    );
   }
 
   const techUser = me.userId ? getUser(me.userId) : null;
@@ -50,12 +60,14 @@ export default async function TechSettingsPage({
           profileImageUrl: techUser.profileImageUrl,
         } : undefined}
       >
-        <div className="p-4 lg:p-6">
-          <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
+        <Box p={{ base: 4, lg: 6 }}>
+          <Link href="/app/tech" fontSize="sm" opacity={0.7} _hover={{ opacity: 1 }}>
             ← Back
           </Link>
-          <div className="mt-3 text-lg font-semibold">AptId mancante</div>
-        </div>
+          <Heading as="h2" size="lg" fontWeight="semibold" mt={3}>
+            AptId mancante
+          </Heading>
+        </Box>
       </AppLayout>
     );
   }
@@ -71,13 +83,17 @@ export default async function TechSettingsPage({
           profileImageUrl: techUser.profileImageUrl,
         } : undefined}
       >
-        <div className="p-4 lg:p-6">
-          <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
+        <Box p={{ base: 4, lg: 6 }}>
+          <Link href="/app/tech" fontSize="sm" opacity={0.7} _hover={{ opacity: 1 }}>
             ← Back
           </Link>
-          <div className="mt-3 text-lg font-semibold">Appartamento non trovato</div>
-          <div className="text-sm opacity-60">AptId: {aptId}</div>
-        </div>
+          <Heading as="h2" size="lg" fontWeight="semibold" mt={3}>
+            Appartamento non trovato
+          </Heading>
+          <Text fontSize="sm" opacity={0.6}>
+            AptId: {aptId}
+          </Text>
+        </Box>
       </AppLayout>
     );
   }
@@ -86,7 +102,6 @@ export default async function TechSettingsPage({
   const enabledDevices = getAllEnabledDevices(aptId);
   const requiredTabs = getRequiredSettingsTabs(aptId);
   
-  // Se il tab richiesto non è disponibile, usa il primo disponibile
   const requestedTab = sp.tab;
   const activeTab = requestedTab && requiredTabs.includes(requestedTab as any)
     ? requestedTab
@@ -101,7 +116,6 @@ export default async function TechSettingsPage({
     const token = (formData.get("token") as string) || "";
     const entityMappingStr = (formData.get("entityMapping") as string) || "";
 
-    // Parse entity mapping from textarea (key=value format, one per line)
     const entityMapping: Record<string, string> = {};
     entityMappingStr.split("\n").forEach((line) => {
       const trimmed = line.trim();
@@ -141,7 +155,6 @@ export default async function TechSettingsPage({
 
   async function testHomeAssistant() {
     "use server";
-    // Mock test - in produzione chiamerà l'API reale
     const hasConfig = settings.homeAssistant.baseUrl && settings.homeAssistant.token;
 
     if (!hasConfig) {
@@ -150,7 +163,6 @@ export default async function TechSettingsPage({
         message: "Configurazione incompleta: baseUrl e token richiesti",
       });
     } else {
-      // Simula test (random success/failure per demo)
       const mockSuccess = Math.random() > 0.3;
       updateTestResult(aptId, "home_assistant", {
         success: mockSuccess,
@@ -170,7 +182,6 @@ export default async function TechSettingsPage({
     revalidatePath(`/app/tech/apt/${aptId}/settings`);
   }
 
-  // Trova device con controller="api"
   const allDevicesMap = getAllDevices(aptId);
   const devicesWithApi: Array<{ deviceType: DeviceType; settings: DeviceApiSettings | null }> = [];
   allDevicesMap.forEach((item, deviceType) => {
@@ -186,7 +197,6 @@ export default async function TechSettingsPage({
     { id: "diagnostics", label: "Diagnostics" },
   ];
 
-  // Filtra i tab in base a quelli richiesti dai device configurati
   const tabs = allTabs.filter((tab) => requiredTabs.includes(tab.id as any));
 
   return (
@@ -198,249 +208,300 @@ export default async function TechSettingsPage({
         profileImageUrl: techUser.profileImageUrl,
       } : undefined}
     >
-      <div className="p-4 lg:p-6">
-      <div className="max-w-4xl mx-auto space-y-4">
-        <div className="lg:hidden">
-          <Link className="text-sm opacity-70 hover:opacity-100" href={`/app/tech/apt/${aptId}`}>
-            ← Torna a {apt.aptName}
-          </Link>
-        </div>
-
-        <Link className="hidden lg:inline-block text-sm opacity-70 hover:opacity-100" href={`/app/tech/apt/${aptId}`}>
-          ← Torna a {apt.aptName}
-        </Link>
-
-        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
-          <div className="mb-4">
-            <div className="text-lg font-semibold text-[var(--text-primary)]">Technical Settings</div>
-            <div className="text-sm opacity-70 text-[var(--text-secondary)]">{apt.aptName}</div>
-          </div>
-
-          {enabledDevices.length === 0 && (
-            <div className="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-400/20 text-sm text-gray-900">
-              ⚠️ Nessun device configurato. Configura prima i device nel{" "}
-              <Link
-                href={`/app/tech/apt/${aptId}/devices?edit=1`}
-                className="underline text-cyan-600 hover:text-cyan-700"
-              >
-                Device Package
-              </Link>{" "}
-              per vedere le impostazioni disponibili.
-            </div>
-          )}
-        </div>
-
-        <ApiDevicesSection
-          aptId={aptId}
-          devicesWithApi={devicesWithApi}
-          saveDeviceApi={updateDeviceApi}
-        />
-
-        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
-          {/* Tabs */}
-              <div className="flex gap-2 mb-6 border-b border-[var(--border-light)]">
-            {tabs.map((tab) => (
-              <Link
-                key={tab.id}
-                href={`/app/tech/apt/${aptId}/settings?tab=${tab.id}`}
-                className={`px-4 py-2 text-sm font-medium transition ${
-                  activeTab === tab.id
-                    ? "border-b-2 border-cyan-400 text-cyan-600"
-                    : "opacity-60 hover:opacity-100"
-                }`}
-              >
-                {tab.label}
+      <Box p={{ base: 4, lg: 6 }}>
+        <Box maxW="4xl" mx="auto">
+          <VStack spacing={4} align="stretch">
+            <Box display={{ base: "block", lg: "none" }}>
+              <Link href={`/app/tech/apt/${aptId}`} fontSize="sm" opacity={0.7} _hover={{ opacity: 1 }}>
+                ← Torna a {apt.aptName}
               </Link>
-            ))}
-          </div>
+            </Box>
 
-          {/* Tab Content */}
-          {activeTab === "home_assistant" && (
-            <form action={updateHomeAssistant} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Base URL</label>
-                <input
-                  type="text"
-                  name="baseUrl"
-                  defaultValue={settings.homeAssistant.baseUrl}
-                  placeholder="http://homeassistant.local:8123"
-                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                />
-              </div>
+            <Link
+              href={`/app/tech/apt/${aptId}`}
+              fontSize="sm"
+              opacity={0.7}
+              _hover={{ opacity: 1 }}
+              display={{ base: "none", lg: "inline-block" }}
+            >
+              ← Torna a {apt.aptName}
+            </Link>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Long-Lived Access Token</label>
-                <input
-                  type="password"
-                  name="token"
-                  defaultValue={settings.homeAssistant.token}
-                  placeholder="Token"
-                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                />
-              </div>
+            <Card>
+              <CardBody p={4}>
+                <Box mb={4}>
+                  <Heading as="h2" size="md" fontWeight="semibold" color="var(--text-primary)">
+                    Technical Settings
+                  </Heading>
+                  <Text fontSize="sm" opacity={0.7} color="var(--text-secondary)">
+                    {apt.aptName}
+                  </Text>
+                </Box>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Entity Mapping (key=value, uno per riga)</label>
-                <textarea
-                  name="entityMapping"
-                  defaultValue={Object.entries(settings.homeAssistant.entityMapping)
-                    .map(([k, v]) => `${k}=${v}`)
-                    .join("\n")}
-                  placeholder="switch.shelly_gate=relay_gate&#10;lock.tedee_101=smart_lock"
-                  rows={6}
-                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500 font-mono text-sm"
-                />
-                <div className="text-xs opacity-60 mt-1">
-                  Formato: entity_id=device_type (es. switch.shelly_gate=relay_gate)
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4 border-t border-[var(--border-light)]">
-                <button
-                  type="submit"
-                  className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-6 py-3 font-semibold"
-                >
-                  Salva configurazione
-                </button>
-              </div>
-            </form>
-          )}
-
-          {activeTab === "network" && (
-            <form action={updateNetwork} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">WireGuard Endpoint</label>
-                <input
-                  type="text"
-                  name="wireguardEndpoint"
-                  defaultValue={settings.network.wireguardEndpoint}
-                  placeholder="wg.example.com:51820"
-                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Cloudflare Endpoint (opzionale)</label>
-                <input
-                  type="text"
-                  name="cloudflareEndpoint"
-                  defaultValue={settings.network.cloudflareEndpoint}
-                  placeholder="https://tunnel.example.com"
-                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Health Check URL</label>
-                <input
-                  type="text"
-                  name="healthCheckUrl"
-                  defaultValue={settings.network.healthCheckUrl}
-                  placeholder="https://health.example.com/check"
-                  className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4 border-t border-[var(--border-light)]">
-                <button
-                  type="submit"
-                  className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-6 py-3 font-semibold"
-                >
-                  Salva configurazione
-                </button>
-              </div>
-            </form>
-          )}
-
-          {activeTab === "diagnostics" && (
-            <div className="space-y-6">
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="text-sm font-semibold">Test di Connessione</div>
-                </div>
-                <div className="flex gap-3">
-                  {requiredTabs.includes("home_assistant") && (
-                    <form action={testHomeAssistant}>
-                      <button
-                        type="submit"
-                        className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-4 py-2 font-semibold text-sm"
+                {enabledDevices.length === 0 && (
+                  <Alert variant="warning" mb={4}>
+                    <Text fontSize="sm">
+                      ⚠️ Nessun device configurato. Configura prima i device nel{" "}
+                      <Link
+                        href={`/app/tech/apt/${aptId}/devices?edit=1`}
+                        textDecoration="underline"
+                        color="rgba(6, 182, 212, 1)"
+                        _hover={{ color: "rgba(6, 182, 212, 0.8)" }}
                       >
-                        Test Home Assistant
-                      </button>
-                    </form>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <div className="text-sm font-semibold mb-4">Risultati Test</div>
-                {(() => {
-                  // Filtra i risultati dei test in base ai tab disponibili
-                  const filteredResults = Object.entries(settings.diagnostics.testResults).filter(([testName]) => {
-                    // Mostra solo i test per i tab che sono presenti
-                    // Nota: "smart_lock" non è più un tab valido, quindi i suoi test vengono sempre mostrati
-                    if (testName === "home_assistant") return requiredTabs.includes("home_assistant");
-                    if (testName === "network") return requiredTabs.includes("network");
-                    return true; // Altri test (es. generici, smart_lock) vengono mostrati sempre
-                  });
-
-                  return filteredResults.length === 0 ? (
-                    <div className="text-sm opacity-60 py-4 text-center">
-                      Nessun test eseguito. Esegui un test per vedere i risultati.
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {filteredResults.map(([testName, result]) => (
-                        <div
-                          key={testName}
-                          className={`rounded-xl border p-3 ${
-                            result.success
-                              ? "bg-emerald-500/10 border-emerald-400/20"
-                              : "bg-red-500/10 border-red-400/20"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="text-sm font-semibold capitalize">{testName.replace("_", " ")}</div>
-                            <div className="text-xs opacity-60">
-                              {new Date(result.timestamp).toLocaleString()}
-                            </div>
-                          </div>
-                          <div className="text-sm opacity-80">{result.message}</div>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
-              </div>
-
-              <div>
-                <div className="text-sm font-semibold mb-4">Ultimi Errori</div>
-                {settings.diagnostics.lastErrors.length === 0 ? (
-                  <div className="text-sm opacity-60 py-4 text-center">Nessun errore registrato.</div>
-                ) : (
-                  <div className="space-y-2">
-                    {settings.diagnostics.lastErrors.slice(0, 10).map((error, idx) => (
-                      <div
-                        key={idx}
-                        className="rounded-xl bg-red-50 border border-red-200 p-3"
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="text-xs font-semibold capitalize">{error.source.replace("_", " ")}</div>
-                          <div className="text-xs opacity-60">
-                            {new Date(error.timestamp).toLocaleString()}
-                          </div>
-                        </div>
-                        <div className="text-sm opacity-80">{error.error}</div>
-                      </div>
-                    ))}
-                  </div>
+                        Device Package
+                      </Link>{" "}
+                      per vedere le impostazioni disponibili.
+                    </Text>
+                  </Alert>
                 )}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-      </div>
+              </CardBody>
+            </Card>
+
+            <ApiDevicesSection
+              aptId={aptId}
+              devicesWithApi={devicesWithApi}
+              saveDeviceApi={updateDeviceApi}
+            />
+
+            <Card>
+              <CardBody p={4}>
+                <VStack spacing={6} align="stretch">
+                  {/* Tabs */}
+                  <HStack gap={2} borderBottom="1px solid" borderColor="var(--border-light)" mb={6}>
+                    {tabs.map((tab) => (
+                      <Box
+                        key={tab.id}
+                        as={Link}
+                        href={`/app/tech/apt/${aptId}/settings?tab=${tab.id}`}
+                        px={4}
+                        py={2}
+                        fontSize="sm"
+                        fontWeight="medium"
+                        transition="all"
+                        borderBottom="2px solid"
+                        borderColor={activeTab === tab.id ? "rgba(6, 182, 212, 1)" : "transparent"}
+                        color={activeTab === tab.id ? "rgba(6, 182, 212, 1)" : "var(--text-primary)"}
+                        opacity={activeTab === tab.id ? 1 : 0.6}
+                        _hover={{ opacity: 1 }}
+                      >
+                        {tab.label}
+                      </Box>
+                    ))}
+                  </HStack>
+
+                  {/* Tab Content */}
+                  {activeTab === "home_assistant" && (
+                    <Box>
+                        <Box as="form" action={updateHomeAssistant}>
+                          <VStack spacing={4} align="stretch">
+                            <Input
+                              type="text"
+                              name="baseUrl"
+                              label="Base URL"
+                              defaultValue={settings.homeAssistant.baseUrl}
+                              placeholder="http://homeassistant.local:8123"
+                            />
+
+                            <Input
+                              type="password"
+                              name="token"
+                              label="Long-Lived Access Token"
+                              defaultValue={settings.homeAssistant.token}
+                              placeholder="Token"
+                            />
+
+                            <Textarea
+                              name="entityMapping"
+                              label="Entity Mapping (key=value, uno per riga)"
+                              defaultValue={Object.entries(settings.homeAssistant.entityMapping)
+                                .map(([k, v]) => `${k}=${v}`)
+                                .join("\n")}
+                              placeholder="switch.shelly_gate=relay_gate&#10;lock.tedee_101=smart_lock"
+                              rows={6}
+                              fontFamily="mono"
+                              fontSize="sm"
+                            />
+                            <Text fontSize="xs" opacity={0.6} mt={1}>
+                              Formato: entity_id=device_type (es. switch.shelly_gate=relay_gate)
+                            </Text>
+
+                            <HStack spacing={3} pt={4} borderTop="1px solid" borderColor="var(--border-light)">
+                              <Button
+                                type="submit"
+                                borderRadius="xl"
+                                bg="rgba(6, 182, 212, 0.2)"
+                                _hover={{ bg: "rgba(6, 182, 212, 0.3)" }}
+                                border="1px solid"
+                                borderColor="rgba(6, 182, 212, 0.3)"
+                                px={6}
+                                py={3}
+                                fontWeight="semibold"
+                              >
+                                Salva configurazione
+                              </Button>
+                            </HStack>
+                          </VStack>
+                        </Box>
+                      </Box>
+                    )}
+
+                    {activeTab === "network" && (
+                      <Box>
+                        <Box as="form" action={updateNetwork}>
+                          <VStack spacing={4} align="stretch">
+                            <Input
+                              type="text"
+                              name="wireguardEndpoint"
+                              label="WireGuard Endpoint"
+                              defaultValue={settings.network.wireguardEndpoint}
+                              placeholder="wg.example.com:51820"
+                            />
+
+                            <Input
+                              type="text"
+                              name="cloudflareEndpoint"
+                              label="Cloudflare Endpoint (opzionale)"
+                              defaultValue={settings.network.cloudflareEndpoint}
+                              placeholder="https://tunnel.example.com"
+                            />
+
+                            <Input
+                              type="text"
+                              name="healthCheckUrl"
+                              label="Health Check URL"
+                              defaultValue={settings.network.healthCheckUrl}
+                              placeholder="https://health.example.com/check"
+                            />
+
+                            <HStack spacing={3} pt={4} borderTop="1px solid" borderColor="var(--border-light)">
+                              <Button
+                                type="submit"
+                                borderRadius="xl"
+                                bg="rgba(6, 182, 212, 0.2)"
+                                _hover={{ bg: "rgba(6, 182, 212, 0.3)" }}
+                                border="1px solid"
+                                borderColor="rgba(6, 182, 212, 0.3)"
+                                px={6}
+                                py={3}
+                                fontWeight="semibold"
+                              >
+                                Salva configurazione
+                              </Button>
+                            </HStack>
+                          </VStack>
+                        </Box>
+                      </Box>
+                    )}
+
+                    {activeTab === "diagnostics" && (
+                      <Box>
+                        <VStack spacing={6} align="stretch">
+                          <Box>
+                            <HStack justify="space-between" mb={4}>
+                              <Text fontSize="sm" fontWeight="semibold">
+                                Test di Connessione
+                              </Text>
+                            </HStack>
+                            <HStack spacing={3}>
+                              {requiredTabs.includes("home_assistant") && (
+                                <Box as="form" action={testHomeAssistant}>
+                                  <Button
+                                    type="submit"
+                                    borderRadius="xl"
+                                    bg="rgba(6, 182, 212, 0.2)"
+                                    _hover={{ bg: "rgba(6, 182, 212, 0.3)" }}
+                                    border="1px solid"
+                                    borderColor="rgba(6, 182, 212, 0.3)"
+                                    px={4}
+                                    py={2}
+                                    fontWeight="semibold"
+                                    fontSize="sm"
+                                  >
+                                    Test Home Assistant
+                                  </Button>
+                                </Box>
+                              )}
+                            </HStack>
+                          </Box>
+
+                          <Box>
+                            <Text fontSize="sm" fontWeight="semibold" mb={4}>
+                              Risultati Test
+                            </Text>
+                            {(() => {
+                              const filteredResults = Object.entries(settings.diagnostics.testResults).filter(([testName]) => {
+                                if (testName === "home_assistant") return requiredTabs.includes("home_assistant");
+                                if (testName === "network") return requiredTabs.includes("network");
+                                return true;
+                              });
+
+                              return filteredResults.length === 0 ? (
+                                <Text fontSize="sm" opacity={0.6} py={4} textAlign="center">
+                                  Nessun test eseguito. Esegui un test per vedere i risultati.
+                                </Text>
+                              ) : (
+                                <VStack spacing={3} align="stretch">
+                                  {filteredResults.map(([testName, result]) => (
+                                    <Alert key={testName} variant={result.success ? "success" : "error"}>
+                                      <VStack align="stretch" spacing={1} flex={1}>
+                                        <HStack justify="space-between" mb={1}>
+                                          <Text fontSize="sm" fontWeight="semibold" textTransform="capitalize">
+                                            {testName.replace("_", " ")}
+                                          </Text>
+                                          <Text fontSize="xs" opacity={0.6}>
+                                            {new Date(result.timestamp).toLocaleString()}
+                                          </Text>
+                                        </HStack>
+                                        <Text fontSize="sm" opacity={0.8}>
+                                          {result.message}
+                                        </Text>
+                                      </VStack>
+                                    </Alert>
+                                  ))}
+                                </VStack>
+                              );
+                            })()}
+                          </Box>
+
+                          <Box>
+                            <Text fontSize="sm" fontWeight="semibold" mb={4}>
+                              Ultimi Errori
+                            </Text>
+                            {settings.diagnostics.lastErrors.length === 0 ? (
+                              <Text fontSize="sm" opacity={0.6} py={4} textAlign="center">
+                                Nessun errore registrato.
+                              </Text>
+                            ) : (
+                              <VStack spacing={2} align="stretch">
+                                {settings.diagnostics.lastErrors.slice(0, 10).map((error, idx) => (
+                                  <Alert key={idx} variant="error">
+                                    <VStack align="stretch" spacing={1} flex={1}>
+                                      <HStack justify="space-between" mb={1}>
+                                        <Text fontSize="xs" fontWeight="semibold" textTransform="capitalize">
+                                          {error.source.replace("_", " ")}
+                                        </Text>
+                                        <Text fontSize="xs" opacity={0.6}>
+                                          {new Date(error.timestamp).toLocaleString()}
+                                        </Text>
+                                      </HStack>
+                                      <Text fontSize="sm" opacity={0.8}>
+                                        {error.error}
+                                      </Text>
+                                    </VStack>
+                                  </Alert>
+                                ))}
+                              </VStack>
+                            )}
+                          </Box>
+                        </VStack>
+                      </Box>
+                    )}
+                </VStack>
+              </CardBody>
+            </Card>
+          </VStack>
+        </Box>
+      </Box>
     </AppLayout>
   );
 }

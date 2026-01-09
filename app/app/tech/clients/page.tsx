@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -20,6 +19,14 @@ import {
 } from "@/app/lib/clientStore";
 import { getUser } from "@/app/lib/userStore";
 import { AppLayout } from "@/app/components/layouts/AppLayout";
+import { Box, VStack, HStack, Heading, Text, Grid, GridItem, Field } from "@chakra-ui/react";
+import { Select } from "@/app/components/ui/Select";
+import { Card, CardBody, CardHeader } from "@/app/components/ui/Card";
+import { Link } from "@/app/components/ui/Link";
+import { Button } from "@/app/components/ui/Button";
+import { Input } from "@/app/components/ui/Input";
+import { Badge } from "@/app/components/ui/Badge";
+import { Alert } from "@/app/components/ui/Alert";
 
 export const dynamic = "force-dynamic";
 
@@ -36,11 +43,14 @@ export default async function TechClientsPage({
   const me = validateSessionUser(session);
 
   if (!me || me.role !== "tech") {
-    // Se la sessione era valida ma l'utente è disabilitato, fai logout
     if (session && session.userId && session.role === "tech") {
       redirect("/api/auth/logout");
     }
-    return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
+    return (
+      <Box p={6} color="var(--text-primary)">
+        Non autorizzato
+      </Box>
+    );
   }
 
   const sp = await Promise.resolve(searchParams ?? {});
@@ -62,8 +72,6 @@ export default async function TechClientsPage({
       redirect("/app/tech/clients?action=create&err=missing");
     }
 
-    // Il BE genererà l'ID automaticamente, per ora generiamo un ID temporaneo basato sul nome
-    // TODO: Modificare createClient per generare l'ID automaticamente
     const id = name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || `client-${Date.now()}`;
 
     try {
@@ -112,8 +120,6 @@ export default async function TechClientsPage({
       redirect(`/app/tech/clients?action=createApt&clientId=${cId}&err=missing`);
     }
 
-    // Il BE genererà ID e Status automaticamente, per ora generiamo valori temporanei
-    // TODO: Modificare createApartment per generare ID e Status automaticamente
     const id = `apt-${Date.now()}`;
     const status = "ok" as ApartmentStatus;
 
@@ -122,7 +128,6 @@ export default async function TechClientsPage({
         name,
         status,
         addressShort,
-        // I dettagli (WiFi, Check-in/out, Rules, Contatti) vengono aggiunti successivamente dall'host
       });
     } catch (error: any) {
       redirect(`/app/tech/clients?action=createApt&clientId=${cId}&err=${encodeURIComponent(error.message)}`);
@@ -147,7 +152,6 @@ export default async function TechClientsPage({
       redirect("/app/tech/clients?err=aptnotfound");
     }
 
-    // Aggiorna solo i campi base, i dettagli vengono gestiti dall'host
     updateApartment(id, {
       name,
       status,
@@ -185,391 +189,532 @@ export default async function TechClientsPage({
         profileImageUrl: techUser.profileImageUrl,
       } : undefined}
     >
-      <div className="max-w-4xl mx-auto space-y-4 p-4 lg:p-6">
-        <div className="flex items-center justify-between">
-          <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
-            ← Torna a Tech
-          </Link>
-        </div>
+      <Box maxW="4xl" mx="auto" p={{ base: 4, lg: 6 }}>
+        <VStack spacing={4} align="stretch">
+          <HStack justify="space-between">
+            <Link href="/app/tech" fontSize="sm" opacity={0.7} _hover={{ opacity: 1 }}>
+              ← Torna a Tech
+            </Link>
+          </HStack>
 
-        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <div className="text-lg font-semibold">Gestione Clienti e Appartamenti</div>
-              <div className="text-sm opacity-70">Crea e gestisci clienti e appartamenti</div>
-            </div>
-            {!isCreateClient && !isEditClient && !isCreateApt && !isEditApt && !isClientDetail && (
-              <Link
-                href="/app/tech/clients?action=create"
-                className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-4 py-2 font-semibold text-sm whitespace-nowrap"
-              >
-                + Nuovo Cliente
-              </Link>
-            )}
-          </div>
-
-          {/* Error Messages */}
-          {err === "missing" && (
-            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-sm">
-              Compila tutti i campi obbligatori
-            </div>
-          )}
-          {err === "notfound" && (
-            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-sm">
-              Cliente non trovato
-            </div>
-          )}
-          {err === "aptnotfound" && (
-            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-sm">
-              Appartamento non trovato
-            </div>
-          )}
-          {err && err !== "missing" && err !== "notfound" && err !== "aptnotfound" && err !== "NEXT_REDIRECT" && (
-            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-sm">
-              {decodeURIComponent(err)}
-            </div>
-          )}
-
-          {/* Form Create Client */}
-          {isCreateClient && (
-            <div className="mb-6 p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)]">
-              <div className="text-sm font-semibold mb-4">Crea Nuovo Cliente</div>
-              <form action={handleCreateClient} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Client ID</label>
-                  <input
-                    type="text"
-                    disabled
-                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-tertiary)] cursor-not-allowed"
-                    placeholder="Generato automaticamente dal BE"
-                  />
-                  <div className="text-xs text-[var(--text-tertiary)] mt-1">Il Client ID verrà generato automaticamente dal backend</div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Nome *</label>
-                  <input
-                    type="text"
-                    name="name"
-                    required
-                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    placeholder="Nome del cliente"
-                  />
-                </div>
-                <div className="flex gap-3 pt-4 border-t border-[var(--border-light)]">
-                  <button
-                    type="submit"
-                    className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-6 py-3 font-semibold"
-                  >
-                    Crea Cliente
-                  </button>
-                  <Link
-                    href="/app/tech/clients"
-                    className="rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-6 py-3 font-semibold"
-                  >
-                    Annulla
-                  </Link>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* Form Edit Client */}
-          {isEditClient && (
-            <div className="mb-6 p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)]">
-              <div className="text-sm font-semibold mb-4">Modifica Cliente: {selectedClient!.name}</div>
-              <form action={handleUpdateClient} className="space-y-4">
-                <input type="hidden" name="clientId" value={selectedClient!.clientId} />
-                <div>
-                  <label className="block text-sm font-medium mb-2">Client ID (non modificabile)</label>
-                  <input
-                    type="text"
-                    value={selectedClient!.clientId}
-                    disabled
-                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-tertiary)] cursor-not-allowed"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Nome</label>
-                  <input
-                    type="text"
-                    name="name"
-                    defaultValue={selectedClient!.name}
-                    required
-                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  />
-                </div>
-                <div className="flex gap-3 pt-4 border-t border-[var(--border-light)]">
-                  <button
-                    type="submit"
-                    className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-6 py-3 font-semibold"
-                  >
-                    Salva Modifiche
-                  </button>
-                  <Link
-                    href={`/app/tech/clients?clientId=${selectedClient!.clientId}`}
-                    className="rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-6 py-3 font-semibold"
-                  >
-                    Annulla
-                  </Link>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* Form Create Apartment */}
-          {isCreateApt && (
-            <div className="mb-6 p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)]">
-              <div className="text-sm font-semibold mb-4">Crea Nuovo Appartamento per {selectedClient!.name}</div>
-              <form action={handleCreateApartment} className="space-y-4">
-                <input type="hidden" name="clientId" value={selectedClient!.clientId} />
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Apartment ID</label>
-                    <input
-                      type="text"
-                      disabled
-                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-tertiary)] cursor-not-allowed"
-                      placeholder="Generato automaticamente dal BE"
-                    />
-                    <div className="text-xs text-[var(--text-tertiary)] mt-1">L'ID verrà generato automaticamente</div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Status</label>
-                    <input
-                      type="text"
-                      disabled
-                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-tertiary)] cursor-not-allowed"
-                      placeholder="Generato automaticamente dal BE"
-                    />
-                    <div className="text-xs text-[var(--text-tertiary)] mt-1">Lo status verrà generato automaticamente</div>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Nome *</label>
-                  <input
-                    type="text"
-                    name="name"
-                    required
-                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    placeholder="Nome dell'appartamento"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Indirizzo breve</label>
-                  <input
-                    type="text"
-                    name="addressShort"
-                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    placeholder="es: Via Demo 12, Milano"
-                  />
-                </div>
-                <div className="text-xs opacity-60 mt-2">
-                  I dettagli (Wi-Fi, Check-in/out, House Rules, Contatti) possono essere aggiunti successivamente dall'host nella vista appartamento.
-                </div>
-                <div className="flex gap-3 pt-4 border-t border-[var(--border-light)]">
-                  <button
-                    type="submit"
-                    className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-6 py-3 font-semibold"
-                  >
-                    Crea Appartamento
-                  </button>
-                  <Link
-                    href={`/app/tech/clients?clientId=${selectedClient!.clientId}`}
-                    className="rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-6 py-3 font-semibold"
-                  >
-                    Annulla
-                  </Link>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* Form Edit Apartment */}
-          {isEditApt && (
-            <div className="mb-6 p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)]">
-              <div className="text-sm font-semibold mb-4">Modifica Appartamento: {selectedApartment!.name}</div>
-              <form action={handleUpdateApartment} className="space-y-4">
-                <input type="hidden" name="aptId" value={selectedApartment!.aptId} />
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Apartment ID (non modificabile)</label>
-                    <input
-                      type="text"
-                      value={selectedApartment!.aptId}
-                      disabled
-                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-tertiary)] cursor-not-allowed"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Status</label>
-                    <select
-                      name="status"
-                      defaultValue={selectedApartment!.status}
-                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
+          <Card>
+            <CardBody p={4}>
+              <VStack spacing={4} align="stretch">
+                <HStack justify="space-between" mb={4}>
+                  <Box>
+                    <Heading as="h2" size="md" fontWeight="semibold">
+                      Gestione Clienti e Appartamenti
+                    </Heading>
+                    <Text fontSize="sm" opacity={0.7}>
+                      Crea e gestisci clienti e appartamenti
+                    </Text>
+                  </Box>
+                  {!isCreateClient && !isEditClient && !isCreateApt && !isEditApt && !isClientDetail && (
+                    <Button
+                      as={Link}
+                      href="/app/tech/clients?action=create"
+                      borderRadius="xl"
+                      bg="rgba(6, 182, 212, 0.2)"
+                      _hover={{ bg: "rgba(6, 182, 212, 0.3)" }}
+                      border="1px solid"
+                      borderColor="rgba(6, 182, 212, 0.3)"
+                      px={4}
+                      py={2}
+                      fontWeight="semibold"
+                      fontSize="sm"
+                      whiteSpace="nowrap"
                     >
-                      <option value="ok">OK</option>
-                      <option value="warn">Warn</option>
-                      <option value="crit">Crit</option>
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Nome *</label>
-                  <input
-                    type="text"
-                    name="name"
-                    defaultValue={selectedApartment!.name}
-                    required
-                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Indirizzo breve</label>
-                  <input
-                    type="text"
-                    name="addressShort"
-                    defaultValue={selectedApartment!.addressShort ?? ""}
-                    className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  />
-                </div>
-                <div className="text-xs opacity-60 mt-2">
-                  I dettagli (Wi-Fi, Check-in/out, House Rules, Contatti) possono essere modificati dall'host nella vista appartamento.
-                </div>
-                <div className="flex gap-3 pt-4 border-t border-[var(--border-light)]">
-                  <button
-                    type="submit"
-                    className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-6 py-3 font-semibold"
-                  >
-                    Salva Modifiche
-                  </button>
-                  <Link
-                    href={`/app/tech/clients?clientId=${selectedApartment!.clientId}`}
-                    className="rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-6 py-3 font-semibold"
-                  >
-                    Annulla
-                  </Link>
-                </div>
-              </form>
-            </div>
-          )}
+                      + Nuovo Cliente
+                    </Button>
+                  )}
+                </HStack>
 
-          {/* Client Detail View */}
-          {isClientDetail && (
-            <div className="space-y-2">
-              <div className="p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)]">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <div className="text-lg font-semibold">{selectedClient!.name}</div>
-                    <div className="text-sm opacity-70">Client ID: {selectedClient!.clientId}</div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Link
-                      href={`/app/tech/clients?action=edit&clientId=${selectedClient!.clientId}`}
-                      className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-4 py-2 font-semibold text-sm"
-                    >
-                      Modifica Cliente
-                    </Link>
-                    <form action={handleDeleteClient}>
-                      <input type="hidden" name="clientId" value={selectedClient!.clientId} />
-                      <button
-                        type="submit"
-                        className="rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 px-4 py-2 font-semibold text-sm"
-                      >
-                        Elimina Cliente
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="text-sm font-semibold">Appartamenti ({listApartmentsByClient(selectedClient!.clientId).length})</div>
-                  <Link
-                    href={`/app/tech/clients?action=createApt&clientId=${selectedClient!.clientId}`}
-                    className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-4 py-2 font-semibold text-sm text-cyan-700"
-                  >
-                    + Nuovo Appartamento
-                  </Link>
-                </div>
-
-                <div className="space-y-2">
-                {listApartmentsByClient(selectedClient!.clientId).length === 0 ? (
-                  <div className="text-sm opacity-60 py-8 text-center">Nessun appartamento configurato</div>
-                ) : (
-                  listApartmentsByClient(selectedClient!.clientId).map((apt) => {
-                    const statusColors = {
-                      ok: "bg-emerald-50 border-emerald-200 text-emerald-700",
-                      warn: "bg-amber-100 border-amber-300 text-amber-900",
-                      crit: "bg-red-50 border-red-200 text-red-700",
-                    };
-                    return (
-                      <div key={apt.aptId} className="flex items-center justify-between gap-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <div className="text-sm font-semibold">{apt.name}</div>
-                            <div className={`text-xs px-2 py-0.5 rounded border ${statusColors[apt.status]}`}>
-                              {apt.status.toUpperCase()}
-                            </div>
-                          </div>
-                          <div className="text-xs opacity-60 mt-1">
-                            {apt.aptId} {apt.addressShort && `• ${apt.addressShort}`}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Link
-                            href={`/app/tech/clients?action=editApt&aptId=${apt.aptId}`}
-                            className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-3 py-1.5 font-semibold text-xs"
-                          >
-                            Modifica
-                          </Link>
-                          <form action={handleDeleteApartment}>
-                            <input type="hidden" name="aptId" value={apt.aptId} />
-                            <input type="hidden" name="clientId" value={selectedClient!.clientId} />
-                            <button
-                              type="submit"
-                              className="rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 px-3 py-1.5 font-semibold text-xs"
-                            >
-                              Elimina
-                            </button>
-                          </form>
-                        </div>
-                      </div>
-                    );
-                  })
+                {/* Error Messages */}
+                {err === "missing" && (
+                  <Alert variant="error">
+                    Compila tutti i campi obbligatori
+                  </Alert>
                 )}
-                </div>
-              </div>
-            </div>
-          )}
+                {err === "notfound" && (
+                  <Alert variant="error">
+                    Cliente non trovato
+                  </Alert>
+                )}
+                {err === "aptnotfound" && (
+                  <Alert variant="error">
+                    Appartamento non trovato
+                  </Alert>
+                )}
+                {err && err !== "missing" && err !== "notfound" && err !== "aptnotfound" && err !== "NEXT_REDIRECT" && (
+                  <Alert variant="error">
+                    {decodeURIComponent(err)}
+                  </Alert>
+                )}
 
-          {/* Client List View (default) */}
-          {!isCreateClient && !isEditClient && !isCreateApt && !isEditApt && !isClientDetail && (
-            <div className="space-y-2">
-              {clients.length === 0 ? (
-                <div className="text-sm opacity-60 py-8 text-center">Nessun cliente configurato. Clicca "Nuovo Cliente" per iniziare.</div>
-              ) : (
-                clients.map((client) => (
-                  <Link
-                    key={client.clientId}
-                    href={`/app/tech/clients?clientId=${client.clientId}`}
-                    className="flex items-center justify-between gap-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-4 hover:bg-[var(--bg-secondary)] transition"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold">{client.name}</div>
-                      <div className="text-xs opacity-60 mt-1">
-                        {client.clientId} • {client.apartments.length} appartamenti
-                      </div>
-                    </div>
-                    <div className="text-xs opacity-60">→</div>
-                  </Link>
-                ))
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+                {/* Form Create Client */}
+                {isCreateClient && (
+                  <Card variant="outlined">
+                    <CardBody p={4}>
+                      <VStack spacing={4} align="stretch">
+                        <Text fontSize="sm" fontWeight="semibold" mb={4}>
+                          Crea Nuovo Cliente
+                        </Text>
+                        <Box as="form" action={handleCreateClient}>
+                          <VStack spacing={4} align="stretch">
+                            <Input
+                              type="text"
+                              label="Client ID"
+                              disabled
+                              placeholder="Generato automaticamente dal BE"
+                              helperText="Il Client ID verrà generato automaticamente dal backend"
+                            />
+                            <Input
+                              type="text"
+                              name="name"
+                              label="Nome *"
+                              required
+                              placeholder="Nome del cliente"
+                            />
+                            <HStack spacing={3} pt={4} borderTop="1px solid" borderColor="var(--border-light)">
+                              <Button
+                                type="submit"
+                                borderRadius="xl"
+                                bg="rgba(6, 182, 212, 0.2)"
+                                _hover={{ bg: "rgba(6, 182, 212, 0.3)" }}
+                                border="1px solid"
+                                borderColor="rgba(6, 182, 212, 0.3)"
+                                px={6}
+                                py={3}
+                                fontWeight="semibold"
+                              >
+                                Crea Cliente
+                              </Button>
+                              <Button
+                                as={Link}
+                                href="/app/tech/clients"
+                                variant="secondary"
+                                borderRadius="xl"
+                                px={6}
+                                py={3}
+                                fontWeight="semibold"
+                              >
+                                Annulla
+                              </Button>
+                            </HStack>
+                          </VStack>
+                        </Box>
+                      </VStack>
+                    </CardBody>
+                  </Card>
+                )}
+
+                {/* Form Edit Client */}
+                {isEditClient && (
+                  <Card variant="outlined">
+                    <CardBody p={4}>
+                      <VStack spacing={4} align="stretch">
+                        <Text fontSize="sm" fontWeight="semibold" mb={4}>
+                          Modifica Cliente: {selectedClient!.name}
+                        </Text>
+                        <Box as="form" action={handleUpdateClient}>
+                          <VStack spacing={4} align="stretch">
+                            <input type="hidden" name="clientId" value={selectedClient!.clientId} />
+                            <Input
+                              type="text"
+                              label="Client ID (non modificabile)"
+                              value={selectedClient!.clientId}
+                              disabled
+                            />
+                            <Input
+                              type="text"
+                              name="name"
+                              label="Nome"
+                              defaultValue={selectedClient!.name}
+                              required
+                            />
+                            <HStack spacing={3} pt={4} borderTop="1px solid" borderColor="var(--border-light)">
+                              <Button
+                                type="submit"
+                                borderRadius="xl"
+                                bg="rgba(6, 182, 212, 0.2)"
+                                _hover={{ bg: "rgba(6, 182, 212, 0.3)" }}
+                                border="1px solid"
+                                borderColor="rgba(6, 182, 212, 0.3)"
+                                px={6}
+                                py={3}
+                                fontWeight="semibold"
+                              >
+                                Salva Modifiche
+                              </Button>
+                              <Button
+                                as={Link}
+                                href={`/app/tech/clients?clientId=${selectedClient!.clientId}`}
+                                variant="secondary"
+                                borderRadius="xl"
+                                px={6}
+                                py={3}
+                                fontWeight="semibold"
+                              >
+                                Annulla
+                              </Button>
+                            </HStack>
+                          </VStack>
+                        </Box>
+                      </VStack>
+                    </CardBody>
+                  </Card>
+                )}
+
+                {/* Form Create Apartment */}
+                {isCreateApt && (
+                  <Card variant="outlined">
+                    <CardBody p={4}>
+                      <VStack spacing={4} align="stretch">
+                        <Text fontSize="sm" fontWeight="semibold" mb={4}>
+                          Crea Nuovo Appartamento per {selectedClient!.name}
+                        </Text>
+                        <Box as="form" action={handleCreateApartment}>
+                          <VStack spacing={4} align="stretch">
+                            <input type="hidden" name="clientId" value={selectedClient!.clientId} />
+                            <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={4}>
+                              <Input
+                                type="text"
+                                label="Apartment ID"
+                                disabled
+                                placeholder="Generato automaticamente dal BE"
+                                helperText="L'ID verrà generato automaticamente"
+                              />
+                              <Input
+                                type="text"
+                                label="Status"
+                                disabled
+                                placeholder="Generato automaticamente dal BE"
+                                helperText="Lo status verrà generato automaticamente"
+                              />
+                            </Grid>
+                            <Input
+                              type="text"
+                              name="name"
+                              label="Nome *"
+                              required
+                              placeholder="Nome dell'appartamento"
+                            />
+                            <Input
+                              type="text"
+                              name="addressShort"
+                              label="Indirizzo breve"
+                              placeholder="es: Via Demo 12, Milano"
+                            />
+                            <Text fontSize="xs" opacity={0.6} mt={2}>
+                              I dettagli (Wi-Fi, Check-in/out, House Rules, Contatti) possono essere aggiunti successivamente dall'host nella vista appartamento.
+                            </Text>
+                            <HStack spacing={3} pt={4} borderTop="1px solid" borderColor="var(--border-light)">
+                              <Button
+                                type="submit"
+                                borderRadius="xl"
+                                bg="rgba(6, 182, 212, 0.2)"
+                                _hover={{ bg: "rgba(6, 182, 212, 0.3)" }}
+                                border="1px solid"
+                                borderColor="rgba(6, 182, 212, 0.3)"
+                                px={6}
+                                py={3}
+                                fontWeight="semibold"
+                              >
+                                Crea Appartamento
+                              </Button>
+                              <Button
+                                as={Link}
+                                href={`/app/tech/clients?clientId=${selectedClient!.clientId}`}
+                                variant="secondary"
+                                borderRadius="xl"
+                                px={6}
+                                py={3}
+                                fontWeight="semibold"
+                              >
+                                Annulla
+                              </Button>
+                            </HStack>
+                          </VStack>
+                        </Box>
+                      </VStack>
+                    </CardBody>
+                  </Card>
+                )}
+
+                {/* Form Edit Apartment */}
+                {isEditApt && (
+                  <Card variant="outlined">
+                    <CardBody p={4}>
+                      <VStack spacing={4} align="stretch">
+                        <Text fontSize="sm" fontWeight="semibold" mb={4}>
+                          Modifica Appartamento: {selectedApartment!.name}
+                        </Text>
+                        <Box as="form" action={handleUpdateApartment}>
+                          <VStack spacing={4} align="stretch">
+                            <input type="hidden" name="aptId" value={selectedApartment!.aptId} />
+                            <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={4}>
+                              <Input
+                                type="text"
+                                label="Apartment ID (non modificabile)"
+                                value={selectedApartment!.aptId}
+                                disabled
+                              />
+                              <Field.Root>
+                                <Field.Label fontSize="sm" fontWeight="medium" mb={2}>Status</Field.Label>
+                                <Select
+                                  name="status"
+                                  defaultValue={selectedApartment!.status}
+                                  borderRadius="xl"
+                                  bg="var(--bg-secondary)"
+                                  border="1px solid"
+                                  borderColor="var(--border-light)"
+                                  px={4}
+                                  py={2}
+                                  color="var(--text-primary)"
+                                  _focus={{ outline: "none", ring: "2px", ringColor: "rgba(6, 182, 212, 1)" }}
+                                >
+                                  <option value="ok">OK</option>
+                                  <option value="warn">Warn</option>
+                                  <option value="crit">Crit</option>
+                                </Select>
+                              </Field.Root>
+                            </Grid>
+                            <Input
+                              type="text"
+                              name="name"
+                              label="Nome *"
+                              defaultValue={selectedApartment!.name}
+                              required
+                            />
+                            <Input
+                              type="text"
+                              name="addressShort"
+                              label="Indirizzo breve"
+                              defaultValue={selectedApartment!.addressShort ?? ""}
+                            />
+                            <Text fontSize="xs" opacity={0.6} mt={2}>
+                              I dettagli (Wi-Fi, Check-in/out, House Rules, Contatti) possono essere modificati dall'host nella vista appartamento.
+                            </Text>
+                            <HStack spacing={3} pt={4} borderTop="1px solid" borderColor="var(--border-light)">
+                              <Button
+                                type="submit"
+                                borderRadius="xl"
+                                bg="rgba(6, 182, 212, 0.2)"
+                                _hover={{ bg: "rgba(6, 182, 212, 0.3)" }}
+                                border="1px solid"
+                                borderColor="rgba(6, 182, 212, 0.3)"
+                                px={6}
+                                py={3}
+                                fontWeight="semibold"
+                              >
+                                Salva Modifiche
+                              </Button>
+                              <Button
+                                as={Link}
+                                href={`/app/tech/clients?clientId=${selectedApartment!.clientId}`}
+                                variant="secondary"
+                                borderRadius="xl"
+                                px={6}
+                                py={3}
+                                fontWeight="semibold"
+                              >
+                                Annulla
+                              </Button>
+                            </HStack>
+                          </VStack>
+                        </Box>
+                      </VStack>
+                    </CardBody>
+                  </Card>
+                )}
+
+                {/* Client Detail View */}
+                {isClientDetail && (
+                  <VStack spacing={2} align="stretch">
+                    <Card variant="outlined">
+                      <CardBody p={4}>
+                        <HStack justify="space-between" mb={4}>
+                          <Box>
+                            <Heading as="h2" size="md" fontWeight="semibold">
+                              {selectedClient!.name}
+                            </Heading>
+                            <Text fontSize="sm" opacity={0.7}>
+                              Client ID: {selectedClient!.clientId}
+                            </Text>
+                          </Box>
+                          <HStack spacing={2}>
+                            <Button
+                              as={Link}
+                              href={`/app/tech/clients?action=edit&clientId=${selectedClient!.clientId}`}
+                              borderRadius="xl"
+                              bg="rgba(6, 182, 212, 0.2)"
+                              _hover={{ bg: "rgba(6, 182, 212, 0.3)" }}
+                              border="1px solid"
+                              borderColor="rgba(6, 182, 212, 0.3)"
+                              px={4}
+                              py={2}
+                              fontWeight="semibold"
+                              fontSize="sm"
+                            >
+                              Modifica Cliente
+                            </Button>
+                            <Box as="form" action={handleDeleteClient}>
+                              <input type="hidden" name="clientId" value={selectedClient!.clientId} />
+                              <Button
+                                type="submit"
+                                variant="danger"
+                                size="sm"
+                                borderRadius="xl"
+                                px={4}
+                                py={2}
+                                fontWeight="semibold"
+                                fontSize="sm"
+                              >
+                                Elimina Cliente
+                              </Button>
+                            </Box>
+                          </HStack>
+                        </HStack>
+                      </CardBody>
+                    </Card>
+
+                    <Box mt={4}>
+                      <HStack justify="space-between" mb={3}>
+                        <Text fontSize="sm" fontWeight="semibold">
+                          Appartamenti ({listApartmentsByClient(selectedClient!.clientId).length})
+                        </Text>
+                        <Button
+                          as={Link}
+                          href={`/app/tech/clients?action=createApt&clientId=${selectedClient!.clientId}`}
+                          borderRadius="xl"
+                          bg="rgba(6, 182, 212, 0.2)"
+                          _hover={{ bg: "rgba(6, 182, 212, 0.3)" }}
+                          border="1px solid"
+                          borderColor="rgba(6, 182, 212, 0.3)"
+                          px={4}
+                          py={2}
+                          fontWeight="semibold"
+                          fontSize="sm"
+                          color="rgba(6, 182, 212, 1)"
+                        >
+                          + Nuovo Appartamento
+                        </Button>
+                      </HStack>
+
+                      <VStack spacing={2} align="stretch">
+                        {listApartmentsByClient(selectedClient!.clientId).length === 0 ? (
+                          <Text fontSize="sm" opacity={0.6} py={8} textAlign="center">
+                            Nessun appartamento configurato
+                          </Text>
+                        ) : (
+                          listApartmentsByClient(selectedClient!.clientId).map((apt) => {
+                            const statusVariant = apt.status === "ok" ? "success" : apt.status === "warn" ? "warning" : "error";
+                            return (
+                              <Card key={apt.aptId} variant="outlined">
+                                <CardBody p={3}>
+                                  <HStack justify="space-between" gap={3}>
+                                    <Box flex={1} minW={0}>
+                                      <HStack spacing={2} mb={1}>
+                                        <Text fontSize="sm" fontWeight="semibold">
+                                          {apt.name}
+                                        </Text>
+                                        <Badge variant={statusVariant} size="sm" px={2} py={0.5}>
+                                          {apt.status.toUpperCase()}
+                                        </Badge>
+                                      </HStack>
+                                      <Text fontSize="xs" opacity={0.6} mt={1}>
+                                        {apt.aptId} {apt.addressShort && `• ${apt.addressShort}`}
+                                      </Text>
+                                    </Box>
+                                    <HStack spacing={2}>
+                                      <Button
+                                        as={Link}
+                                        href={`/app/tech/clients?action=editApt&aptId=${apt.aptId}`}
+                                        size="sm"
+                                        borderRadius="xl"
+                                        bg="rgba(6, 182, 212, 0.2)"
+                                        _hover={{ bg: "rgba(6, 182, 212, 0.3)" }}
+                                        border="1px solid"
+                                        borderColor="rgba(6, 182, 212, 0.3)"
+                                        px={3}
+                                        py={1.5}
+                                        fontWeight="semibold"
+                                        fontSize="xs"
+                                      >
+                                        Modifica
+                                      </Button>
+                                      <Box as="form" action={handleDeleteApartment}>
+                                        <input type="hidden" name="aptId" value={apt.aptId} />
+                                        <input type="hidden" name="clientId" value={selectedClient!.clientId} />
+                                        <Button
+                                          type="submit"
+                                          variant="danger"
+                                          size="sm"
+                                          borderRadius="xl"
+                                          px={3}
+                                          py={1.5}
+                                          fontWeight="semibold"
+                                          fontSize="xs"
+                                        >
+                                          Elimina
+                                        </Button>
+                                      </Box>
+                                    </HStack>
+                                  </HStack>
+                                </CardBody>
+                              </Card>
+                            );
+                          })
+                        )}
+                      </VStack>
+                    </Box>
+                  </VStack>
+                )}
+
+                {/* Client List View (default) */}
+                {!isCreateClient && !isEditClient && !isCreateApt && !isEditApt && !isClientDetail && (
+                  <VStack spacing={2} align="stretch">
+                    {clients.length === 0 ? (
+                      <Text fontSize="sm" opacity={0.6} py={8} textAlign="center">
+                        Nessun cliente configurato. Clicca "Nuovo Cliente" per iniziare.
+                      </Text>
+                    ) : (
+                      clients.map((client) => (
+                        <Box
+                          key={client.clientId}
+                          as={Link}
+                          href={`/app/tech/clients?clientId=${client.clientId}`}
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="space-between"
+                          gap={3}
+                          borderRadius="xl"
+                          bg="var(--bg-secondary)"
+                          border="1px solid"
+                          borderColor="var(--border-light)"
+                          p={4}
+                          _hover={{ bg: "var(--bg-secondary)" }}
+                          transition="colors"
+                        >
+                          <Box flex={1} minW={0}>
+                            <Text fontSize="sm" fontWeight="semibold">
+                              {client.name}
+                            </Text>
+                            <Text fontSize="xs" opacity={0.6} mt={1}>
+                              {client.clientId} • {client.apartments.length} appartamenti
+                            </Text>
+                          </Box>
+                          <Text fontSize="xs" opacity={0.6}>→</Text>
+                        </Box>
+                      ))
+                    )}
+                  </VStack>
+                )}
+              </VStack>
+            </CardBody>
+          </Card>
+        </VStack>
+      </Box>
     </AppLayout>
   );
 }
-

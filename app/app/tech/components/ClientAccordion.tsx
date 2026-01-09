@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { Box, VStack, HStack, Text, Heading, Grid, GridItem, IconButton } from "@chakra-ui/react";
+import { ChevronDown } from "lucide-react";
+import { Link } from "@/app/components/ui/Link";
+import { StatusPill } from "@/app/components/ui/StatusPill";
+import { Card, CardBody } from "@/app/components/ui/Card";
 
 type Apartment = {
   aptId: string;
@@ -10,29 +14,6 @@ type Apartment = {
   network: "main" | "backup";
   lastAccessLabel: string;
 };
-
-type PillStatus = {
-  dot: string;
-  text: string;
-  box: string;
-};
-
-type PillNet = {
-  text: string;
-  box: string;
-};
-
-function pillStatus(s: "online" | "offline"): PillStatus {
-  return s === "online"
-    ? { dot: "bg-emerald-500", text: "ONLINE", box: "bg-[var(--pastel-green)] border-[var(--border-light)] text-[var(--accent-success)]" }
-    : { dot: "bg-red-500", text: "OFFLINE", box: "bg-red-100 border-[var(--border-light)] text-[var(--accent-error)]" };
-}
-
-function pillNet(n: "main" | "backup"): PillNet {
-  return n === "main"
-    ? { text: "MAIN WAN", box: "bg-[var(--bg-card)] border-[var(--border-light)] text-[var(--text-primary)]" }
-    : { text: "BACKUP WAN", box: "bg-[var(--bg-card)] border-[var(--border-light)] text-[var(--text-primary)]" };
-}
 
 interface ClientAccordionProps {
   clientName: string;
@@ -46,87 +27,104 @@ export function ClientAccordion({
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] overflow-hidden">
+    <Card variant="outlined">
       {/* Header cliccabile */}
-      <button
+      <Box
+        as="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full p-4 flex items-center justify-between hover:bg-[var(--bg-tertiary)] transition-colors"
+        w="100%"
+        p={4}
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
+        _hover={{ bg: "var(--bg-tertiary)" }}
+        transition="colors"
       >
-        <div className="font-semibold text-left">{clientName}</div>
-        <svg
-          className={`w-5 h-5 text-[var(--text-primary)] transition-transform duration-200 ${
-            isOpen ? "rotate-180" : ""
-          }`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
-      </button>
+        <Text fontWeight="semibold" textAlign="left">
+          {clientName}
+        </Text>
+        <Box
+          as={ChevronDown}
+          w={5}
+          h={5}
+          color="var(--text-primary)"
+          transition="transform 0.2s"
+          transform={isOpen ? "rotate(180deg)" : "rotate(0deg)"}
+        />
+      </Box>
 
       {/* Contenuto collassabile */}
       {isOpen && (
-        <div className="border-t border-[var(--border-light)]">
+        <Box borderTop="1px solid" borderColor="var(--border-light)">
           {/* Header tabella */}
-          <div className="hidden sm:grid grid-cols-[1.2fr_1fr_1fr_1fr] gap-2 p-4 text-xs uppercase tracking-wider opacity-60">
-            <div>Apartment</div>
-            <div>Status</div>
-            <div>Network</div>
-            <div>Last Access</div>
-          </div>
+          <Grid
+            templateColumns={{ base: "1fr", sm: "1.2fr 1fr 1fr 1fr" }}
+            gap={2}
+            p={4}
+            fontSize="xs"
+            textTransform="uppercase"
+            letterSpacing="wider"
+            opacity={0.6}
+            display={{ base: "none", sm: "grid" }}
+          >
+            <Box>Apartment</Box>
+            <Box>Status</Box>
+            <Box>Network</Box>
+            <Box>Last Access</Box>
+          </Grid>
 
           {/* Lista appartamenti */}
-          <div className="px-4 pt-2 pb-4 space-y-2">
-            {apartments.map((apt) => {
-              const st = pillStatus(apt.status);
-              const net = pillNet(apt.network);
-
-              return (
-                <Link
+          <Box px={4} pt={2} pb={4}>
+            <VStack spacing={2} align="stretch">
+              {apartments.map((apt) => (
+                <Box
                   key={apt.aptId}
+                  as={Link}
                   href={`/app/tech/apt/${apt.aptId}`}
-                  className="grid grid-cols-1 sm:grid-cols-[1.2fr_1fr_1fr_1fr] gap-2 items-start sm:items-center rounded-xl bg-[var(--bg-card)] border border-[var(--border-light)] px-4 py-3 hover:border-[var(--border-medium)] active:scale-[.99] transition"
+                  display="grid"
+                  gridTemplateColumns={{ base: "1fr", sm: "1.2fr 1fr 1fr 1fr" }}
+                  gap={2}
+                  alignItems={{ base: "start", sm: "center" }}
+                  borderRadius="xl"
+                  bg="var(--bg-card)"
+                  border="1px solid"
+                  borderColor="var(--border-light)"
+                  px={4}
+                  py={3}
+                  _hover={{ borderColor: "var(--border-medium)" }}
+                  transition="all"
+                  _active={{ transform: "scale(0.99)" }}
                 >
-                  <div className="font-semibold">{apt.aptName}</div>
+                  <Text fontWeight="semibold">{apt.aptName}</Text>
 
-                  <div className="flex flex-col sm:block gap-1">
-                    <span className="text-xs opacity-60 sm:hidden">Status</span>
-                    <div
-                      className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold ${st.box}`}
-                    >
-                      <span className={`h-2 w-2 rounded-full ${st.dot}`} />
-                      {st.text}
-                    </div>
-                  </div>
+                  <VStack align={{ base: "start", sm: "stretch" }} spacing={1}>
+                    <Text fontSize="xs" opacity={0.6} display={{ base: "block", sm: "none" }}>
+                      Status
+                    </Text>
+                    <StatusPill status={apt.status} />
+                  </VStack>
 
-                  <div className="flex flex-col sm:block gap-1">
-                    <span className="text-xs opacity-60 sm:hidden">Network</span>
-                    <div
-                      className={`inline-flex items-center rounded-lg border px-3 py-2 text-xs font-semibold ${net.box}`}
-                    >
-                      {net.text}
-                    </div>
-                  </div>
+                  <VStack align={{ base: "start", sm: "stretch" }} spacing={1}>
+                    <Text fontSize="xs" opacity={0.6} display={{ base: "block", sm: "none" }}>
+                      Network
+                    </Text>
+                    <StatusPill status={apt.network} />
+                  </VStack>
 
-                  <div className="flex flex-col sm:block gap-1">
-                    <span className="text-xs opacity-60 sm:hidden">Last Access</span>
-                    <div className="text-sm opacity-90 mt-1 sm:mt-0">
+                  <VStack align={{ base: "start", sm: "stretch" }} spacing={1}>
+                    <Text fontSize="xs" opacity={0.6} display={{ base: "block", sm: "none" }}>
+                      Last Access
+                    </Text>
+                    <Text fontSize="sm" opacity={0.9} mt={{ base: 1, sm: 0 }}>
                       {apt.lastAccessLabel}
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
+                    </Text>
+                  </VStack>
+                </Box>
+              ))}
+            </VStack>
+          </Box>
+        </Box>
       )}
-    </div>
+    </Card>
   );
 }
-

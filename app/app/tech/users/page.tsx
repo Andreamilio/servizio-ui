@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -18,6 +17,14 @@ import {
 import { listClients } from "@/app/lib/clientStore";
 import { UserImageEditor } from "../../components/UserImageEditor";
 import { AppLayout } from "@/app/components/layouts/AppLayout";
+import { Box, VStack, HStack, Heading, Text, Image, Divider, Field } from "@chakra-ui/react";
+import { Select } from "@/app/components/ui/Select";
+import { Card, CardBody, CardHeader } from "@/app/components/ui/Card";
+import { Link } from "@/app/components/ui/Link";
+import { Button } from "@/app/components/ui/Button";
+import { Input } from "@/app/components/ui/Input";
+import { Badge } from "@/app/components/ui/Badge";
+import { Alert } from "@/app/components/ui/Alert";
 
 export const dynamic = "force-dynamic";
 
@@ -41,11 +48,14 @@ export default async function TechUsersPage({
   const me = validateSessionUser(session);
 
   if (!me || me.role !== "tech") {
-    // Se la sessione era valida ma l'utente è disabilitato, fai logout
     if (session && session.userId && session.role === "tech") {
       redirect("/api/auth/logout");
     }
-    return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
+    return (
+      <Box p={6} color="var(--text-primary)">
+        Non autorizzato
+      </Box>
+    );
   }
 
   const sp = await Promise.resolve(searchParams ?? {});
@@ -77,7 +87,6 @@ export default async function TechUsersPage({
       if (errorMessage.includes("già esistente")) {
         redirect("/app/tech/users?action=create&err=exists");
       } else {
-        // Altri errori - reindirizza senza mostrare errore specifico
         revalidatePath("/app/tech/users");
         redirect("/app/tech/users");
       }
@@ -100,7 +109,7 @@ export default async function TechUsersPage({
       if (errorMessage.includes("già esistente")) {
         redirect(`/app/tech/users?action=edit&userId=${id}&err=exists`);
       }
-      throw error; // Rilancia altri errori
+      throw error;
     }
     redirect("/app/tech/users");
   }
@@ -153,311 +162,446 @@ export default async function TechUsersPage({
         profileImageUrl: techUser.profileImageUrl,
       } : undefined}
     >
-      <div className="max-w-4xl mx-auto space-y-4 p-4 lg:p-6">
-        <div className="flex items-center justify-between">
-          <Link className="text-sm opacity-70 hover:opacity-100" href="/app/tech">
-            ← Torna a Tech
-          </Link>
-        </div>
+      <Box maxW="4xl" mx="auto" p={{ base: 4, lg: 6 }}>
+        <VStack spacing={4} align="stretch">
+          <HStack justify="space-between">
+            <Link href="/app/tech" fontSize="sm" opacity={0.7} _hover={{ opacity: 1 }}>
+              ← Torna a Tech
+            </Link>
+          </HStack>
 
-        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <div className="text-lg font-semibold">Gestione Utenti</div>
-              <div className="text-sm opacity-70">Tech e Host users</div>
-            </div>
-            {!isCreateMode && !isEditMode && (
-              <Link
-                href="/app/tech/users?action=create"
-                className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-4 py-2 font-semibold text-sm"
-              >
-                + Nuovo Utente
-              </Link>
-            )}
-          </div>
-
-          {err === "missing" && (
-            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-sm">
-              Username e password sono obbligatori
-            </div>
-          )}
-
-          {err === "exists" && (
-            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-sm">
-              Username già esistente
-            </div>
-          )}
-
-          {/* Form Create/Edit */}
-          {(isCreateMode || isEditMode) && (
-            <div className="mb-6 p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)]">
-              <div className="text-sm font-semibold mb-4">
-                {isCreateMode ? "Crea Nuovo Utente" : `Modifica: ${selectedUser?.username}`}
-              </div>
-
-              {isCreateMode ? (
-                <form action={handleCreate} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Username</label>
-                    <input
-                      type="text"
-                      name="username"
-                      required
-                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Password</label>
-                    <input
-                      type="password"
-                      name="password"
-                      required
-                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Ruolo</label>
-                    <select
-                      name="role"
-                      defaultValue="tech"
-                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
+          <Card>
+            <CardBody p={4}>
+              <VStack spacing={4} align="stretch">
+                <HStack justify="space-between">
+                  <Box>
+                    <Heading as="h2" size="md" fontWeight="semibold">
+                      Gestione Utenti
+                    </Heading>
+                    <Text fontSize="sm" opacity={0.7}>
+                      Tech e Host users
+                    </Text>
+                  </Box>
+                  {!isCreateMode && !isEditMode && (
+                    <Button
+                      as={Link}
+                      href="/app/tech/users?action=create"
+                      borderRadius="xl"
+                      bg="rgba(6, 182, 212, 0.2)"
+                      _hover={{ bg: "rgba(6, 182, 212, 0.3)" }}
+                      border="1px solid"
+                      borderColor="rgba(6, 182, 212, 0.3)"
+                      px={4}
+                      py={2}
+                      fontWeight="semibold"
+                      fontSize="sm"
                     >
-                      <option value="tech">Tech</option>
-                      <option value="host">Host</option>
-                    </select>
-                  </div>
+                      + Nuovo Utente
+                    </Button>
+                  )}
+                </HStack>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Client (solo per Host, opzionale)</label>
-                    <select
-                      name="clientId"
-                      className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    >
-                      <option value="">Nessuno (accesso a tutti i client)</option>
-                      {clients.map((c) => (
-                        <option key={c.clientId} value={c.clientId}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                {err === "missing" && (
+                  <Alert variant="error">
+                    Username e password sono obbligatori
+                  </Alert>
+                )}
 
-                  <div className="flex gap-3 pt-4 border-t border-[var(--border-light)]">
-                    <button
-                      type="submit"
-                      className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-6 py-3 font-semibold"
-                    >
-                      Crea Utente
-                    </button>
-                    <Link
-                      href="/app/tech/users"
-                      className="rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-6 py-3 font-semibold"
-                    >
-                      Annulla
-                    </Link>
-                  </div>
-                </form>
-              ) : (
-                <>
-                  <form action={handleUpdate} className="space-y-4 mb-6">
-                    <input type="hidden" name="userId" value={selectedUser!.userId} />
+                {err === "exists" && (
+                  <Alert variant="error">
+                    Username già esistente
+                  </Alert>
+                )}
 
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Username</label>
-                      <input
-                        type="text"
-                        name="username"
-                        defaultValue={selectedUser!.username}
-                        required
-                        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                      />
-                    </div>
+                {/* Form Create/Edit */}
+                {(isCreateMode || isEditMode) && (
+                  <Card variant="outlined">
+                    <CardBody p={4}>
+                      <VStack spacing={4} align="stretch">
+                        <Text fontSize="sm" fontWeight="semibold" mb={4}>
+                          {isCreateMode ? "Crea Nuovo Utente" : `Modifica: ${selectedUser?.username}`}
+                        </Text>
 
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Ruolo</label>
-                      <select
-                        name="role"
-                        defaultValue={selectedUser!.role}
-                        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                      >
-                        <option value="tech">Tech</option>
-                        <option value="host">Host</option>
-                      </select>
-                    </div>
+                        {isCreateMode ? (
+                          <Box as="form" action={handleCreate}>
+                            <VStack spacing={4} align="stretch">
+                              <Input
+                                type="text"
+                                name="username"
+                                label="Username"
+                                required
+                              />
 
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Client (solo per Host, opzionale)</label>
-                      <select
-                        name="clientId"
-                        defaultValue={selectedUser!.clientId || ""}
-                        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                      >
-                        <option value="">Nessuno (accesso a tutti i client)</option>
-                        {clients.map((c) => (
-                          <option key={c.clientId} value={c.clientId}>
-                            {c.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                              <Input
+                                type="password"
+                                name="password"
+                                label="Password"
+                                required
+                              />
 
-                    <div className="pt-4 border-t border-[var(--border-light)]">
-                      <UserImageEditor
-                        userId={selectedUser!.userId}
-                        username={selectedUser!.username}
-                        currentImageUrl={selectedUser!.profileImageUrl}
-                      />
-                    </div>
+                              <Field.Root>
+                                <Field.Label fontSize="sm" fontWeight="medium" mb={2}>Ruolo</Field.Label>
+                                <Select
+                                  name="role"
+                                  defaultValue="tech"
+                                  borderRadius="xl"
+                                  bg="var(--bg-secondary)"
+                                  border="1px solid"
+                                  borderColor="var(--border-light)"
+                                  px={4}
+                                  py={2}
+                                  color="var(--text-primary)"
+                                  _focus={{ outline: "none", ring: "2px", ringColor: "rgba(6, 182, 212, 1)" }}
+                                >
+                                  <option value="tech">Tech</option>
+                                  <option value="host">Host</option>
+                                </Select>
+                              </Field.Root>
 
-                    <div className="flex gap-3 pt-4 border-t border-[var(--border-light)]">
-                      <button
-                        type="submit"
-                        className="rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-6 py-3 font-semibold"
-                      >
-                        Salva Modifiche
-                      </button>
-                      <Link
-                        href="/app/tech/users"
-                        className="rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-6 py-3 font-semibold"
-                      >
-                        Annulla
-                      </Link>
-                    </div>
-                  </form>
+                              <Field.Root>
+                                <Field.Label fontSize="sm" fontWeight="medium" mb={2}>Client (solo per Host, opzionale)</Field.Label>
+                                <Select
+                                  name="clientId"
+                                  borderRadius="xl"
+                                  bg="var(--bg-secondary)"
+                                  border="1px solid"
+                                  borderColor="var(--border-light)"
+                                  px={4}
+                                  py={2}
+                                  color="var(--text-primary)"
+                                  _focus={{ outline: "none", ring: "2px", ringColor: "rgba(6, 182, 212, 1)" }}
+                                >
+                                  <option value="">Nessuno (accesso a tutti i client)</option>
+                                  {clients.map((c) => (
+                                    <option key={c.clientId} value={c.clientId}>
+                                      {c.name}
+                                    </option>
+                                  ))}
+                                </Select>
+                              </Field.Root>
 
-                  <form action={handleUpdatePassword} className="space-y-4 p-4 rounded-xl bg-amber-500/5 border border-amber-400/10">
-                    <div className="text-sm font-semibold mb-2 text-[var(--text-primary)]">Cambia Password</div>
-                    <input type="hidden" name="userId" value={selectedUser!.userId} />
+                              <HStack spacing={3} pt={4} borderTop="1px solid" borderColor="var(--border-light)">
+                                <Button
+                                  type="submit"
+                                  borderRadius="xl"
+                                  bg="rgba(6, 182, 212, 0.2)"
+                                  _hover={{ bg: "rgba(6, 182, 212, 0.3)" }}
+                                  border="1px solid"
+                                  borderColor="rgba(6, 182, 212, 0.3)"
+                                  px={6}
+                                  py={3}
+                                  fontWeight="semibold"
+                                >
+                                  Crea Utente
+                                </Button>
+                                <Button
+                                  as={Link}
+                                  href="/app/tech/users"
+                                  variant="secondary"
+                                  borderRadius="xl"
+                                  px={6}
+                                  py={3}
+                                  fontWeight="semibold"
+                                >
+                                  Annulla
+                                </Button>
+                              </HStack>
+                            </VStack>
+                          </Box>
+                        ) : (
+                          <>
+                            <Box as="form" action={handleUpdate}>
+                              <VStack spacing={4} align="stretch" mb={6}>
+                                <input type="hidden" name="userId" value={selectedUser!.userId} />
 
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Nuova Password</label>
-                      <input
-                        type="password"
-                        name="newPassword"
-                        required
-                        className="w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                      />
-                    </div>
+                                <Input
+                                  type="text"
+                                  name="username"
+                                  label="Username"
+                                  defaultValue={selectedUser!.username}
+                                  required
+                                />
 
-                    <button
-                      type="submit"
-                      className="rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/30 px-4 py-2 font-semibold text-sm text-[var(--accent-warning)]"
-                    >
-                      Aggiorna Password
-                    </button>
-                  </form>
-                </>
-              )}
-            </div>
-          )}
+                                <Field.Root>
+                                  <Field.Label fontSize="sm" fontWeight="medium" mb={2}>Ruolo</Field.Label>
+                                  <Select
+                                    name="role"
+                                    defaultValue={selectedUser!.role}
+                                    borderRadius="xl"
+                                    bg="var(--bg-secondary)"
+                                    border="1px solid"
+                                    borderColor="var(--border-light)"
+                                    px={4}
+                                    py={2}
+                                    color="var(--text-primary)"
+                                    _focus={{ outline: "none", ring: "2px", ringColor: "rgba(6, 182, 212, 1)" }}
+                                  >
+                                    <option value="tech">Tech</option>
+                                    <option value="host">Host</option>
+                                  </Select>
+                                </Field.Root>
 
-          {/* Lista Utenti */}
-          {!isCreateMode && !isEditMode && (
-            <div className="space-y-2">
-              {users.length === 0 ? (
-                <div className="text-sm opacity-60 py-8 text-center">Nessun utente configurato</div>
-              ) : (
-                users.map((user) => (
-                  <div
-                    key={user.userId}
-                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3"
-                  >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      {user.profileImageUrl ? (
-                        <img
-                          src={user.profileImageUrl}
-                          alt={user.username}
-                          className="w-10 h-10 rounded-full object-cover border border-[var(--border-light)] flex-shrink-0"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-[var(--pastel-blue)] border border-[var(--border-light)] flex items-center justify-center flex-shrink-0">
-                          <span className="text-xs font-semibold text-[var(--accent-primary)]">
-                            {getInitials(user.username)}
-                          </span>
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <div className="text-sm font-semibold">{user.username}</div>
-                        <div
-                          className={`text-xs px-2 py-0.5 rounded border ${
-                            user.role === "tech"
-                              ? "bg-[var(--pastel-blue)] border-[var(--border-light)] text-[var(--accent-primary)]"
-                              : "bg-[var(--pastel-purple)] border-[var(--border-light)] text-purple-700"
-                          }`}
-                        >
-                          {user.role.toUpperCase()}
-                        </div>
-                        {!user.enabled && (
-                          <div className="text-xs px-2 py-0.5 rounded bg-red-100 border border-[var(--border-light)] text-[var(--accent-error)]">
-                            DISABILITATO
-                          </div>
+                                <Field.Root>
+                                  <Field.Label fontSize="sm" fontWeight="medium" mb={2}>Client (solo per Host, opzionale)</Field.Label>
+                                  <Select
+                                    name="clientId"
+                                    defaultValue={selectedUser!.clientId || ""}
+                                    borderRadius="xl"
+                                    bg="var(--bg-secondary)"
+                                    border="1px solid"
+                                    borderColor="var(--border-light)"
+                                    px={4}
+                                    py={2}
+                                    color="var(--text-primary)"
+                                    _focus={{ outline: "none", ring: "2px", ringColor: "rgba(6, 182, 212, 1)" }}
+                                  >
+                                    <option value="">Nessuno (accesso a tutti i client)</option>
+                                    {clients.map((c) => (
+                                      <option key={c.clientId} value={c.clientId}>
+                                        {c.name}
+                                      </option>
+                                    ))}
+                                  </Select>
+                                </Field.Root>
+
+                                <Box pt={4} borderTop="1px solid" borderColor="var(--border-light)">
+                                  <UserImageEditor
+                                    userId={selectedUser!.userId}
+                                    username={selectedUser!.username}
+                                    currentImageUrl={selectedUser!.profileImageUrl}
+                                  />
+                                </Box>
+
+                                <HStack spacing={3} pt={4} borderTop="1px solid" borderColor="var(--border-light)">
+                                  <Button
+                                    type="submit"
+                                    borderRadius="xl"
+                                    bg="rgba(6, 182, 212, 0.2)"
+                                    _hover={{ bg: "rgba(6, 182, 212, 0.3)" }}
+                                    border="1px solid"
+                                    borderColor="rgba(6, 182, 212, 0.3)"
+                                    px={6}
+                                    py={3}
+                                    fontWeight="semibold"
+                                  >
+                                    Salva Modifiche
+                                  </Button>
+                                  <Button
+                                    as={Link}
+                                    href="/app/tech/users"
+                                    variant="secondary"
+                                    borderRadius="xl"
+                                    px={6}
+                                    py={3}
+                                    fontWeight="semibold"
+                                  >
+                                    Annulla
+                                  </Button>
+                                </HStack>
+                              </VStack>
+                            </Box>
+
+                            <Box as="form" action={handleUpdatePassword} p={4} borderRadius="xl" bg="rgba(245, 158, 11, 0.05)" border="1px solid" borderColor="rgba(245, 158, 11, 0.1)">
+                              <VStack spacing={4} align="stretch">
+                                <Text fontSize="sm" fontWeight="semibold" mb={2} color="var(--text-primary)">
+                                  Cambia Password
+                                </Text>
+                                <input type="hidden" name="userId" value={selectedUser!.userId} />
+
+                                <Input
+                                  type="password"
+                                  name="newPassword"
+                                  label="Nuova Password"
+                                  required
+                                />
+
+                                <Button
+                                  type="submit"
+                                  borderRadius="xl"
+                                  bg="rgba(245, 158, 11, 0.2)"
+                                  _hover={{ bg: "rgba(245, 158, 11, 0.3)" }}
+                                  border="1px solid"
+                                  borderColor="rgba(245, 158, 11, 0.3)"
+                                  px={4}
+                                  py={2}
+                                  fontWeight="semibold"
+                                  fontSize="sm"
+                                  color="var(--accent-warning)"
+                                >
+                                  Aggiorna Password
+                                </Button>
+                              </VStack>
+                            </Box>
+                          </>
                         )}
-                      </div>
-                        <div className="text-xs opacity-60 mt-1.5 space-y-0.5">
-                          {user.clientId && (
-                            <div>
-                              Client: {clients.find((c) => c.clientId === user.clientId)?.name || user.clientId}
-                            </div>
-                          )}
-                          {user.lastLoginAt && (
-                            <div>
-                              Ultimo accesso: {new Date(user.lastLoginAt).toLocaleString()}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                      </VStack>
+                    </CardBody>
+                  </Card>
+                )}
 
-                    <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                      <Link
-                        href={`/app/tech/users?action=edit&userId=${user.userId}`}
-                        className="rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-3 py-1.5 font-semibold text-xs"
-                      >
-                        Modifica
-                      </Link>
-                      {user.enabled ? (
-                        <form action={handleToggleEnabled}>
-                          <input type="hidden" name="userId" value={user.userId} />
-                          <input type="hidden" name="enabled" value="false" />
-                          <button
-                            type="submit"
-                            className="rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/30 px-3 py-1.5 font-semibold text-xs text-[var(--accent-warning)]"
-                          >
-                            Disabilita
-                          </button>
-                        </form>
-                      ) : (
-                        <form action={handleToggleEnabled}>
-                          <input type="hidden" name="userId" value={user.userId} />
-                          <input type="hidden" name="enabled" value="true" />
-                          <button
-                            type="submit"
-                            className="rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 px-3 py-1.5 font-semibold text-xs"
-                          >
-                            Abilita
-                          </button>
-                        </form>
-                      )}
-                      <form action={handleDelete}>
-                        <input type="hidden" name="userId" value={user.userId} />
-                        <button
-                          type="submit"
-                          className="rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 px-3 py-1.5 font-semibold text-xs"
-                        >
-                          Elimina
-                        </button>
-                      </form>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+                {/* Lista Utenti */}
+                {!isCreateMode && !isEditMode && (
+                  <VStack spacing={2} align="stretch">
+                    {users.length === 0 ? (
+                      <Text fontSize="sm" opacity={0.6} py={8} textAlign="center">
+                        Nessun utente configurato
+                      </Text>
+                    ) : (
+                      users.map((user) => (
+                        <Card key={user.userId} variant="outlined">
+                          <CardBody p={3}>
+                            <VStack spacing={3} align="stretch">
+                              <HStack justify="space-between" gap={3} flexDir={{ base: "column", sm: "row" }}>
+                                <HStack spacing={3} flex={1} minW={0}>
+                                  {user.profileImageUrl ? (
+                                    <Image
+                                      src={user.profileImageUrl}
+                                      alt={user.username}
+                                      w={10}
+                                      h={10}
+                                      borderRadius="full"
+                                      objectFit="cover"
+                                      border="1px solid"
+                                      borderColor="var(--border-light)"
+                                      flexShrink={0}
+                                    />
+                                  ) : (
+                                    <Box
+                                      w={10}
+                                      h={10}
+                                      borderRadius="full"
+                                      bg="var(--pastel-blue)"
+                                      border="1px solid"
+                                      borderColor="var(--border-light)"
+                                      display="flex"
+                                      alignItems="center"
+                                      justifyContent="center"
+                                      flexShrink={0}
+                                    >
+                                      <Text fontSize="xs" fontWeight="semibold" color="var(--accent-primary)">
+                                        {getInitials(user.username)}
+                                      </Text>
+                                    </Box>
+                                  )}
+                                  <Box flex={1} minW={0}>
+                                    <HStack spacing={2} flexWrap="wrap" mb={1.5}>
+                                      <Text fontSize="sm" fontWeight="semibold">
+                                        {user.username}
+                                      </Text>
+                                      <Badge
+                                        variant={user.role === "tech" ? "info" : "default"}
+                                        size="sm"
+                                        px={2}
+                                        py={0.5}
+                                      >
+                                        {user.role.toUpperCase()}
+                                      </Badge>
+                                      {!user.enabled && (
+                                        <Badge variant="error" size="sm" px={2} py={0.5}>
+                                          DISABILITATO
+                                        </Badge>
+                                      )}
+                                    </HStack>
+                                    <VStack spacing={0.5} align="stretch" fontSize="xs" opacity={0.6}>
+                                      {user.clientId && (
+                                        <Text>
+                                          Client: {clients.find((c) => c.clientId === user.clientId)?.name || user.clientId}
+                                        </Text>
+                                      )}
+                                      {user.lastLoginAt && (
+                                        <Text>
+                                          Ultimo accesso: {new Date(user.lastLoginAt).toLocaleString()}
+                                        </Text>
+                                      )}
+                                    </VStack>
+                                  </Box>
+                                </HStack>
+
+                                <HStack spacing={2} flexWrap="wrap" justify={{ base: "start", sm: "end" }}>
+                                  <Button
+                                    as={Link}
+                                    href={`/app/tech/users?action=edit&userId=${user.userId}`}
+                                    variant="secondary"
+                                    size="sm"
+                                    borderRadius="xl"
+                                    px={3}
+                                    py={1.5}
+                                    fontWeight="semibold"
+                                    fontSize="xs"
+                                  >
+                                    Modifica
+                                  </Button>
+                                  {user.enabled ? (
+                                    <Box as="form" action={handleToggleEnabled}>
+                                      <input type="hidden" name="userId" value={user.userId} />
+                                      <input type="hidden" name="enabled" value="false" />
+                                      <Button
+                                        type="submit"
+                                        size="sm"
+                                        borderRadius="xl"
+                                        bg="rgba(245, 158, 11, 0.2)"
+                                        _hover={{ bg: "rgba(245, 158, 11, 0.3)" }}
+                                        border="1px solid"
+                                        borderColor="rgba(245, 158, 11, 0.3)"
+                                        px={3}
+                                        py={1.5}
+                                        fontWeight="semibold"
+                                        fontSize="xs"
+                                        color="var(--accent-warning)"
+                                      >
+                                        Disabilita
+                                      </Button>
+                                    </Box>
+                                  ) : (
+                                    <Box as="form" action={handleToggleEnabled}>
+                                      <input type="hidden" name="userId" value={user.userId} />
+                                      <input type="hidden" name="enabled" value="true" />
+                                      <Button
+                                        type="submit"
+                                        size="sm"
+                                        borderRadius="xl"
+                                        bg="rgba(16, 185, 129, 0.2)"
+                                        _hover={{ bg: "rgba(16, 185, 129, 0.3)" }}
+                                        border="1px solid"
+                                        borderColor="rgba(16, 185, 129, 0.3)"
+                                        px={3}
+                                        py={1.5}
+                                        fontWeight="semibold"
+                                        fontSize="xs"
+                                      >
+                                        Abilita
+                                      </Button>
+                                    </Box>
+                                  )}
+                                  <Box as="form" action={handleDelete}>
+                                    <input type="hidden" name="userId" value={user.userId} />
+                                    <Button
+                                      type="submit"
+                                      variant="danger"
+                                      size="sm"
+                                      borderRadius="xl"
+                                      px={3}
+                                      py={1.5}
+                                      fontWeight="semibold"
+                                      fontSize="xs"
+                                    >
+                                      Elimina
+                                    </Button>
+                                  </Box>
+                                </HStack>
+                              </HStack>
+                            </VStack>
+                          </CardBody>
+                        </Card>
+                      ))
+                    )}
+                  </VStack>
+                )}
+              </VStack>
+            </CardBody>
+          </Card>
+        </VStack>
+      </Box>
     </AppLayout>
   );
 }

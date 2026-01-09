@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Box, Image, Text } from "@chakra-ui/react";
 import { UserProfileModal } from "./UserProfileModal";
 
 type UserProfileProps = {
@@ -14,7 +15,6 @@ export function UserProfile({ userId, username, role, profileImageUrl }: UserPro
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // Evita problemi di hydration renderizzando solo dopo il mount
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -28,35 +28,63 @@ export function UserProfile({ userId, username, role, profileImageUrl }: UserPro
       .slice(0, 2);
   }
 
-  // Durante SSR, renderizza solo un placeholder per evitare mismatch
   if (!mounted) {
     return (
-      <div className="w-8 h-8 rounded-full bg-[var(--pastel-blue)] border border-[var(--border-light)] flex items-center justify-center">
-        <span className="text-xs font-semibold text-[var(--accent-primary)]">
+      <Box
+        w={8}
+        h={8}
+        borderRadius="full"
+        bg="var(--pastel-blue)"
+        border="1px solid"
+        borderColor="var(--border-light)"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <Text fontSize="xs" fontWeight="semibold" color="var(--accent-primary)">
           {getInitials(username)}
-        </span>
-      </div>
+        </Text>
+      </Box>
     );
   }
 
   return (
     <>
       {profileImageUrl ? (
-        <img
+        <Image
           src={profileImageUrl}
           alt={username}
           onClick={() => setIsModalOpen(true)}
-          className="w-8 h-8 rounded-full object-cover border border-[var(--border-light)] cursor-pointer hover:opacity-80 transition-opacity"
+          w={8}
+          h={8}
+          borderRadius="full"
+          objectFit="cover"
+          border="1px solid"
+          borderColor="var(--border-light)"
+          cursor="pointer"
+          _hover={{ opacity: 0.8 }}
+          transition="opacity"
         />
       ) : (
-        <div
+        <Box
           onClick={() => setIsModalOpen(true)}
-          className="w-8 h-8 rounded-full bg-[var(--pastel-blue)] border border-[var(--border-light)] flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+          w={8}
+          h={8}
+          borderRadius="full"
+          bg="var(--pastel-blue)"
+          border="1px solid"
+          borderColor="var(--border-light)"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          cursor="pointer"
+          _hover={{ opacity: 0.8 }}
+          transition="opacity"
         >
-          <span className="text-xs font-semibold text-[var(--accent-primary)]">
+          <Text fontSize="xs" fontWeight="semibold" color="var(--accent-primary)">
             {getInitials(username)}
-          </span>
-        </div>
+          </Text>
+        </Box>
       )}
 
       {isModalOpen && (

@@ -1,82 +1,120 @@
-import Link from "next/link";
+"use client";
+
+import { Box, VStack, HStack, Heading, Text, Image } from "@chakra-ui/react";
 import { Input } from "@/app/components/ui/Input";
 import { Button } from "@/app/components/ui/Button";
 import { Card, CardBody } from "@/app/components/ui/Card";
+import { Alert } from "@/app/components/ui/Alert";
+import { Link } from "@/app/components/ui/Link";
 import { KeyRound } from "lucide-react";
 import { OpenA2HSLink } from "@/app/components/OpenA2HSLink";
+import { useSearchParams } from "next/navigation";
 
-export default function LoginPage({ searchParams }: any) {
-  const next = typeof searchParams?.next === "string" ? searchParams.next : "";
-  const err = typeof searchParams?.err === "string" ? searchParams.err : "";
+export default function LoginPage() {
+  const searchParams = useSearchParams();
+  const next = searchParams?.get("next") || "";
+  const err = searchParams?.get("err") || "";
 
   return (
-    <main className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-md">
-        <Card variant="elevated" className="w-full">
-          <CardBody className="space-y-6">
-            <div className="text-center space-y-4">
-              <div className="flex justify-center">
-                <img 
-                  src="/easy-stay-192.png" 
-                  alt="easy stay" 
-                  className="w-24 h-24 object-contain"
-                />
-              </div>
-              <div className="text-center space-y-2">
-                <div className="flex justify-center">
-                  <div className="p-3 rounded-2xl bg-[var(--pastel-blue)]">
-                    <KeyRound className="w-8 h-8 text-[var(--accent-primary)]" />
-                  </div>
-                </div>
-                <h1 className="text-2xl font-semibold text-[var(--text-primary)]">Accesso Guest / Cleaner</h1>
-                <p className="text-sm text-[var(--text-secondary)]">Inserisci il tuo PIN per accedere</p>
-              </div>
-            </div>
+    <Box
+      as="main"
+      minH="100vh"
+      bg="var(--bg-primary)"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      p={{ base: 4, sm: 6 }}
+    >
+      <Box w="100%" maxW="md">
+        <Card variant="elevated" w="100%">
+          <CardBody>
+            <VStack spacing={6}>
+              <VStack spacing={4} textAlign="center">
+                <HStack justify="center">
+                  <Image
+                    src="/easy-stay-192.png"
+                    alt="easy stay"
+                    w={24}
+                    h={24}
+                    objectFit="contain"
+                  />
+                </HStack>
+                <VStack spacing={2} textAlign="center">
+                  <HStack justify="center">
+                    <Box
+                      p={3}
+                      borderRadius="2xl"
+                      bg="var(--pastel-blue)"
+                    >
+                      <KeyRound size={32} color="var(--accent-primary)" />
+                    </Box>
+                  </HStack>
+                  <Heading as="h1" size="xl" fontWeight="semibold" color="var(--text-primary)">
+                    Accesso Guest / Cleaner
+                  </Heading>
+                  <Text fontSize="sm" color="var(--text-secondary)">
+                    Inserisci il tuo PIN per accedere
+                  </Text>
+                </VStack>
+              </VStack>
 
-            {err === "pin" && (
-              <div className="rounded-xl bg-red-50 border border-red-200 p-4">
-                <p className="text-sm text-red-600 font-medium">PIN non valido o scaduto</p>
-              </div>
-            )}
+              {err === "pin" && (
+                <Alert variant="error">
+                  <Text fontSize="sm" fontWeight="medium">
+                    PIN non valido o scaduto
+                  </Text>
+                </Alert>
+              )}
 
-            <form action="/api/auth/pin" method="post" className="space-y-4">
-              <input type="hidden" name="next" value={next} />
+              <Box as="form" action="/api/auth/pin" method="post" w="100%">
+                <VStack spacing={4} w="100%">
+                  <input type="hidden" name="next" value={next} />
 
-              <Input
-                name="pin"
-                type="text"
-                inputMode="numeric"
-                placeholder="Inserisci PIN"
-                required
-                autoFocus
-                className="text-center text-2xl tracking-widest font-mono"
-              />
+                  <Input
+                    name="pin"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Inserisci PIN"
+                    required
+                    autoFocus
+                    textAlign="center"
+                    fontSize="2xl"
+                    letterSpacing="widest"
+                    fontFamily="mono"
+                  />
 
-              <Button type="submit" variant="primary" size="lg" fullWidth>
-                Entra
-              </Button>
-            </form>
+                  <Button type="submit" variant="primary" size="lg" fullWidth>
+                    Entra
+                  </Button>
+                </VStack>
+              </Box>
 
-            <OpenA2HSLink />
+              <OpenA2HSLink />
 
-            <div className="pt-4 border-t border-[var(--border-light)] space-y-4">
-              <p className="text-center text-sm text-[var(--text-secondary)]">
-                Host/Tech?{" "}
-                <Link href="/loginhost-tech" className="text-[var(--accent-primary)] hover:underline font-medium">
-                  Accedi qui
-                </Link>
-              </p>
-              <div className="flex justify-center pt-2">
-                <img 
-                  src="/easy-stay-192.png" 
-                  alt="easy stay" 
-                  className="w-16 h-16 opacity-60 object-contain"
-                />
-              </div>
-            </div>
+              <Box pt={4} borderTop="1px solid" borderColor="var(--border-light)" w="100%">
+                <VStack spacing={4} w="100%">
+                  <Text textAlign="center" fontSize="sm" color="var(--text-secondary)">
+                    Host/Tech?{" "}
+                    <Link href="/loginhost-tech" variant="default">
+                      Accedi qui
+                    </Link>
+                  </Text>
+                  <HStack justify="center" pt={2}>
+                    <Image
+                      src="/easy-stay-192.png"
+                      alt="easy stay"
+                      w={16}
+                      h={16}
+                      opacity={0.6}
+                      objectFit="contain"
+                    />
+                  </HStack>
+                </VStack>
+              </Box>
+            </VStack>
           </CardBody>
         </Card>
-      </div>
-    </main>
+      </Box>
+    </Box>
   );
 }

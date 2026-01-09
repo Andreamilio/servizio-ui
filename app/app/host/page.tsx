@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
@@ -14,6 +13,14 @@ import { UserProfile } from '../components/UserProfile';
 
 import { stays_createWithOptionalCleaner } from '@/app/lib/domain/pinsDomain';
 import { getAllEnabledDevices, getDeviceState, getDeviceLabel } from '@/app/lib/devicePackageStore';
+import { Box, VStack, HStack, Heading, Text, Grid, GridItem } from "@chakra-ui/react";
+import { Badge } from "@/app/components/ui/Badge";
+import { Card, CardBody, CardHeader } from "@/app/components/ui/Card";
+import { Link } from "@/app/components/ui/Link";
+import { Button } from "@/app/components/ui/Button";
+import { Input } from "@/app/components/ui/Input";
+import { Textarea } from "@/app/components/ui/Textarea";
+import { StatusPill } from "@/app/components/ui/StatusPill";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -58,7 +65,6 @@ function fmtDT(ts?: number | null) {
 function getDoorUi(aptId: string): { label: string; tone: 'open' | 'closed' | 'unknown' } {
     const log = Store.listAccessLogByApt(aptId, 50) ?? [];
     const last = log.find((e: any) => e?.type === 'door_opened' || e?.type === 'door_closed');
-    // Default a BLOCCATA (closed) per prototipo
     if (!last) return { label: 'BLOCCATA', tone: 'closed' };
     if (last.type === 'door_opened') return { label: 'SBLOCCATA', tone: 'open' };
     return { label: 'BLOCCATA', tone: 'closed' };
@@ -99,33 +105,32 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
     const me = validateSessionUser(session);
 
     if (!me || me.role !== 'host') {
-        // Se la sessione era valida ma l'utente è disabilitato, fai logout
         if (session && session.userId && session.role === 'host') {
             redirect('/api/auth/logout');
         }
-        return <div className='p-6 text-[var(--text-primary)]'>Non autorizzato</div>;
+        return (
+            <Box p={6} color="var(--text-primary)">
+                Non autorizzato
+            </Box>
+        );
     }
 
     const clients = (listClients() as any[]) ?? [];
     const getClientId = (c: any) => String(c?.id ?? c?.clientId ?? c?.clientID ?? c?.slug ?? '');
     
-    // Se l'utente host ha un clientId associato, filtra i clienti disponibili
     const hostUser = me.userId ? getUser(me.userId) : null;
     const hostUserClientId = hostUser?.clientId;
     
-    // Se l'host ha un clientId specifico, mostra solo quel client
     const availableClients = hostUserClientId 
       ? clients.filter((c) => getClientId(c) === hostUserClientId)
       : clients;
     
-    // Se l'host ha un clientId, usa quello di default, altrimenti usa quello dall'URL (o stringa vuota se non specificato)
     const urlClientId = pick(sp, 'client')?.trim();
     const wantedClientId = hostUserClientId || urlClientId || undefined;
     const client = wantedClientId ? availableClients.find((c) => getClientId(c) === wantedClientId) ?? null : null;
 
     const clientId = client ? getClientId(client) : (hostUserClientId || urlClientId || '');
     
-    // Se clientId è specificato, mostra solo gli appartamenti di quel client, altrimenti mostra tutti
     const apartments = clientId
         ? (listApartmentsByClient(clientId) as any[]).map((a) => ({
               aptId: String(a?.aptId ?? a?.id ?? a?.apt ?? ''),
@@ -161,7 +166,6 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
 
         const doorUi = getDoorUi(aptId);
         const allAccessEvents = Store.listAccessLogByApt(aptId, 20) ?? [];
-        // Filtra eventi WAN/VPN: visibili solo nella vista Tech
         const accessEvents = allAccessEvents.filter((e: any) => e.type !== 'wan_switched' && e.type !== 'vpn_toggled');
 
         async function actOpenDoor() {
@@ -185,8 +189,6 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
             redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}&r=${Date.now()}`);
         }
 
-
-
         return (
             <AppLayout 
                 role="host"
@@ -196,236 +198,310 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                     profileImageUrl: hostUser.profileImageUrl,
                 } : undefined}
             >
-                <div className='max-w-3xl mx-auto space-y-5 p-4 sm:p-6'>
-                    <div className='flex items-start justify-between gap-3'>
-                        <div>
-                            <div className='text-xs opacity-60'>Host • Dettaglio appartamento</div>
-                            <h1 className='text-lg font-semibold'>{apt?.name ?? (aptId ? `Apt ${aptId}` : 'Apt')}</h1>
-                        </div>
+                <Box maxW="3xl" mx="auto" p={{ base: 4, sm: 6 }}>
+                    <VStack spacing={5} align="stretch">
+                        <HStack justify="space-between" gap={3} align="start">
+                            <Box>
+                                <Text fontSize="xs" opacity={0.6}>Host • Dettaglio appartamento</Text>
+                                <Heading as="h1" size="lg" fontWeight="semibold">
+                                    {apt?.name ?? (aptId ? `Apt ${aptId}` : 'Apt')}
+                                </Heading>
+                            </Box>
 
-                        <div className='flex flex-wrap items-center justify-end gap-2 sm:gap-3'>
-                            <Link className='whitespace-normal sm:whitespace-nowrap text-sm opacity-70 hover:opacity-100' href={clientId ? `/app/host?client=${encodeURIComponent(clientId)}` : '/app/host'}>
-                                ← Dashboard
-                            </Link>
-                        </div>
-                    </div>
+                            <HStack spacing={{ base: 2, sm: 3 }} flexWrap="wrap" justify="end">
+                                <Link
+                                    href={clientId ? `/app/host?client=${encodeURIComponent(clientId)}` : '/app/host'}
+                                    fontSize="sm"
+                                    opacity={0.7}
+                                    _hover={{ opacity: 1 }}
+                                    whiteSpace={{ base: "normal", sm: "nowrap" }}
+                                >
+                                    ← Dashboard
+                                </Link>
+                            </HStack>
+                        </HStack>
 
-                    <section className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
-                        <div className='flex items-center justify-between gap-3'>
-                            <div>
-                                <div className='text-sm opacity-70'>Stato operativo</div>
-                                <div className='mt-1 font-semibold'>{health?.readiness ?? '—'}</div>
+                        <Card>
+                            <CardBody p={4}>
+                                <HStack justify="space-between" gap={3}>
+                                    <Box>
+                                        <Text fontSize="sm" opacity={0.7}>Stato operativo</Text>
+                                        <Text mt={1} fontWeight="semibold">
+                                            {health?.readiness ?? '—'}
+                                        </Text>
 
-                                <div className='mt-2 text-sm opacity-70'>Porta</div>
-                                <div
-                                    className={`mt-1 inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold ${
-                                        doorUi.tone === 'open'
-                                            ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                                            : doorUi.tone === 'closed'
-                                            ? 'bg-[var(--bg-card)] border-[var(--border-light)] text-[var(--text-primary)]'
-                                            : 'bg-yellow-100 border-yellow-300 text-yellow-900'
-                                    }`}>
-                                    <span className={`h-2 w-2 rounded-full ${doorUi.tone === 'open' ? 'bg-emerald-400' : doorUi.tone === 'closed' ? 'bg-[var(--text-tertiary)]' : 'bg-yellow-400'}`} />
-                                    {doorUi.label}
-                                </div>
+                                        <Text mt={2} fontSize="sm" opacity={0.7}>Porta</Text>
+                                        <Badge
+                                            variant={doorUi.tone === 'open' ? 'success' : doorUi.tone === 'closed' ? 'default' : 'warning'}
+                                            size="sm"
+                                            display="inline-flex"
+                                            alignItems="center"
+                                            gap={2}
+                                            borderRadius="xl"
+                                            px={3}
+                                            py={1.5}
+                                            mt={1}
+                                        >
+                                            <Box
+                                                w={2}
+                                                h={2}
+                                                borderRadius="full"
+                                                bg={
+                                                    doorUi.tone === 'open' 
+                                                        ? 'var(--accent-success)' 
+                                                        : doorUi.tone === 'closed' 
+                                                        ? 'var(--text-tertiary)' 
+                                                        : 'var(--accent-warning)'
+                                                }
+                                            />
+                                            {doorUi.label}
+                                        </Badge>
+                                    </Box>
+                                    <Box textAlign="right">
+                                        <Text fontSize="sm" opacity={0.7}>Ultimo evento</Text>
+                                        <Text mt={1} fontSize="sm" opacity={0.9}>
+                                            {health?.lastEvent ?? '—'}
+                                        </Text>
+                                    </Box>
+                                </HStack>
 
-                            </div>
-                            <div className='text-right'>
-                                <div className='text-sm opacity-70'>Ultimo evento</div>
-                                <div className='mt-1 text-sm opacity-90'>{health?.lastEvent ?? '—'}</div>
-                            </div>
-                        </div>
+                                <HStack spacing={2} mt={4} flexWrap="wrap">
+                                    {doorUi.tone !== 'unknown' && (
+                                        <Box as="form" action={doorUi.tone === 'open' ? actCloseDoor : actOpenDoor}>
+                                            <Button
+                                                type="submit"
+                                                borderRadius="xl"
+                                                px={4}
+                                                py={2}
+                                                fontSize="sm"
+                                                fontWeight="semibold"
+                                                bg={doorUi.tone === 'open' ? 'var(--bg-secondary)' : 'rgba(16, 185, 129, 0.25)'}
+                                                _hover={{ bg: doorUi.tone === 'open' ? 'var(--bg-tertiary)' : 'rgba(16, 185, 129, 0.35)' }}
+                                                border="1px solid"
+                                                borderColor={doorUi.tone === 'open' ? 'var(--border-light)' : 'rgba(16, 185, 129, 0.3)'}
+                                            >
+                                                {doorUi.tone === 'open' ? 'Chiudi porta' : 'Apri porta'}
+                                            </Button>
+                                        </Box>
+                                    )}
 
-                        <div className='mt-4 flex flex-wrap gap-2'>
-                            {doorUi.tone !== 'unknown' && (
-                                <form action={doorUi.tone === 'open' ? actCloseDoor : actOpenDoor}>
-                                    <button
-                                        type='submit'
-                                        className={`rounded-xl px-4 py-2 text-sm font-semibold ${
-                                            doorUi.tone === 'open' ? 'bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)]' : 'bg-emerald-500/25 hover:bg-emerald-500/35 border border-emerald-400/30'
-                                        }`}>
-                                        {doorUi.tone === 'open' ? 'Chiudi porta' : 'Apri porta'}
-                                    </button>
-                                </form>
-                            )}
+                                    <Box as="form" action={actOpenGate}>
+                                        <Button
+                                            type="submit"
+                                            borderRadius="xl"
+                                            px={4}
+                                            py={2}
+                                            fontSize="sm"
+                                            fontWeight="semibold"
+                                            bg="rgba(16, 185, 129, 0.25)"
+                                            _hover={{ bg: "rgba(16, 185, 129, 0.35)" }}
+                                            border="1px solid"
+                                            borderColor="rgba(16, 185, 129, 0.3)"
+                                        >
+                                            Apri portone
+                                        </Button>
+                                    </Box>
 
-                            <form action={actOpenGate}>
-                                <button
-                                    type='submit'
-                                    className='rounded-xl px-4 py-2 text-sm font-semibold bg-emerald-500/25 hover:bg-emerald-500/35 border border-emerald-400/30'>
-                                    Apri portone
-                                </button>
-                            </form>
+                                    <Button
+                                        as={Link}
+                                        href={aptId 
+                                            ? `/app/host/support?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`
+                                            : clientId
+                                            ? `/app/host/support?client=${encodeURIComponent(clientId)}`
+                                            : '/app/host/support'
+                                        }
+                                        borderRadius="xl"
+                                        bg="var(--bg-card)"
+                                        border="1px solid"
+                                        borderColor="var(--border-light)"
+                                        px={4}
+                                        py={2}
+                                        fontSize="sm"
+                                        opacity={0.9}
+                                    >
+                                        Supporto
+                                    </Button>
+                                </HStack>
+                            </CardBody>
+                        </Card>
 
-                            <Link 
-                                href={aptId 
-                                    ? `/app/host/support?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`
-                                    : clientId
-                                    ? `/app/host/support?client=${encodeURIComponent(clientId)}`
-                                    : '/app/host/support'
-                                }
-                                className='rounded-xl bg-[var(--bg-card)] border border-[var(--border-light)] px-4 py-2 text-sm opacity-90'>
-                                Supporto
-                            </Link>
-                        </div>
-                    </section>
+                        {/* Dettagli Appartamento */}
+                        <Card>
+                            <CardBody p={4}>
+                                <Text fontSize="sm" fontWeight="semibold" mb={4}>Dettagli Appartamento</Text>
+                                <Box
+                                    as="form"
+                                    action={async (formData: FormData) => {
+                                        'use server';
+                                        const aptId = formData.get('aptId')?.toString() ?? '';
+                                        if (!aptId) return;
 
-                    {/* Dettagli Appartamento */}
-                    <section className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
-                        <div className='text-sm font-semibold mb-4'>Dettagli Appartamento</div>
-                        <form
-                            action={async (formData: FormData) => {
-                                'use server';
-                                const aptId = formData.get('aptId')?.toString() ?? '';
-                                if (!aptId) return;
+                                        const wifiSsid = (formData.get('wifiSsid')?.toString() ?? '').trim() || undefined;
+                                        const wifiPass = (formData.get('wifiPass')?.toString() ?? '').trim() || undefined;
+                                        const rulesText = (formData.get('rules')?.toString() ?? '').trim();
+                                        const rules = rulesText ? rulesText.split('\n').filter((r) => r.trim().length > 0) : undefined;
+                                        const supportContacts = (formData.get('supportContacts')?.toString() ?? '').trim() || undefined;
 
-                                const wifiSsid = (formData.get('wifiSsid')?.toString() ?? '').trim() || undefined;
-                                const wifiPass = (formData.get('wifiPass')?.toString() ?? '').trim() || undefined;
-                                const rulesText = (formData.get('rules')?.toString() ?? '').trim();
-                                const rules = rulesText ? rulesText.split('\n').filter((r) => r.trim().length > 0) : undefined;
-                                const supportContacts = (formData.get('supportContacts')?.toString() ?? '').trim() || undefined;
+                                        updateApartment(aptId, {
+                                            wifiSsid,
+                                            wifiPass,
+                                            rules,
+                                            supportContacts,
+                                        });
 
-                                updateApartment(aptId, {
-                                    wifiSsid,
-                                    wifiPass,
-                                    rules,
-                                    supportContacts,
-                                });
+                                        revalidatePath('/app/host');
+                                        redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}&r=${Date.now()}`);
+                                    }}
+                                >
+                                    <VStack spacing={4} align="stretch">
+                                        <input type='hidden' name='aptId' value={aptId} />
 
-                                revalidatePath('/app/host');
-                                redirect(`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}&r=${Date.now()}`);
-                            }}
-                            className='space-y-4'>
-                            <input type='hidden' name='aptId' value={aptId} />
+                                        <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={4}>
+                                            <Input
+                                                type='text'
+                                                name='wifiSsid'
+                                                label="Wi-Fi SSID"
+                                                defaultValue={apartmentDetails?.wifiSsid ?? ''}
+                                                placeholder='Nome rete Wi-Fi'
+                                            />
+                                            <Input
+                                                type='text'
+                                                name='wifiPass'
+                                                label="Wi-Fi Password"
+                                                defaultValue={apartmentDetails?.wifiPass ?? ''}
+                                                placeholder='Password Wi-Fi'
+                                            />
+                                        </Grid>
 
-                            <div className='grid grid-cols-2 gap-4'>
-                                <div>
-                                    <label className='block text-sm font-medium mb-2'>Wi-Fi SSID</label>
-                                    <input
-                                        type='text'
-                                        name='wifiSsid'
-                                        defaultValue={apartmentDetails?.wifiSsid ?? ''}
-                                        className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500'
-                                        placeholder='Nome rete Wi-Fi'
-                                    />
-                                </div>
-                                <div>
-                                    <label className='block text-sm font-medium mb-2'>Wi-Fi Password</label>
-                                    <input
-                                        type='text'
-                                        name='wifiPass'
-                                        defaultValue={apartmentDetails?.wifiPass ?? ''}
-                                        className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500'
-                                        placeholder='Password Wi-Fi'
-                                    />
-                                </div>
-                            </div>
+                                        <Textarea
+                                            name='rules'
+                                            label="House Rules (una per riga)"
+                                            rows={4}
+                                            defaultValue={apartmentDetails?.rules?.join('\n') ?? ''}
+                                            placeholder='No smoking&#10;Silenzio dopo le 22:30'
+                                        />
 
-                            <div>
-                                <label className='block text-sm font-medium mb-2'>House Rules (una per riga)</label>
-                                <textarea
-                                    name='rules'
-                                    rows={4}
-                                    defaultValue={apartmentDetails?.rules?.join('\n') ?? ''}
-                                    className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500'
-                                    placeholder='No smoking&#10;Silenzio dopo le 22:30'
-                                />
-                            </div>
+                                        <Textarea
+                                            name='supportContacts'
+                                            label="Contatti Supporto"
+                                            rows={2}
+                                            defaultValue={apartmentDetails?.supportContacts ?? ''}
+                                            placeholder='Telefono, email, ecc.'
+                                        />
 
-                            <div>
-                                <label className='block text-sm font-medium mb-2'>Contatti Supporto</label>
-                                <textarea
-                                    name='supportContacts'
-                                    rows={2}
-                                    defaultValue={apartmentDetails?.supportContacts ?? ''}
-                                    className='w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-4 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-cyan-500'
-                                    placeholder='Telefono, email, ecc.'
-                                />
-                            </div>
+                                        <HStack spacing={3} pt={2} borderTop="1px solid" borderColor="var(--border-light)">
+                                            <Button
+                                                type='submit'
+                                                borderRadius="xl"
+                                                bg="rgba(6, 182, 212, 0.2)"
+                                                _hover={{ bg: "rgba(6, 182, 212, 0.3)" }}
+                                                border="1px solid"
+                                                borderColor="rgba(6, 182, 212, 0.3)"
+                                                px={6}
+                                                py={3}
+                                                fontWeight="semibold"
+                                                fontSize="sm"
+                                            >
+                                                Salva Dettagli
+                                            </Button>
+                                        </HStack>
+                                    </VStack>
+                                </Box>
+                            </CardBody>
+                        </Card>
 
-                            <div className='flex gap-3 pt-2 border-t border-[var(--border-light)]'>
-                                <button
-                                    type='submit'
-                                    className='rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 px-6 py-3 font-semibold text-sm'>
-                                    Salva Dettagli
-                                </button>
-                            </div>
-                        </form>
-                    </section>
-
-                    {/* Device Status */}
-                    <section className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
-                        <div className='text-sm font-semibold mb-4'>Device</div>
-                        {(() => {
-                            const enabledDevices = getAllEnabledDevices(aptId);
-                            
-                            if (enabledDevices.length === 0) {
-                                return (
-                                    <div className='text-sm opacity-60 py-4 text-center'>
-                                        Nessun device configurato per questo appartamento.
-                                        <div className='text-xs opacity-50 mt-1'>I device vengono configurati dalla sezione Tech.</div>
-                                    </div>
-                                );
-                            }
-
-                            return (
-                                <div className='space-y-2'>
-                                    {enabledDevices.map((deviceType) => {
-                                        const state = getDeviceState(aptId, deviceType);
-                                        const label = getDeviceLabel(deviceType);
-                                        const isOnline = state === 'online';
-
+                        {/* Device Status */}
+                        <Card>
+                            <CardBody p={4}>
+                                <Text fontSize="sm" fontWeight="semibold" mb={4}>Device</Text>
+                                {(() => {
+                                    const enabledDevices = getAllEnabledDevices(aptId);
+                                    
+                                    if (enabledDevices.length === 0) {
                                         return (
-                                            <div
-                                                key={deviceType}
-                                                className='flex items-center justify-between gap-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3'>
-                                                <div className='flex-1 min-w-0'>
-                                                    <div className='text-sm font-semibold'>{label}</div>
-                                                    <div className='text-xs opacity-60 mt-0.5'>{deviceType}</div>
-                                                </div>
-                                                <div className='flex items-center gap-2'>
-                                                    <div
-                                                        className={`text-xs px-3 py-1 rounded-lg border ${
-                                                            isOnline
-                                                                ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                                                                : 'bg-red-50 border-red-200 text-red-700'
-                                                        }`}>
-                                                        {state.toUpperCase()}
-                                                    </div>
-                                                </div>
-                                            </div>
+                                            <Box textAlign="center" py={4}>
+                                                <Text fontSize="sm" opacity={0.6}>
+                                                    Nessun device configurato per questo appartamento.
+                                                </Text>
+                                                <Text fontSize="xs" opacity={0.5} mt={1}>
+                                                    I device vengono configurati dalla sezione Tech.
+                                                </Text>
+                                            </Box>
                                         );
-                                    })}
-                                </div>
-                            );
-                        })()}
-                    </section>
+                                    }
 
+                                    return (
+                                        <VStack spacing={2} align="stretch">
+                                            {enabledDevices.map((deviceType) => {
+                                                const state = getDeviceState(aptId, deviceType);
+                                                const label = getDeviceLabel(deviceType);
+                                                const isOnline = state === 'online';
 
+                                                return (
+                                                    <Card key={deviceType} variant="outlined">
+                                                        <CardBody p={3}>
+                                                            <HStack justify="space-between" gap={3}>
+                                                                <Box flex={1} minW={0}>
+                                                                    <Text fontSize="sm" fontWeight="semibold">
+                                                                        {label}
+                                                                    </Text>
+                                                                    <Text fontSize="xs" opacity={0.6} mt={0.5}>
+                                                                        {deviceType}
+                                                                    </Text>
+                                                                </Box>
+                                                                <Badge
+                                                                    variant={isOnline ? 'success' : 'error'}
+                                                                    size="sm"
+                                                                    px={3}
+                                                                    py={1}
+                                                                    borderRadius="lg"
+                                                                    fontSize="xs"
+                                                                >
+                                                                    {state.toUpperCase()}
+                                                                </Badge>
+                                                            </HStack>
+                                                        </CardBody>
+                                                    </Card>
+                                                );
+                                            })}
+                                        </VStack>
+                                    );
+                                })()}
+                            </CardBody>
+                        </Card>
 
-                    <section className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
-                        <div className='flex items-center justify-between gap-3 mb-3'>
-                            <div className='text-sm opacity-70'>Attività recente (Access log)</div>
-                            <div className='text-xs opacity-50'>Ultimi 20 eventi</div>
-                        </div>
+                        <Card>
+                            <HStack justify="space-between" gap={3} mb={3}>
+                                <Text fontSize="sm" opacity={0.7}>Attività recente (Access log)</Text>
+                                <Text fontSize="xs" opacity={0.5}>Ultimi 20 eventi</Text>
+                            </HStack>
 
-                        {accessEvents.length === 0 ? (
-                            <div className='text-sm opacity-60'>Nessun evento registrato.</div>
-                        ) : (
-                            <div className='space-y-2'>
-                                {accessEvents.map((e: any) => (
-                                    <div key={String(e.id)} className='rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3'>
-                                        <div className='flex items-center justify-between'>
-                                            <div className='text-xs opacity-60'>{fmtDT(e.ts)}</div>
-                                            <div className='text-[11px] opacity-60 font-mono'>{e.type}</div>
-                                        </div>
-                                        <div className='mt-1 text-sm font-semibold'>{e.label}</div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </section>
-                </div>
+                            {accessEvents.length === 0 ? (
+                                <Text fontSize="sm" opacity={0.6}>Nessun evento registrato.</Text>
+                            ) : (
+                                <VStack spacing={2} align="stretch">
+                                    {accessEvents.map((e: any) => (
+                                        <Card key={String(e.id)} variant="outlined">
+                                            <CardBody p={3}>
+                                                <HStack justify="space-between">
+                                                    <Text fontSize="xs" opacity={0.6}>
+                                                        {fmtDT(e.ts)}
+                                                    </Text>
+                                                    <Text fontSize="11px" opacity={0.6} fontFamily="mono">
+                                                        {e.type}
+                                                    </Text>
+                                                </HStack>
+                                                <Text mt={1} fontSize="sm" fontWeight="semibold">
+                                                    {e.label}
+                                                </Text>
+                                            </CardBody>
+                                        </Card>
+                                    ))}
+                                </VStack>
+                            )}
+                        </Card>
+                    </VStack>
+                </Box>
             </AppLayout>
         );
     }
@@ -442,101 +518,157 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                 profileImageUrl: hostUser.profileImageUrl,
             } : undefined}
         >
-            <div className='max-w-5xl mx-auto space-y-5 p-4 sm:p-6'>
-                <div className='flex flex-col gap-3 md:flex-row md:items-end md:justify-between'>
-                    <div>
-                        <div className='text-xs opacity-60'>Host • Dashboard</div>
-                        <h1 className='text-xl font-semibold'>{orgLabel}</h1>
-                        <div className='mt-1 text-sm opacity-70'>
-                            <span className='opacity-80'>{apartments.length} appartamenti</span>
-                        </div>
-                    </div>
-                </div>
+            <Box maxW="5xl" mx="auto" p={{ base: 4, sm: 6 }}>
+                <VStack spacing={5} align="stretch">
+                    <Box>
+                        <HStack justify="space-between" align={{ base: "start", md: "end" }} flexDir={{ base: "column", md: "row" }} gap={3}>
+                            <Box>
+                                <Text fontSize="xs" opacity={0.6}>Host • Dashboard</Text>
+                                <Heading as="h1" size="xl" fontWeight="semibold">
+                                    {orgLabel}
+                                </Heading>
+                                <Text mt={1} fontSize="sm" opacity={0.7}>
+                                    <Text as="span" opacity={0.8}>{apartments.length} appartamenti</Text>
+                                </Text>
+                            </Box>
+                        </HStack>
+                    </Box>
 
-                <div className='grid grid-cols-2 md:grid-cols-4 gap-3'>
-                    <div className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
-                        <div className='text-xs opacity-60'>Totali</div>
-                        <div className='mt-1 text-2xl font-semibold'>{total}</div>
-                    </div>
-                    <div className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
-                        <div className='text-xs opacity-60'>OK</div>
-                        <div className='mt-1 text-2xl font-semibold'>{ok}</div>
-                    </div>
-                    <div className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
-                        <div className='text-xs opacity-60'>Attenzione</div>
-                        <div className='mt-1 text-2xl font-semibold'>{warn}</div>
-                    </div>
-                    <div className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
-                        <div className='text-xs opacity-60'>Problema</div>
-                        <div className='mt-1 text-2xl font-semibold'>{crit}</div>
-                    </div>
-                </div>
+                    <Grid templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }} gap={3}>
+                        <Card>
+                            <CardBody p={4}>
+                                <Text fontSize="xs" opacity={0.6}>Totali</Text>
+                                <Text mt={1} fontSize="2xl" fontWeight="semibold">
+                                    {total}
+                                </Text>
+                            </CardBody>
+                        </Card>
+                        <Card>
+                            <CardBody p={4}>
+                                <Text fontSize="xs" opacity={0.6}>OK</Text>
+                                <Text mt={1} fontSize="2xl" fontWeight="semibold">
+                                    {ok}
+                                </Text>
+                            </CardBody>
+                        </Card>
+                        <Card>
+                            <CardBody p={4}>
+                                <Text fontSize="xs" opacity={0.6}>Attenzione</Text>
+                                <Text mt={1} fontSize="2xl" fontWeight="semibold">
+                                    {warn}
+                                </Text>
+                            </CardBody>
+                        </Card>
+                        <Card>
+                            <CardBody p={4}>
+                                <Text fontSize="xs" opacity={0.6}>Problema</Text>
+                                <Text mt={1} fontSize="2xl" fontWeight="semibold">
+                                    {crit}
+                                </Text>
+                            </CardBody>
+                        </Card>
+                    </Grid>
 
-                <section className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
-                    <div className='flex items-center justify-between gap-3'>
-                        <div className='text-sm opacity-70'>🔴 Problemi (critical first)</div>
-                        <div className='text-xs opacity-50'>Mostra max 5</div>
-                    </div>
+                    <Card>
+                        <CardBody p={4}>
+                            <HStack justify="space-between" gap={3}>
+                                <Text fontSize="sm" opacity={0.7}>🔴 Problemi (critical first)</Text>
+                                <Text fontSize="xs" opacity={0.5}>Mostra max 5</Text>
+                            </HStack>
 
-                    {criticalFirst.length === 0 ? (
-                        <div className='mt-3 text-sm opacity-60'>Nessun problema critico rilevato.</div>
-                    ) : (
-                        <div className='mt-3 space-y-2'>
-                            {criticalFirst.map((a) => (
-                                <Link
-                                    key={a.aptId}
-                                    href={`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(a.aptId)}`}
-                                    className='block rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3 hover:border-[var(--border-medium)]'>
-                                    <div className='flex items-center justify-between'>
-                                        <div className='font-semibold'>{a.name}</div>
-                                        <div className='text-xs opacity-70'>{a.readiness}</div>
-                                    </div>
-                                    <div className='mt-1 text-sm opacity-70'>{a.lastEvent}</div>
-                                </Link>
-                            ))}
-                        </div>
-                    )}
-                </section>
+                            {criticalFirst.length === 0 ? (
+                                <Text mt={3} fontSize="sm" opacity={0.6}>
+                                    Nessun problema critico rilevato.
+                                </Text>
+                            ) : (
+                                <VStack spacing={2} align="stretch" mt={3}>
+                                    {criticalFirst.map((a) => (
+                                        <Box
+                                            key={a.aptId}
+                                            as={Link}
+                                            href={`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(a.aptId)}`}
+                                            display="block"
+                                            borderRadius="xl"
+                                            bg="var(--bg-secondary)"
+                                            border="1px solid"
+                                            borderColor="var(--border-light)"
+                                            p={3}
+                                            _hover={{ borderColor: "var(--border-medium)" }}
+                                        >
+                                            <HStack justify="space-between">
+                                                <Text fontWeight="semibold">{a.name}</Text>
+                                                <Text fontSize="xs" opacity={0.7}>
+                                                    {a.readiness}
+                                                </Text>
+                                            </HStack>
+                                            <Text mt={1} fontSize="sm" opacity={0.7}>
+                                                {a.lastEvent}
+                                            </Text>
+                                        </Box>
+                                    ))}
+                                </VStack>
+                            )}
+                        </CardBody>
+                    </Card>
 
-                <div className='flex items-center gap-3'>
-                    <ApartmentSearchForm clientId={clientId} initialQuery={q} />
-                </div>
+                    <HStack spacing={3}>
+                        <ApartmentSearchForm clientId={clientId} initialQuery={q} />
+                    </HStack>
 
-                <section className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
-                    <div className='flex items-center justify-between gap-3'>
-                        <div className='text-sm opacity-70'>Appartamenti</div>
-                        <div className='text-xs opacity-50'>Vista compatta</div>
-                    </div>
+                    <Card>
+                        <CardBody p={4}>
+                            <HStack justify="space-between" gap={3}>
+                                <Text fontSize="sm" opacity={0.7}>Appartamenti</Text>
+                                <Text fontSize="xs" opacity={0.5}>Vista compatta</Text>
+                            </HStack>
 
-                    <div className='mt-3 space-y-2'>
-                        {healthFiltered.map((a) => (
-                            <Link
-                                key={a.aptId}
-                                href={`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(a.aptId)}`}
-                                className='block rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-4 hover:border-[var(--border-medium)]'>
-                                <div className='flex items-center justify-between gap-3'>
-                                    <div>
-                                        <div className='font-semibold'>{a.name}</div>
-                                        <div className='mt-1 text-xs opacity-60'>Ultimo evento: {a.lastEvent}</div>
-                                    </div>
+                            <VStack spacing={2} align="stretch" mt={3}>
+                                {healthFiltered.map((a) => (
+                                    <Box
+                                        key={a.aptId}
+                                        as={Link}
+                                        href={`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(a.aptId)}`}
+                                        display="block"
+                                        borderRadius="xl"
+                                        bg="var(--bg-secondary)"
+                                        border="1px solid"
+                                        borderColor="var(--border-light)"
+                                        p={4}
+                                        _hover={{ borderColor: "var(--border-medium)" }}
+                                    >
+                                        <HStack justify="space-between" gap={3}>
+                                            <Box>
+                                                <Text fontWeight="semibold">{a.name}</Text>
+                                                <Text mt={1} fontSize="xs" opacity={0.6}>
+                                                    Ultimo evento: {a.lastEvent}
+                                                </Text>
+                                            </Box>
 
-                                    <div className='text-right'>
-                                        <div className='text-xs opacity-60'>Stato</div>
-                                        <div className='font-semibold'>
-                                            {a.status === 'ok' && '🟢 OK'}
-                                            {a.status === 'warn' && '🟡 Attenzione'}
-                                            {a.status === 'crit' && '🔴 Problema'}
-                                        </div>
-                                        <div className='mt-1 text-xs opacity-70'>{a.readiness}</div>
-                                    </div>
-                                </div>
-                            </Link>
-                        ))}
+                                            <Box textAlign="right">
+                                                <Text fontSize="xs" opacity={0.6}>Stato</Text>
+                                                <Text fontWeight="semibold">
+                                                    {a.status === 'ok' && '🟢 OK'}
+                                                    {a.status === 'warn' && '🟡 Attenzione'}
+                                                    {a.status === 'crit' && '🔴 Problema'}
+                                                </Text>
+                                                <Text mt={1} fontSize="xs" opacity={0.7}>
+                                                    {a.readiness}
+                                                </Text>
+                                            </Box>
+                                        </HStack>
+                                    </Box>
+                                ))}
 
-                        {healthFiltered.length === 0 && <div className='text-sm opacity-60'>Nessun appartamento trovato.</div>}
-                    </div>
-                </section>
-            </div>
+                                {healthFiltered.length === 0 && (
+                                    <Text fontSize="sm" opacity={0.6}>
+                                        Nessun appartamento trovato.
+                                    </Text>
+                                )}
+                            </VStack>
+                        </CardBody>
+                    </Card>
+                </VStack>
+            </Box>
         </AppLayout>
     );
 }

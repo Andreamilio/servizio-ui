@@ -1,31 +1,15 @@
-import Link from "next/link";
 import { cookies } from "next/headers";
 import { readSession } from "@/app/lib/session";
 import { getIncidents, listApts, techStore } from "@/app/lib/techstore";
 import * as Store from "@/app/lib/store";
+import { Box, VStack, HStack, Heading, Text, Grid, GridItem } from "@chakra-ui/react";
+import { Card, CardBody, CardHeader } from "@/app/components/ui/Card";
+import { Link } from "@/app/components/ui/Link";
+import { Button } from "@/app/components/ui/Button";
+import { StatusPill } from "@/app/components/ui/StatusPill";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-
-function pillStatus(s: "online" | "offline") {
-  return s === "online"
-    ? {
-        dot: "bg-emerald-400",
-        text: "ONLINE",
-        box: "bg-[var(--pastel-green)] border-[var(--border-light)] text-[var(--accent-success)]",
-      }
-    : {
-        dot: "bg-red-400",
-        text: "OFFLINE",
-        box: "bg-red-100 border-[var(--border-light)] text-[var(--accent-error)]",
-      };
-}
-
-function pillNet(n: "main" | "backup") {
-  return n === "main"
-    ? { text: "MAIN WAN", box: "bg-[var(--bg-secondary)] border-[var(--border-light)] text-[var(--text-primary)]" }
-    : { text: "BACKUP WAN", box: "bg-[var(--bg-secondary)] border-[var(--border-light)] text-[var(--text-primary)]" };
-}
 
 export default async function TechPage() {
   const cookieStore = await cookies();
@@ -33,12 +17,15 @@ export default async function TechPage() {
   const me = readSession(sess);
 
   if (!me || me.role !== "tech") {
-    return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
+    return (
+      <Box p={6} color="var(--text-primary)">
+        Non autorizzato
+      </Box>
+    );
   }
 
   const apts = listApts();
 
-  // ✅ Shared audit log (same source as Host)
   const accessLog = (Store.accessLog ?? []).slice(0, 10).map((e) => {
     const tsLabel = new Date(e.ts).toLocaleTimeString([], {
       hour: "2-digit",
@@ -83,196 +70,305 @@ export default async function TechPage() {
   const offline = totalApts - online;
 
   return (
-    <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
+    <Box as="main" minH="100vh" bg="var(--bg-primary)" color="var(--text-primary)">
       {/* MOBILE HEADER */}
-      <div className="p-4 md:hidden">
-        <div className="text-xs opacity-60">TECH • monitoring</div>
-        <div className="mt-1 text-lg font-semibold">{techStore.clientName}</div>
-        <div className="mt-1 text-xs opacity-60">
+      <Box p={4} display={{ base: "block", md: "none" }}>
+        <Text fontSize="xs" opacity={0.6}>TECH • monitoring</Text>
+        <Heading as="h1" size="lg" fontWeight="semibold" mt={1}>
+          {techStore.clientName}
+        </Heading>
+        <Text mt={1} fontSize="xs" opacity={0.6}>
           {totalApts} appartamenti • {online} online • {offline} offline
-        </div>
-      </div>
+        </Text>
+      </Box>
 
       {/* DESKTOP GRID / MOBILE STACK */}
-      <div className="p-4 md:p-6 md:grid md:grid-cols-[280px_1fr_360px] md:gap-6 space-y-4 md:space-y-0">
-        {/* SIDEBAR (mobile collapsible) */}
-        <aside className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] overflow-hidden">
-          <div className="p-4 border-b border-[var(--border-light)]">
-            <div className="text-xs opacity-60">CLIENT</div>
-            <div className="mt-2 font-semibold">{techStore.clientName}</div>
-            <div className="mt-1 text-xs opacity-60">
-              {totalApts} appartamenti • {online} online • {offline} offline
-            </div>
-          </div>
+      <Grid
+        templateColumns={{ base: "1fr", md: "280px 1fr 360px" }}
+        gap={{ base: 4, md: 6 }}
+        p={{ base: 4, md: 6 }}
+      >
+        {/* SIDEBAR */}
+        <Box as="aside">
+          <Card>
+            <CardHeader p={4} borderBottom="1px solid" borderColor="var(--border-light)">
+              <Text fontSize="xs" opacity={0.6}>CLIENT</Text>
+              <Text mt={2} fontWeight="semibold">
+                {techStore.clientName}
+              </Text>
+              <Text mt={1} fontSize="xs" opacity={0.6}>
+                {totalApts} appartamenti • {online} online • {offline} offline
+              </Text>
+            </CardHeader>
 
-          <div className="p-4">
-            <div className="text-xs opacity-60 mb-3">APARTMENTS</div>
+            <Box p={4}>
+              <Text fontSize="xs" opacity={0.6} mb={3}>
+                APARTMENTS
+              </Text>
 
-            <div className="space-y-2 max-h-[52vh] md:max-h-[70vh] overflow-auto pr-1">
-              {apts.map((a) => (
-                <Link
-                  key={a.aptId}
-                  href={`/app/tech/apt/${a.aptId}`}
-                  className="flex items-center justify-between rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-3 py-2 hover:border-[var(--border-medium)]"
-                >
-                  <div className="text-sm">
-                    <div className="font-semibold">{a.aptName}</div>
-                    <div className="text-xs opacity-60">{a.group}</div>
-                  </div>
-                  <div
-                    className={`h-2 w-2 rounded-full ${
-                      a.status === "online" ? "bg-emerald-400" : "bg-red-400"
-                    }`}
-                  />
-                </Link>
-              ))}
-            </div>
-          </div>
+              <VStack spacing={2} align="stretch" maxH={{ base: "52vh", md: "70vh" }} overflowY="auto" pr={1}>
+                {apts.map((a) => (
+                  <Box
+                    key={a.aptId}
+                    as={Link}
+                    href={`/app/tech/apt/${a.aptId}`}
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                    borderRadius="xl"
+                    bg="var(--bg-secondary)"
+                    border="1px solid"
+                    borderColor="var(--border-light)"
+                    px={3}
+                    py={2}
+                    _hover={{ borderColor: "var(--border-medium)" }}
+                  >
+                    <Box fontSize="sm">
+                      <Text fontWeight="semibold">{a.aptName}</Text>
+                      <Text fontSize="xs" opacity={0.6}>{a.group}</Text>
+                    </Box>
+                    <Box
+                      w={2}
+                      h={2}
+                      borderRadius="full"
+                      bg={a.status === "online" ? "var(--accent-success)" : "var(--accent-error)"}
+                    />
+                  </Box>
+                ))}
+              </VStack>
+            </Box>
 
-          <div className="p-4 border-t border-[var(--border-light)] text-xs opacity-60">
-            TECH • monitoring
-          </div>
-        </aside>
+            <Box p={4} borderTop="1px solid" borderColor="var(--border-light)">
+              <Text fontSize="xs" opacity={0.6}>
+                TECH • monitoring
+              </Text>
+            </Box>
+          </Card>
+        </Box>
 
         {/* CENTER */}
-        <section className="space-y-4">
-          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] overflow-hidden">
-            <div className="p-4 border-b border-[var(--border-light)] flex items-center justify-between">
-              <div>
-                <div className="text-lg font-semibold">Status</div>
-                <div className="text-xs opacity-60 hidden md:block">
-                  Click su una riga per aprire il dettaglio appartamento
-                </div>
-              </div>
-              <div className="text-xs opacity-60 md:hidden">Tap per dettagli</div>
-            </div>
+        <Box as="section">
+          <VStack spacing={4} align="stretch">
+            <Card>
+              <CardHeader
+                p={4}
+                borderBottom="1px solid"
+                borderColor="var(--border-light)"
+                display="flex"
+                alignItems="center"
+                justifyContent="space-between"
+              >
+                <Box>
+                  <Heading as="h2" size="md" fontWeight="semibold">
+                    Status
+                  </Heading>
+                  <Text fontSize="xs" opacity={0.6} display={{ base: "none", md: "block" }}>
+                    Click su una riga per aprire il dettaglio appartamento
+                  </Text>
+                </Box>
+                <Text fontSize="xs" opacity={0.6} display={{ base: "block", md: "none" }}>
+                  Tap per dettagli
+                </Text>
+              </CardHeader>
 
-            {/* desktop header */}
-            <div className="hidden md:grid grid-cols-[1.2fr_1fr_1fr_1fr] gap-2 p-4 text-xs uppercase tracking-wider opacity-60">
-              <div>Apartment</div>
-              <div>Status</div>
-              <div>Network</div>
-              <div>Last Access</div>
-            </div>
+              {/* desktop header */}
+              <Grid
+                templateColumns="1.2fr 1fr 1fr 1fr"
+                gap={2}
+                p={4}
+                fontSize="xs"
+                textTransform="uppercase"
+                letterSpacing="wider"
+                opacity={0.6}
+                display={{ base: "none", md: "grid" }}
+              >
+                <Box>Apartment</Box>
+                <Box>Status</Box>
+                <Box>Network</Box>
+                <Box>Last Access</Box>
+              </Grid>
 
-            <div className="px-4 pb-4 space-y-2">
-              {apts.map((a) => {
-                const st = pillStatus(a.status);
-                const net = pillNet(a.network);
-                return (
-                  <Link
-                    key={a.aptId}
-                    href={`/app/tech/apt/${a.aptId}`}
-                    className="block rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] hover:border-[var(--border-medium)]"
-                  >
-                    <div className="p-4 grid grid-cols-1 gap-3 md:grid-cols-[1.2fr_1fr_1fr_1fr] md:items-center md:gap-2">
-                      <div>
-                        <div className="font-semibold">{a.aptName}</div>
-                        <div className="text-xs opacity-60">{a.group}</div>
-                      </div>
-
-                      <div>
-                        <div
-                          className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold ${st.box}`}
+              <Box px={4} pb={4}>
+                <VStack spacing={2} align="stretch">
+                  {apts.map((a) => {
+                    return (
+                      <Box
+                        key={a.aptId}
+                        as={Link}
+                        href={`/app/tech/apt/${a.aptId}`}
+                        display="block"
+                        borderRadius="xl"
+                        bg="var(--bg-secondary)"
+                        border="1px solid"
+                        borderColor="var(--border-light)"
+                        _hover={{ borderColor: "var(--border-medium)" }}
+                      >
+                        <Grid
+                          templateColumns={{ base: "1fr", md: "1.2fr 1fr 1fr 1fr" }}
+                          gap={{ base: 3, md: 2 }}
+                          p={4}
+                          alignItems={{ base: "start", md: "center" }}
                         >
-                          <span className={`h-2 w-2 rounded-full ${st.dot}`} />
-                          {st.text}
-                        </div>
-                      </div>
+                          <Box>
+                            <Text fontWeight="semibold">{a.aptName}</Text>
+                            <Text fontSize="xs" opacity={0.6}>{a.group}</Text>
+                          </Box>
 
-                      <div>
-                        <div
-                          className={`inline-flex items-center rounded-lg border px-3 py-2 text-xs font-semibold ${net.box}`}
-                        >
-                          {net.text}
-                        </div>
-                      </div>
+                          <Box>
+                            <StatusPill status={a.status} />
+                          </Box>
 
-                      <div>
-                        <div className="text-xs opacity-80 rounded-lg border border-[var(--border-light)] bg-[var(--bg-secondary)] px-3 py-2 md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-sm md:opacity-90">
-                          Last Access: <span className="opacity-100">{a.lastAccessLabel}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        </section>
+                          <Box>
+                            <StatusPill status={a.network} />
+                          </Box>
+
+                          <Box>
+                            <Text
+                              fontSize={{ base: "xs", md: "sm" }}
+                              opacity={{ base: 0.8, md: 0.9 }}
+                              borderRadius={{ base: "lg", md: "none" }}
+                              border={{ base: "1px solid", md: "none" }}
+                              borderColor={{ base: "var(--border-light)", md: "transparent" }}
+                              bg={{ base: "var(--bg-secondary)", md: "transparent" }}
+                              px={{ base: 3, md: 0 }}
+                              py={{ base: 2, md: 0 }}
+                            >
+                              Last Access: <Text as="span" opacity={1}>{a.lastAccessLabel}</Text>
+                            </Text>
+                          </Box>
+                        </Grid>
+                      </Box>
+                    );
+                  })}
+                </VStack>
+              </Box>
+            </Card>
+          </VStack>
+        </Box>
 
         {/* RIGHT */}
-        <aside className="space-y-4">
-          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] overflow-hidden">
-            <div className="p-4 border-b border-[var(--border-light)] flex items-center justify-between">
-              <div className="text-sm font-semibold">LIVE ACCESS LOG</div>
-              <Link href="/app/tech/log" className="text-xs opacity-60 hover:opacity-100">
-                Mostra di più
-              </Link>
-            </div>
+        <Box as="aside">
+          <VStack spacing={4} align="stretch">
+            <Card>
+              <CardHeader
+                p={4}
+                borderBottom="1px solid"
+                borderColor="var(--border-light)"
+                display="flex"
+                alignItems="center"
+                justifyContent="space-between"
+              >
+                <Text fontSize="sm" fontWeight="semibold">
+                  LIVE ACCESS LOG
+                </Text>
+                <Link href="/app/tech/log" fontSize="xs" opacity={0.6} _hover={{ opacity: 1 }}>
+                  Mostra di più
+                </Link>
+              </CardHeader>
 
-            <div className="p-4 space-y-3">
-              {accessLog.map((e) => (
-                <div key={e.id} className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3">
-                  <div className="text-xs opacity-60">{e.tsLabel}</div>
-                  <div className="mt-1 text-sm">
-                    <span className="font-semibold">Apt {e.aptId}</span> <span className="opacity-70">|</span>{" "}
-                    <span className="font-semibold">{e.title}</span>
-                  </div>
-                  <div className="mt-1 text-xs opacity-70">{e.detail}</div>
-                </div>
-              ))}
-            </div>
+              <Box p={4}>
+                <VStack spacing={3} align="stretch">
+                  {accessLog.map((e) => (
+                    <Card key={e.id} variant="outlined">
+                      <CardBody p={3}>
+                        <VStack align="stretch" spacing={1}>
+                          <Text fontSize="xs" opacity={0.6}>
+                            {e.tsLabel}
+                          </Text>
+                          <Text mt={1} fontSize="sm">
+                            <Text as="span" fontWeight="semibold">
+                              Apt {e.aptId}
+                            </Text>{" "}
+                            <Text as="span" opacity={0.7}>|</Text>{" "}
+                            <Text as="span" fontWeight="semibold">
+                              {e.title}
+                            </Text>
+                          </Text>
+                          <Text mt={1} fontSize="xs" opacity={0.7}>
+                            {e.detail}
+                          </Text>
+                        </VStack>
+                      </CardBody>
+                    </Card>
+                  ))}
+                </VStack>
+              </Box>
 
-            <div className="px-4 pb-4">
-              <div className="text-xs opacity-60">Mostrati ultimi 10 eventi</div>
-            </div>
-          </div>
+              <Box px={4} pb={4}>
+                <Text fontSize="xs" opacity={0.6}>
+                  Mostrati ultimi 10 eventi
+                </Text>
+              </Box>
+            </Card>
 
-          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] overflow-hidden">
-            <div className="p-4 border-b border-[var(--border-light)]">
-              <div className="text-sm font-semibold">INCIDENTS</div>
-            </div>
+            <Card>
+              <CardHeader p={4} borderBottom="1px solid" borderColor="var(--border-light)">
+                <Text fontSize="sm" fontWeight="semibold">
+                  INCIDENTS
+                </Text>
+              </CardHeader>
 
-            <div className="p-4 space-y-2">
-              {incidents.length === 0 ? (
-                <div className="text-sm opacity-60">Nessun incidente recente.</div>
-              ) : (
-                incidents.map((i) => (
-                  <div
-                    key={i.id}
-                    className="flex items-center justify-between rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-3 py-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="text-lg">
-                        {i.type === "tamper" && "⚠️"}
-                        {i.type === "offline" && "🛑"}
-                        {i.type === "failed_access" && "❗"}
-                      </div>
-                      <div>
-                        <div className="text-sm font-semibold">{i.title}</div>
-                        <div className="text-xs opacity-60">
-                          Apt {i.aptId} • {i.tsLabel}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
+              <Box p={4}>
+                <VStack spacing={2} align="stretch">
+                  {incidents.length === 0 ? (
+                    <Text fontSize="sm" opacity={0.6}>
+                      Nessun incidente recente.
+                    </Text>
+                  ) : (
+                    incidents.map((i) => (
+                      <Card key={i.id} variant="outlined">
+                        <CardBody px={3} py={3}>
+                          <HStack justify="space-between">
+                            <HStack spacing={3}>
+                              <Text fontSize="lg">
+                                {i.type === "tamper" && "⚠️"}
+                                {i.type === "offline" && "🛑"}
+                                {i.type === "failed_access" && "❗"}
+                              </Text>
+                              <Box>
+                                <Text fontSize="sm" fontWeight="semibold">
+                                  {i.title}
+                                </Text>
+                                <Text fontSize="xs" opacity={0.6}>
+                                  Apt {i.aptId} • {i.tsLabel}
+                                </Text>
+                              </Box>
+                            </HStack>
+                          </HStack>
+                        </CardBody>
+                      </Card>
+                    ))
+                  )}
+                </VStack>
+              </Box>
+            </Card>
 
-          <form action="/api/auth/logout" method="post">
-            <button className="w-full rounded-xl bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-4 py-3">
-              Logout
-            </button>
-          </form>
+            <Box as="form" action="/api/auth/logout" method="post">
+              <Button
+                type="submit"
+                variant="secondary"
+                w="100%"
+                borderRadius="xl"
+                px={4}
+                py={3}
+              >
+                Logout
+              </Button>
+            </Box>
 
-          <Link className="block text-center text-xs opacity-60 hover:opacity-100" href="/app/cleaner">
-            Vai a Cleaner (debug)
-          </Link>
-        </aside>
-      </div>
-    </main>
+            <Link
+              href="/app/cleaner"
+              display="block"
+              textAlign="center"
+              fontSize="xs"
+              opacity={0.6}
+              _hover={{ opacity: 1 }}
+            >
+              Vai a Cleaner (debug)
+            </Link>
+          </VStack>
+        </Box>
+      </Grid>
+    </Box>
   );
 }

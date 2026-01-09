@@ -1,6 +1,12 @@
 "use client";
 
-import { ReactNode, useEffect } from "react";
+import { ReactNode } from "react";
+import {
+  Dialog,
+  Box,
+  Heading,
+  IconButton,
+} from "@chakra-ui/react";
 import { X } from "lucide-react";
 
 interface ModalProps {
@@ -12,6 +18,13 @@ interface ModalProps {
   showCloseButton?: boolean;
 }
 
+const sizeMap = {
+  sm: "sm",
+  md: "md",
+  lg: "lg",
+  xl: "xl",
+} as const;
+
 export function Modal({
   isOpen,
   onClose,
@@ -20,63 +33,72 @@ export function Modal({
   size = "md",
   showCloseButton = true,
 }: ModalProps) {
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isOpen]);
-
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        onClose();
-      }
-    };
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
-  const sizeClasses = {
-    sm: "max-w-md",
-    md: "max-w-lg",
-    lg: "max-w-2xl",
-    xl: "max-w-4xl",
-  };
-
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[var(--bg-overlay)] backdrop-blur-sm overflow-x-hidden"
-      onClick={onClose}
+    <Dialog.Root 
+      open={isOpen} 
+      onOpenChange={(details) => {
+        if (!details.open) {
+          onClose();
+        }
+      }}
+      size={sizeMap[size]}
+      placement="center"
     >
-      <div
-        className={`${sizeClasses[size]} w-full max-h-[90vh] overflow-y-auto overflow-x-hidden bg-[var(--bg-card)] rounded-2xl border border-[var(--border-light)] shadow-xl`}
-        onClick={(e) => e.stopPropagation()}
+      <Dialog.Backdrop
+        bg="var(--bg-overlay)"
+        backdropFilter="blur(4px)"
+      />
+      <Dialog.Content
+        maxH="90vh"
+        maxW="90vw"
+        borderRadius="2xl"
+        bg="var(--bg-card)"
+        border="1px solid"
+        borderColor="var(--border-light)"
+        boxShadow="var(--shadow-xl)"
+        overflow="hidden"
+        position="fixed"
+        top="50%"
+        left="50%"
+        transform="translate(-50%, -50%)"
+        margin="0"
       >
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between p-4 lg:p-6 border-b border-[var(--border-light)]">
+          <Dialog.Header
+            display="flex"
+            alignItems="center"
+            justifyContent="space-between"
+            p={{ base: 4, lg: 6 }}
+            borderBottom="1px solid"
+            borderColor="var(--border-light)"
+          >
             {title && (
-              <h2 className="text-xl font-semibold text-[var(--text-primary)]">{title}</h2>
+              <Heading as="h2" size="lg" fontWeight="semibold" color="var(--text-primary)">
+                {title}
+              </Heading>
             )}
             {showCloseButton && (
-              <button
-                onClick={onClose}
-                className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
-                aria-label="Close"
-              >
-                <X size={20} />
-              </button>
+              <Dialog.CloseTrigger asChild>
+                <IconButton
+                  aria-label="Close"
+                  icon={<X size={20} />}
+                  variant="ghost"
+                  size="sm"
+                  color="var(--text-secondary)"
+                  _hover={{
+                    color: "var(--text-primary)",
+                    bg: "var(--bg-secondary)",
+                  }}
+                  transition="colors"
+                />
+              </Dialog.CloseTrigger>
             )}
-          </div>
+          </Dialog.Header>
         )}
-        <div className="p-4 lg:p-6 overflow-x-hidden">{children}</div>
-      </div>
-    </div>
+        <Dialog.Body p={{ base: 4, lg: 6 }} overflowX="hidden">
+          {children}
+        </Dialog.Body>
+      </Dialog.Content>
+    </Dialog.Root>
   );
 }

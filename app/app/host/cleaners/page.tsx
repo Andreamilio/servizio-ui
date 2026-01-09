@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
@@ -8,6 +7,13 @@ import { getUser } from '@/app/lib/userStore';
 import { AppLayout } from '@/app/components/layouts/AppLayout';
 
 import { cleaners_getCfg, cleaners_setDuration, cleaners_add, cleaners_remove, cleaners_setTimeRanges } from '@/app/lib/domain/cleanersDomain';
+
+import { Box, VStack, HStack, Heading, Text, Input as ChakraInput } from "@chakra-ui/react";
+import { Card, CardBody, CardHeader } from "@/app/components/ui/Card";
+import { Link } from "@/app/components/ui/Link";
+import { Button } from "@/app/components/ui/Button";
+import { Input } from "@/app/components/ui/Input";
+import { Select } from "@/app/components/ui/Select";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -29,7 +35,11 @@ export default async function HostCleanersPage({ searchParams }: { searchParams?
     const me = validateSessionUser(session);
 
     if (!me || me.role !== 'host') {
-        return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
+        return (
+            <Box p={6} color="var(--text-primary)">
+                Non autorizzato
+            </Box>
+        );
     }
 
     if (!aptId) {
@@ -68,295 +78,465 @@ export default async function HostCleanersPage({ searchParams }: { searchParams?
                 profileImageUrl: hostUserForLayout.profileImageUrl,
             } : undefined}
         >
-            <div className='max-w-3xl mx-auto space-y-5 p-4 sm:p-6'>
-                <div className='flex items-center justify-between gap-3'>
-                    <div>
-                        <Link 
-                            href={`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`}
-                            className='text-sm opacity-70 hover:opacity-100'
-                        >
-                            ← Torna alla dashboard
-                        </Link>
-                        <div className='mt-2'>
-                            <div className='text-lg font-semibold'>Cleaner</div>
-                            <div className='text-sm opacity-70'>{apartment.name}</div>
-                        </div>
-                    </div>
-                </div>
+            <Box maxW="3xl" mx="auto" p={{ base: 4, sm: 6 }}>
+                <VStack spacing={5} align="stretch">
+                    <HStack justify="space-between" gap={3}>
+                        <Box>
+                            <Link
+                                href={`/app/host?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`}
+                                fontSize="sm"
+                                opacity={0.7}
+                                _hover={{ opacity: 1 }}
+                            >
+                                ← Torna alla dashboard
+                            </Link>
+                            <Box mt={2}>
+                                <Heading as="h2" size="lg" fontWeight="semibold">
+                                    Cleaner
+                                </Heading>
+                                <Text fontSize="sm" opacity={0.7}>
+                                    {apartment.name}
+                                </Text>
+                            </Box>
+                        </Box>
+                    </HStack>
 
-                {/* Cleaner config */}
-                <section className='rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] p-4'>
-                    <div>
-                        <div className='text-sm font-semibold'>Cleaner (per appartamento)</div>
-                        <div className='mt-1 text-xs opacity-60'>Configura durata standard pulizia e censisci i cleaner per questo appartamento.</div>
-                    </div>
+                    {/* Cleaner config */}
+                    <Card>
+                        <CardBody p={4}>
+                            <VStack spacing={4} align="stretch">
+                                <Box>
+                                    <Text fontSize="sm" fontWeight="semibold">
+                                        Cleaner (per appartamento)
+                                    </Text>
+                                    <Text mt={1} fontSize="xs" opacity={0.6}>
+                                        Configura durata standard pulizia e censisci i cleaner per questo appartamento.
+                                    </Text>
+                                </Box>
 
-                    <div className='mt-4 space-y-4'>
-                        <form
-                            action={async (fd: FormData) => {
-                                'use server';
-                                const aptId = (fd.get('aptId')?.toString() ?? '').trim();
-                                if (!aptId) return;
-                                const durationMin = Math.max(15, Math.min(24 * 60, Number(fd.get('durationMin')?.toString() ?? '60') || 60));
-                                cleaners_setDuration(aptId, durationMin);
-                                redirect(`/app/host/cleaners?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
-                            }}
-                            className='space-y-2'>
-                            <input type='hidden' name='aptId' value={aptId} />
-                            <div className='text-[11px] opacity-60'>Durata pulizia default</div>
-                            <div className='flex flex-col sm:flex-row gap-2'>
-                                <select name='durationMin' defaultValue={String(cfg.durationMin)} className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2'>
-                                    {[30, 45, 60, 90, 120, 180, 240].map((m) => (
-                                        <option key={m} value={String(m)}>
-                                            {m} min
-                                        </option>
-                                    ))}
-                                </select>
-                                <button type='submit' className='rounded-xl bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-4 py-2 text-sm font-semibold whitespace-nowrap'>
-                                    Salva
-                                </button>
-                            </div>
-                        </form>
+                                <VStack spacing={4} align="stretch" mt={4}>
+                                    <Box as="form"
+                                        action={async (fd: FormData) => {
+                                            'use server';
+                                            const aptId = (fd.get('aptId')?.toString() ?? '').trim();
+                                            if (!aptId) return;
+                                            const durationMin = Math.max(15, Math.min(24 * 60, Number(fd.get('durationMin')?.toString() ?? '60') || 60));
+                                            cleaners_setDuration(aptId, durationMin);
+                                            redirect(`/app/host/cleaners?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
+                                        }}
+                                    >
+                                        <VStack spacing={2} align="stretch">
+                                            <input type='hidden' name='aptId' value={aptId} />
+                                            <Text fontSize="11px" opacity={0.6}>
+                                                Durata pulizia default
+                                            </Text>
+                                            <HStack spacing={2} flexDir={{ base: "column", sm: "row" }}>
+                                                <Select
+                                                    name='durationMin'
+                                                    defaultValue={String(cfg.durationMin)}
+                                                    flex={1}
+                                                    minW={0}
+                                                    borderRadius="xl"
+                                                    bg="var(--bg-secondary)"
+                                                    border="1px solid"
+                                                    borderColor="var(--border-light)"
+                                                    p={2}
+                                                >
+                                                    {[30, 45, 60, 90, 120, 180, 240].map((m) => (
+                                                        <option key={m} value={String(m)}>
+                                                            {m} min
+                                                        </option>
+                                                    ))}
+                                                </Select>
+                                                <Button
+                                                    type='submit'
+                                                    variant="secondary"
+                                                    borderRadius="xl"
+                                                    px={4}
+                                                    py={2}
+                                                    fontSize="sm"
+                                                    fontWeight="semibold"
+                                                    whiteSpace="nowrap"
+                                                >
+                                                    Salva
+                                                </Button>
+                                            </HStack>
+                                        </VStack>
+                                    </Box>
 
-                        <form
-                            action={async (fd: FormData) => {
-                                'use server';
-                                const aptId = (fd.get('aptId')?.toString() ?? '').trim();
-                                const name = fd.get('cleanerName')?.toString() ?? '';
-                                const phone = fd.get('cleanerPhone')?.toString() ?? '';
-                                if (!aptId) return;
-                                cleaners_add(aptId, name, phone);
-                                redirect(`/app/host/cleaners?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
-                            }}
-                            className='space-y-2'>
-                            <input type='hidden' name='aptId' value={aptId} />
-                            <div className='text-[11px] opacity-60'>Aggiungi cleaner</div>
-                            <div className='flex flex-col sm:flex-row gap-2'>
-                                <input name='cleanerName' placeholder='Es. Mario Rossi' required className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2' />
-                                <input name='cleanerPhone' type='tel' placeholder='Telefono' required className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2' />
-                                <button type='submit' className='rounded-xl bg-cyan-500/30 border border-cyan-400/30 px-4 py-2 text-sm font-semibold whitespace-nowrap'>
-                                    Aggiungi
-                                </button>
-                            </div>
-                        </form>
+                                    <Box as="form"
+                                        action={async (fd: FormData) => {
+                                            'use server';
+                                            const aptId = (fd.get('aptId')?.toString() ?? '').trim();
+                                            const name = fd.get('cleanerName')?.toString() ?? '';
+                                            const phone = fd.get('cleanerPhone')?.toString() ?? '';
+                                            if (!aptId) return;
+                                            cleaners_add(aptId, name, phone);
+                                            redirect(`/app/host/cleaners?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
+                                        }}
+                                    >
+                                        <VStack spacing={2} align="stretch">
+                                            <input type='hidden' name='aptId' value={aptId} />
+                                            <Text fontSize="11px" opacity={0.6}>
+                                                Aggiungi cleaner
+                                            </Text>
+                                            <HStack spacing={2} flexDir={{ base: "column", sm: "row" }}>
+                                                <ChakraInput
+                                                    name='cleanerName'
+                                                    placeholder='Es. Mario Rossi'
+                                                    required
+                                                    flex={1}
+                                                    minW={0}
+                                                    borderRadius="xl"
+                                                    bg="var(--bg-secondary)"
+                                                    border="1px solid"
+                                                    borderColor="var(--border-light)"
+                                                    p={2}
+                                                />
+                                                <ChakraInput
+                                                    name='cleanerPhone'
+                                                    type='tel'
+                                                    placeholder='Telefono'
+                                                    required
+                                                    flex={1}
+                                                    minW={0}
+                                                    borderRadius="xl"
+                                                    bg="var(--bg-secondary)"
+                                                    border="1px solid"
+                                                    borderColor="var(--border-light)"
+                                                    p={2}
+                                                />
+                                                <Button
+                                                    type='submit'
+                                                    borderRadius="xl"
+                                                    bg="rgba(6, 182, 212, 0.3)"
+                                                    border="1px solid"
+                                                    borderColor="rgba(6, 182, 212, 0.3)"
+                                                    px={4}
+                                                    py={2}
+                                                    fontSize="sm"
+                                                    fontWeight="semibold"
+                                                    whiteSpace="nowrap"
+                                                >
+                                                    Aggiungi
+                                                </Button>
+                                            </HStack>
+                                        </VStack>
+                                    </Box>
 
-                        <div>
-                            <div className='text-[11px] opacity-60 mb-2'>Range orari pulizie</div>
-                            <div className='text-xs opacity-50 mb-2'>Le pulizie assegnate verranno schedulati nel primo range disponibile dopo il check-out.</div>
-                            {(() => {
-                                const ranges = cfg.cleaningTimeRanges ?? [{ from: '09:00', to: '18:00' }];
-                                // Aggiungi sempre un range vuoto alla fine per permettere di aggiungerne uno nuovo
-                                const rangesWithEmpty = [...ranges, { from: '', to: '' }];
+                                    <Box>
+                                        <Text fontSize="11px" opacity={0.6} mb={2}>
+                                            Range orari pulizie
+                                        </Text>
+                                        <Text fontSize="xs" opacity={0.5} mb={2}>
+                                            Le pulizie assegnate verranno schedulati nel primo range disponibile dopo il check-out.
+                                        </Text>
+                                        {(() => {
+                                            const ranges = cfg.cleaningTimeRanges ?? [{ from: '09:00', to: '18:00' }];
+                                            const rangesWithEmpty = [...ranges, { from: '', to: '' }];
 
-                                return (
-                                    <div className='space-y-2'>
-                                        {/* Range rimovibili - form separati */}
-                                        {rangesWithEmpty.map((range, idx) => {
-                                            const isFirst = idx === 0;
-                                            const isLast = idx === rangesWithEmpty.length - 1;
-                                            const isRemovable = !isFirst && !isLast && ranges.length > 1;
+                                            return (
+                                                <VStack spacing={2} align="stretch">
+                                                    {/* Range rimovibili - form separati */}
+                                                    {rangesWithEmpty.map((range, idx) => {
+                                                        const isFirst = idx === 0;
+                                                        const isLast = idx === rangesWithEmpty.length - 1;
+                                                        const isRemovable = !isFirst && !isLast && ranges.length > 1;
 
-                                            if (isRemovable) {
-                                                return (
-                                                    <form
-                                                        key={idx}
+                                                        if (isRemovable) {
+                                                            return (
+                                                                <Box
+                                                                    key={idx}
+                                                                    as="form"
+                                                                    action={async (fd: FormData) => {
+                                                                        'use server';
+                                                                        const aptId = (fd.get('aptId')?.toString() ?? '').trim();
+                                                                        const rangeIndex = parseInt(fd.get('rangeIndex')?.toString() ?? '0', 10);
+                                                                        if (!aptId || isNaN(rangeIndex)) return;
+
+                                                                        const currentCfg = cleaners_getCfg(aptId);
+                                                                        const currentRanges = currentCfg.cleaningTimeRanges ?? [{ from: '09:00', to: '18:00' }];
+
+                                                                        if (currentRanges.length > 1 && rangeIndex >= 0 && rangeIndex < currentRanges.length) {
+                                                                            const newRanges = currentRanges.filter((_, i) => i !== rangeIndex);
+                                                                            cleaners_setTimeRanges(aptId, newRanges);
+                                                                        }
+
+                                                                        redirect(`/app/host/cleaners?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
+                                                                    }}
+                                                                    display="flex"
+                                                                    flexDir={{ base: "column", sm: "row" }}
+                                                                    gap={2}
+                                                                    alignItems={{ base: "stretch", sm: "center" }}
+                                                                >
+                                                                    <input type='hidden' name='aptId' value={aptId} />
+                                                                    <input type='hidden' name='rangeIndex' value={idx} />
+                                                                    <ChakraInput
+                                                                        type='time'
+                                                                        defaultValue={range.from}
+                                                                        placeholder='09:00'
+                                                                        flex={1}
+                                                                        minW={0}
+                                                                        borderRadius="xl"
+                                                                        bg="var(--bg-secondary)"
+                                                                        border="1px solid"
+                                                                        borderColor="var(--border-light)"
+                                                                        p={2}
+                                                                        opacity={0.6}
+                                                                        disabled
+                                                                    />
+                                                                    <Text fontSize="xs" opacity={0.6} display={{ base: "none", sm: "inline" }}>
+                                                                        →
+                                                                    </Text>
+                                                                    <ChakraInput
+                                                                        type='time'
+                                                                        defaultValue={range.to}
+                                                                        placeholder='18:00'
+                                                                        flex={1}
+                                                                        minW={0}
+                                                                        borderRadius="xl"
+                                                                        bg="var(--bg-secondary)"
+                                                                        border="1px solid"
+                                                                        borderColor="var(--border-light)"
+                                                                        p={2}
+                                                                        opacity={0.6}
+                                                                        disabled
+                                                                    />
+                                                                    <Button
+                                                                        type='submit'
+                                                                        size="sm"
+                                                                        borderRadius="lg"
+                                                                        bg="rgba(239, 68, 68, 0.2)"
+                                                                        _hover={{ bg: "rgba(239, 68, 68, 0.3)" }}
+                                                                        border="1px solid"
+                                                                        borderColor="rgba(239, 68, 68, 0.3)"
+                                                                        px={3}
+                                                                        py={2}
+                                                                        fontSize="xs"
+                                                                        whiteSpace={{ base: "normal", sm: "nowrap" }}
+                                                                    >
+                                                                        Rimuovi
+                                                                    </Button>
+                                                                </Box>
+                                                            );
+                                                        }
+                                                        return null;
+                                                    })}
+
+                                                    {/* Form principale per range editabili */}
+                                                    <Box as="form"
                                                         action={async (fd: FormData) => {
                                                             'use server';
                                                             const aptId = (fd.get('aptId')?.toString() ?? '').trim();
-                                                            const rangeIndex = parseInt(fd.get('rangeIndex')?.toString() ?? '0', 10);
-                                                            if (!aptId || isNaN(rangeIndex)) return;
+                                                            if (!aptId) return;
 
-                                                            const currentCfg = cleaners_getCfg(aptId);
-                                                            const currentRanges = currentCfg.cleaningTimeRanges ?? [{ from: '09:00', to: '18:00' }];
-
-                                                            // Rimuovi il range all'indice specificato, ma mantieni sempre almeno uno
-                                                            if (currentRanges.length > 1 && rangeIndex >= 0 && rangeIndex < currentRanges.length) {
-                                                                const newRanges = currentRanges.filter((_, i) => i !== rangeIndex);
-                                                                cleaners_setTimeRanges(aptId, newRanges);
+                                                            const ranges: Array<{ from: string; to: string }> = [];
+                                                            let idx = 0;
+                                                            while (true) {
+                                                                const from = fd.get(`rangeFrom_${idx}`)?.toString()?.trim();
+                                                                const to = fd.get(`rangeTo_${idx}`)?.toString()?.trim();
+                                                                if (!from || !to) break;
+                                                                const fromParts = from.split(':');
+                                                                const toParts = to.split(':');
+                                                                if (fromParts.length === 2 && toParts.length === 2) {
+                                                                    const fromMin = parseInt(fromParts[0], 10) * 60 + parseInt(fromParts[1], 10);
+                                                                    const toMin = parseInt(toParts[0], 10) * 60 + parseInt(toParts[1], 10);
+                                                                    if (fromMin < toMin) {
+                                                                        ranges.push({ from, to });
+                                                                    }
+                                                                }
+                                                                idx++;
                                                             }
 
+                                                            if (ranges.length === 0) {
+                                                                ranges.push({ from: '09:00', to: '18:00' });
+                                                            }
+
+                                                            cleaners_setTimeRanges(aptId, ranges);
                                                             redirect(`/app/host/cleaners?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
                                                         }}
-                                                        className='flex flex-col sm:flex-row gap-2 items-stretch sm:items-center'>
-                                                        <input type='hidden' name='aptId' value={aptId} />
-                                                        <input type='hidden' name='rangeIndex' value={idx} />
-                                                        <input
-                                                            type='time'
-                                                            defaultValue={range.from}
-                                                            placeholder='09:00'
-                                                            className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2 opacity-60'
-                                                            disabled
-                                                        />
-                                                        <span className='text-xs opacity-60 hidden sm:inline'>→</span>
-                                                        <input
-                                                            type='time'
-                                                            defaultValue={range.to}
-                                                            placeholder='18:00'
-                                                            className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2 opacity-60'
-                                                            disabled
-                                                        />
-                                                        <button
-                                                            type='submit'
-                                                            className='text-xs px-3 py-2 rounded-lg bg-red-500/20 border border-red-500/30 hover:bg-red-500/30 whitespace-normal sm:whitespace-nowrap'>
-                                                            Rimuovi
-                                                        </button>
-                                                    </form>
-                                                );
-                                            }
-                                            return null;
-                                        })}
+                                                    >
+                                                        <VStack spacing={2} align="stretch">
+                                                            <input type='hidden' name='aptId' value={aptId} />
+                                                            {/* Include hidden inputs per i range rimovibili */}
+                                                            {ranges.map((r, idx) => {
+                                                                if (idx > 0 && idx < ranges.length) {
+                                                                    return <input key={`from_${idx}`} type='hidden' name={`rangeFrom_${idx}`} value={r.from} />;
+                                                                }
+                                                                return null;
+                                                            })}
+                                                            {ranges.map((r, idx) => {
+                                                                if (idx > 0 && idx < ranges.length) {
+                                                                    return <input key={`to_${idx}`} type='hidden' name={`rangeTo_${idx}`} value={r.to} />;
+                                                                }
+                                                                return null;
+                                                            })}
+                                                            {/* Range editabili (primo e ultimo vuoto) */}
+                                                            {rangesWithEmpty.map((range, idx) => {
+                                                                const isFirst = idx === 0;
+                                                                const isLast = idx === rangesWithEmpty.length - 1;
+                                                                const isRemovable = !isFirst && !isLast && ranges.length > 1;
+                                                                const isEmpty = !range.from && !range.to;
 
-                                        {/* Form principale per range editabili */}
-                                        <form
-                                            action={async (fd: FormData) => {
-                                                'use server';
-                                                const aptId = (fd.get('aptId')?.toString() ?? '').trim();
-                                                if (!aptId) return;
+                                                                if (!isRemovable) {
+                                                                    if (isLast && isEmpty) {
+                                                                        return (
+                                                                            <Box key={idx} pt={2} borderTop="1px solid" borderColor="var(--border-light)">
+                                                                                <VStack spacing={2} align="stretch">
+                                                                                    <Text fontSize="10px" opacity={0.7} fontWeight="medium">
+                                                                                        + Aggiungi nuovo range
+                                                                                    </Text>
+                                                                                    <HStack spacing={2} flexDir={{ base: "column", sm: "row" }} alignItems={{ base: "stretch", sm: "center" }}>
+                                                                                        <ChakraInput
+                                                                                            type='time'
+                                                                                            name={`rangeFrom_${idx}`}
+                                                                                            defaultValue={range.from}
+                                                                                            placeholder='09:00'
+                                                                                            flex={1}
+                                                                                            minW={0}
+                                                                                            borderRadius="xl"
+                                                                                            bg="var(--bg-secondary)"
+                                                                                            border="2px dashed"
+                                                                                            borderColor="var(--border-strong)"
+                                                                                            p={2}
+                                                                                        />
+                                                                                        <Text fontSize="xs" opacity={0.6} display={{ base: "none", sm: "inline" }}>
+                                                                                            →
+                                                                                        </Text>
+                                                                                        <ChakraInput
+                                                                                            type='time'
+                                                                                            name={`rangeTo_${idx}`}
+                                                                                            defaultValue={range.to}
+                                                                                            placeholder='18:00'
+                                                                                            flex={1}
+                                                                                            minW={0}
+                                                                                            borderRadius="xl"
+                                                                                            bg="var(--bg-secondary)"
+                                                                                            border="2px dashed"
+                                                                                            borderColor="var(--border-strong)"
+                                                                                            p={2}
+                                                                                        />
+                                                                                    </HStack>
+                                                                                </VStack>
+                                                                            </Box>
+                                                                        );
+                                                                    }
+                                                                    return (
+                                                                        <HStack key={idx} spacing={2} flexDir={{ base: "column", sm: "row" }} alignItems={{ base: "stretch", sm: "center" }}>
+                                                                            <ChakraInput
+                                                                                type='time'
+                                                                                name={`rangeFrom_${idx}`}
+                                                                                defaultValue={range.from}
+                                                                                placeholder='09:00'
+                                                                                flex={1}
+                                                                                minW={0}
+                                                                                borderRadius="xl"
+                                                                                bg="var(--bg-secondary)"
+                                                                                border="1px solid"
+                                                                                borderColor="var(--border-light)"
+                                                                                p={2}
+                                                                            />
+                                                                            <Text fontSize="xs" opacity={0.6} display={{ base: "none", sm: "inline" }}>
+                                                                                →
+                                                                            </Text>
+                                                                            <ChakraInput
+                                                                                type='time'
+                                                                                name={`rangeTo_${idx}`}
+                                                                                defaultValue={range.to}
+                                                                                placeholder='18:00'
+                                                                                flex={1}
+                                                                                minW={0}
+                                                                                borderRadius="xl"
+                                                                                bg="var(--bg-secondary)"
+                                                                                border="1px solid"
+                                                                                borderColor="var(--border-light)"
+                                                                                p={2}
+                                                                            />
+                                                                        </HStack>
+                                                                    );
+                                                                }
+                                                                return null;
+                                                            })}
+                                                            <Button
+                                                                type='submit'
+                                                                variant="secondary"
+                                                                w="100%"
+                                                                borderRadius="xl"
+                                                                px={4}
+                                                                py={2}
+                                                                fontSize="sm"
+                                                                fontWeight="semibold"
+                                                            >
+                                                                Salva range orari
+                                                            </Button>
+                                                        </VStack>
+                                                    </Box>
+                                                </VStack>
+                                            );
+                                        })()}
+                                    </Box>
 
-                                                // Leggi tutti i range dal form (filtra quelli vuoti)
-                                                const ranges: Array<{ from: string; to: string }> = [];
-                                                let idx = 0;
-                                                while (true) {
-                                                    const from = fd.get(`rangeFrom_${idx}`)?.toString()?.trim();
-                                                    const to = fd.get(`rangeTo_${idx}`)?.toString()?.trim();
-                                                    if (!from || !to) break;
-                                                    // Valida che from < to
-                                                    const fromParts = from.split(':');
-                                                    const toParts = to.split(':');
-                                                    if (fromParts.length === 2 && toParts.length === 2) {
-                                                        const fromMin = parseInt(fromParts[0], 10) * 60 + parseInt(fromParts[1], 10);
-                                                        const toMin = parseInt(toParts[0], 10) * 60 + parseInt(toParts[1], 10);
-                                                        if (fromMin < toMin) {
-                                                            ranges.push({ from, to });
-                                                        }
-                                                    }
-                                                    idx++;
-                                                }
-
-                                                // Se non ci sono range validi, usa il default
-                                                if (ranges.length === 0) {
-                                                    ranges.push({ from: '09:00', to: '18:00' });
-                                                }
-
-                                                cleaners_setTimeRanges(aptId, ranges);
-                                                redirect(`/app/host/cleaners?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
-                                            }}
-                                            className='space-y-2'>
-                                            <input type='hidden' name='aptId' value={aptId} />
-                                            {/* Include hidden inputs per i range rimovibili */}
-                                            {ranges.map((r, idx) => {
-                                                if (idx > 0 && idx < ranges.length) {
-                                                    return <input key={`from_${idx}`} type='hidden' name={`rangeFrom_${idx}`} value={r.from} />;
-                                                }
-                                                return null;
-                                            })}
-                                            {ranges.map((r, idx) => {
-                                                if (idx > 0 && idx < ranges.length) {
-                                                    return <input key={`to_${idx}`} type='hidden' name={`rangeTo_${idx}`} value={r.to} />;
-                                                }
-                                                return null;
-                                            })}
-                                            {/* Range editabili (primo e ultimo vuoto) */}
-                                            {rangesWithEmpty.map((range, idx) => {
-                                                const isFirst = idx === 0;
-                                                const isLast = idx === rangesWithEmpty.length - 1;
-                                                const isRemovable = !isFirst && !isLast && ranges.length > 1;
-                                                const isEmpty = !range.from && !range.to;
-
-                                                if (!isRemovable) {
-                                                    if (isLast && isEmpty) {
-                                                        // Range vuoto per aggiungere nuovo
-                                                        return (
-                                                            <div key={idx} className='space-y-2 pt-2 border-t border-[var(--border-light)]'>
-                                                                <div className='text-[10px] opacity-70 font-medium'>+ Aggiungi nuovo range</div>
-                                                                <div className='flex flex-col sm:flex-row gap-2 items-stretch sm:items-center'>
-                                                                    <input
-                                                                        type='time'
-                                                                        name={`rangeFrom_${idx}`}
-                                                                        defaultValue={range.from}
-                                                                        placeholder='09:00'
-                                                                        className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border-2 border-dashed border-[var(--border-strong)] p-2'
-                                                                    />
-                                                                    <span className='text-xs opacity-60 hidden sm:inline'>→</span>
-                                                                    <input
-                                                                        type='time'
-                                                                        name={`rangeTo_${idx}`}
-                                                                        defaultValue={range.to}
-                                                                        placeholder='18:00'
-                                                                        className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border-2 border-dashed border-[var(--border-strong)] p-2'
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    }
-                                                    // Primo range (sempre presente)
-                                                    return (
-                                                        <div key={idx} className='flex flex-col sm:flex-row gap-2 items-stretch sm:items-center'>
-                                                            <input
-                                                                type='time'
-                                                                name={`rangeFrom_${idx}`}
-                                                                defaultValue={range.from}
-                                                                placeholder='09:00'
-                                                                className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2'
-                                                            />
-                                                            <span className='text-xs opacity-60 hidden sm:inline'>→</span>
-                                                            <input
-                                                                type='time'
-                                                                name={`rangeTo_${idx}`}
-                                                                defaultValue={range.to}
-                                                                placeholder='18:00'
-                                                                className='flex-1 min-w-0 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-2'
-                                                            />
-                                                        </div>
-                                                    );
-                                                }
-                                                return null;
-                                            })}
-                                            <button type='submit' className='w-full rounded-xl bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-4 py-2 text-sm font-semibold'>
-                                                Salva range orari
-                                            </button>
-                                        </form>
-                                    </div>
-                                );
-                            })()}
-                        </div>
-
-                        <div>
-                            <div className='text-[11px] opacity-60 mb-2'>Cleaner censiti</div>
-                            {cfg.cleaners.length === 0 ? (
-                                <div className='text-sm opacity-50'>Nessun cleaner censito.</div>
-                            ) : (
-                                <div className='space-y-2'>
-                                    {cfg.cleaners.map((cleaner) => (
-                                        <div key={cleaner.name} className='flex items-center justify-between rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3'>
-                                            <div>
-                                                <div className='text-sm font-semibold'>{cleaner.name}</div>
-                                                <div className='text-xs opacity-60'>{cleaner.phone}</div>
-                                            </div>
-                                            <form
-                                                action={async (fd: FormData) => {
-                                                    'use server';
-                                                    const aptId = (fd.get('aptId')?.toString() ?? '').trim();
-                                                    const name = (fd.get('name')?.toString() ?? '').trim();
-                                                    if (!aptId) return;
-                                                    cleaners_remove(aptId, name);
-                                                    redirect(`/app/host/cleaners?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
-                                                }}>
-                                                <input type='hidden' name='aptId' value={aptId} />
-                                                <input type='hidden' name='name' value={cleaner.name} />
-                                                <button type='submit' className='text-xs px-3 py-2 rounded-lg bg-red-500/20 border border-red-500/30'>
-                                                    Rimuovi
-                                                </button>
-                                            </form>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </section>
-            </div>
+                                    <Box>
+                                        <Text fontSize="11px" opacity={0.6} mb={2}>
+                                            Cleaner censiti
+                                        </Text>
+                                        {cfg.cleaners.length === 0 ? (
+                                            <Text fontSize="sm" opacity={0.5}>
+                                                Nessun cleaner censito.
+                                            </Text>
+                                        ) : (
+                                            <VStack spacing={2} align="stretch">
+                                                {cfg.cleaners.map((cleaner) => (
+                                                    <Card key={cleaner.name} variant="outlined">
+                                                        <CardBody p={3}>
+                                                            <HStack justify="space-between">
+                                                                <Box>
+                                                                    <Text fontSize="sm" fontWeight="semibold">
+                                                                        {cleaner.name}
+                                                                    </Text>
+                                                                    <Text fontSize="xs" opacity={0.6}>
+                                                                        {cleaner.phone}
+                                                                    </Text>
+                                                                </Box>
+                                                                <Box as="form"
+                                                                    action={async (fd: FormData) => {
+                                                                        'use server';
+                                                                        const aptId = (fd.get('aptId')?.toString() ?? '').trim();
+                                                                        const name = (fd.get('name')?.toString() ?? '').trim();
+                                                                        if (!aptId) return;
+                                                                        cleaners_remove(aptId, name);
+                                                                        redirect(`/app/host/cleaners?client=${encodeURIComponent(clientId)}&apt=${encodeURIComponent(aptId)}`);
+                                                                    }}
+                                                                >
+                                                                    <input type='hidden' name='aptId' value={aptId} />
+                                                                    <input type='hidden' name='name' value={cleaner.name} />
+                                                                    <Button
+                                                                        type='submit'
+                                                                        size="sm"
+                                                                        borderRadius="lg"
+                                                                        bg="rgba(239, 68, 68, 0.2)"
+                                                                        border="1px solid"
+                                                                        borderColor="rgba(239, 68, 68, 0.3)"
+                                                                        px={3}
+                                                                        py={2}
+                                                                        fontSize="xs"
+                                                                    >
+                                                                        Rimuovi
+                                                                    </Button>
+                                                                </Box>
+                                                            </HStack>
+                                                        </CardBody>
+                                                    </Card>
+                                                ))}
+                                            </VStack>
+                                        )}
+                                    </Box>
+                                </VStack>
+                            </VStack>
+                        </CardBody>
+                    </Card>
+                </VStack>
+            </Box>
         </AppLayout>
     );
 }
-

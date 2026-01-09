@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { readSession, validateSessionUser } from "@/app/lib/session";
@@ -9,18 +8,9 @@ import { AppLayout } from "@/app/components/layouts/AppLayout";
 import { UserProfile } from "../components/UserProfile";
 import { ClientAccordion } from "./components/ClientAccordion";
 import { TestPushButton } from "./components/TestPushButton";
-
-function pillStatus(s: "online" | "offline") {
-  return s === "online"
-    ? { dot: "bg-emerald-500", text: "ONLINE", box: "bg-[var(--pastel-green)] border-[var(--border-light)] text-[var(--accent-success)]" }
-    : { dot: "bg-red-500", text: "OFFLINE", box: "bg-red-100 border-[var(--border-light)] text-[var(--accent-error)]" };
-}
-
-function pillNet(n: "main" | "backup") {
-  return n === "main"
-    ? { text: "MAIN WAN", box: "bg-[var(--bg-card)] border-[var(--border-light)] text-[var(--text-primary)]" }
-    : { text: "BACKUP WAN", box: "bg-[var(--bg-card)] border-[var(--border-light)] text-[var(--text-primary)]" };
-}
+import { Box, VStack, HStack, Heading, Text, Grid, GridItem } from "@chakra-ui/react";
+import { Card, CardBody, CardHeader } from "@/app/components/ui/Card";
+import { Link } from "@/app/components/ui/Link";
 
 export default async function TechPage({
   searchParams,
@@ -33,21 +23,23 @@ export default async function TechPage({
   const me = validateSessionUser(session);
 
   if (!me || me.role !== "tech") {
-    // Se la sessione era valida ma l'utente è disabilitato, fai logout
     if (session && session.userId && session.role === "tech") {
       redirect("/api/auth/logout");
     }
-    return <div className="p-6 text-[var(--text-primary)]">Non autorizzato</div>;
+    return (
+      <Box p={6} color="var(--text-primary)">
+        Non autorizzato
+      </Box>
+    );
   }
 
   const apts = listApts();
   const clients = listClients();
   const clientsCount = clients.length;
 
-  // Raggruppare appartamenti per cliente
   const apartmentsByClient = new Map<string, typeof apts>();
   apts.forEach((apt) => {
-    const clientName = apt.group; // Il campo group contiene il nome del cliente
+    const clientName = apt.group;
     if (!apartmentsByClient.has(clientName)) {
       apartmentsByClient.set(clientName, []);
     }
@@ -76,112 +68,165 @@ export default async function TechPage({
         profileImageUrl: techUser.profileImageUrl,
       } : undefined}
     >
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 lg:gap-6 p-4 lg:p-6">
+      <Grid
+        templateColumns={{ base: "1fr", lg: "1fr 360px" }}
+        gap={{ base: 4, lg: 6 }}
+        p={{ base: 4, lg: 6 }}
+      >
         {/* CENTER */}
-        <section className="space-y-4">
-          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] overflow-hidden">
-            <div className="p-4 border-b border-[var(--border-light)]">
-              <div className="text-lg font-semibold">Status</div>
-              <div className="text-sm opacity-60 mt-1">
-                {totalApts} appartamenti • {online} online • {offline} offline
-              </div>
-            </div>
+        <Box as="section">
+          <VStack spacing={4} align="stretch">
+            <Card>
+              <CardHeader p={4} borderBottom="1px solid" borderColor="var(--border-light)">
+                <Heading as="h2" size="md" fontWeight="semibold">
+                  Status
+                </Heading>
+                <Text fontSize="sm" opacity={0.6} mt={1}>
+                  {totalApts} appartamenti • {online} online • {offline} offline
+                </Text>
+              </CardHeader>
 
-            <div className="p-4 space-y-3">
-              {Array.from(apartmentsByClient.entries()).map(([clientName, clientApts]) => (
-                <ClientAccordion
-                  key={clientName}
-                  clientName={clientName}
-                  apartments={clientApts.map((a) => ({
-                    aptId: a.aptId,
-                    aptName: a.aptName,
-                    status: a.status,
-                    network: a.network,
-                    lastAccessLabel: a.lastAccessLabel,
-                  }))}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
+              <Box p={4}>
+                <VStack spacing={3} align="stretch">
+                  {Array.from(apartmentsByClient.entries()).map(([clientName, clientApts]) => (
+                    <ClientAccordion
+                      key={clientName}
+                      clientName={clientName}
+                      apartments={clientApts.map((a) => ({
+                        aptId: a.aptId,
+                        aptName: a.aptName,
+                        status: a.status,
+                        network: a.network,
+                        lastAccessLabel: a.lastAccessLabel,
+                      }))}
+                    />
+                  ))}
+                </VStack>
+              </Box>
+            </Card>
+          </VStack>
+        </Box>
 
         {/* RIGHT */}
-        <aside className="space-y-4">
-          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] overflow-hidden">
-            <div className="p-4 border-b border-[var(--border-light)] flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold">LIVE ACCESS LOG</div>
-                <div className="text-xs opacity-60">
-                  {showAll ? "Ultimi 50 eventi" : "Ultimi 10 eventi"}
-                </div>
-              </div>
+        <Box as="aside">
+          <VStack spacing={4} align="stretch">
+            <Card>
+              <CardHeader
+                p={4}
+                borderBottom="1px solid"
+                borderColor="var(--border-light)"
+                display="flex"
+                alignItems="center"
+                justifyContent="space-between"
+              >
+                <Box>
+                  <Text fontSize="sm" fontWeight="semibold">
+                    LIVE ACCESS LOG
+                  </Text>
+                  <Text fontSize="xs" opacity={0.6}>
+                    {showAll ? "Ultimi 50 eventi" : "Ultimi 10 eventi"}
+                  </Text>
+                </Box>
 
-              {showAll ? (
-                <Link className="text-xs opacity-70 hover:opacity-100" href="/app/tech">
-                  Mostra meno
-                </Link>
-              ) : (
-                <Link className="text-xs opacity-70 hover:opacity-100" href="/app/tech?all=1">
-                  Mostra di più
-                </Link>
-              )}
-            </div>
+                {showAll ? (
+                  <Link href="/app/tech" fontSize="xs" opacity={0.7} _hover={{ opacity: 1 }}>
+                    Mostra meno
+                  </Link>
+                ) : (
+                  <Link href="/app/tech?all=1" fontSize="xs" opacity={0.7} _hover={{ opacity: 1 }}>
+                    Mostra di più
+                  </Link>
+                )}
+              </CardHeader>
 
-            <div className="p-4 space-y-3">
-              {accessLog.length === 0 ? (
-                <div className="text-sm opacity-60">Nessun evento.</div>
-              ) : (
-                accessLog.map((e) => (
-                  <div key={e.id} className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] p-3">
-                    <div className="text-xs opacity-60">{e.tsLabel}</div>
-                    <div className="mt-1 text-sm">
-                      <span className="font-semibold">Apt {e.aptId}</span>{" "}
-                      <span className="opacity-70">|</span>{" "}
-                      <span className="font-semibold">{e.title}</span>
-                    </div>
-                    <div className="mt-1 text-xs opacity-70">{e.detail}</div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
+              <Box p={4}>
+                <VStack spacing={3} align="stretch">
+                  {accessLog.length === 0 ? (
+                    <Text fontSize="sm" opacity={0.6}>
+                      Nessun evento.
+                    </Text>
+                  ) : (
+                    accessLog.map((e) => (
+                      <Card key={e.id} variant="outlined">
+                        <CardBody p={3}>
+                          <VStack align="stretch" spacing={1}>
+                            <Text fontSize="xs" opacity={0.6}>
+                              {e.tsLabel}
+                            </Text>
+                            <Text fontSize="sm" mt={1}>
+                              <Text as="span" fontWeight="semibold">
+                                Apt {e.aptId}
+                              </Text>{" "}
+                              <Text as="span" opacity={0.7}>|</Text>{" "}
+                              <Text as="span" fontWeight="semibold">
+                                {e.title}
+                              </Text>
+                            </Text>
+                            <Text fontSize="xs" opacity={0.7} mt={1}>
+                              {e.detail}
+                            </Text>
+                          </VStack>
+                        </CardBody>
+                      </Card>
+                    ))
+                  )}
+                </VStack>
+              </Box>
+            </Card>
 
-          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] overflow-hidden">
-            <div className="p-4 border-b border-[var(--border-light)]">
-              <div className="text-sm font-semibold">INCIDENTS</div>
-            </div>
+            <Card>
+              <CardHeader p={4} borderBottom="1px solid" borderColor="var(--border-light)">
+                <Text fontSize="sm" fontWeight="semibold">
+                  INCIDENTS
+                </Text>
+              </CardHeader>
 
-            <div className="p-4 space-y-2">
-              {incidents.map((i) => (
-                <div key={i.id} className="flex items-center justify-between rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)] px-3 py-3">
-                  <div className="flex items-center gap-3">
-                    <div className="text-lg">
-                      {i.type === "tamper" && "⚠️"}
-                      {i.type === "offline" && "🛑"}
-                      {i.type === "failed_access" && "❗"}
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold">{i.title}</div>
-                      <div className="text-xs opacity-60">Apt {i.aptId} • {i.tsLabel}</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+              <Box p={4}>
+                <VStack spacing={2} align="stretch">
+                  {incidents.map((i) => (
+                    <Card key={i.id} variant="outlined">
+                      <CardBody px={3} py={3}>
+                        <HStack justify="space-between">
+                          <HStack spacing={3}>
+                            <Text fontSize="lg">
+                              {i.type === "tamper" && "⚠️"}
+                              {i.type === "offline" && "🛑"}
+                              {i.type === "failed_access" && "❗"}
+                            </Text>
+                            <Box>
+                              <Text fontSize="sm" fontWeight="semibold">
+                                {i.title}
+                              </Text>
+                              <Text fontSize="xs" opacity={0.6}>
+                                Apt {i.aptId} • {i.tsLabel}
+                              </Text>
+                            </Box>
+                          </HStack>
+                        </HStack>
+                      </CardBody>
+                    </Card>
+                  ))}
+                </VStack>
+              </Box>
+            </Card>
 
-          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-light)] overflow-hidden">
-            <div className="p-4 border-b border-[var(--border-light)]">
-              <div className="text-sm font-semibold">PUSH NOTIFICATIONS</div>
-              <div className="text-xs opacity-60 mt-1">Test invio notifiche</div>
-            </div>
+            <Card>
+              <CardHeader p={4} borderBottom="1px solid" borderColor="var(--border-light)">
+                <Text fontSize="sm" fontWeight="semibold">
+                  PUSH NOTIFICATIONS
+                </Text>
+                <Text fontSize="xs" opacity={0.6} mt={1}>
+                  Test invio notifiche
+                </Text>
+              </CardHeader>
 
-            <div className="p-4">
-              <TestPushButton />
-            </div>
-          </div>
-        </aside>
-      </div>
+              <Box p={4}>
+                <TestPushButton />
+              </Box>
+            </Card>
+          </VStack>
+        </Box>
+      </Grid>
     </AppLayout>
   );
 }

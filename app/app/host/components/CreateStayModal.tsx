@@ -1,7 +1,11 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { Box, VStack, HStack, Grid, GridItem, Text, Field } from "@chakra-ui/react";
+import { Select } from "@/app/components/ui/Select";
 import { Modal } from '@/app/components/ui/Modal';
+import { Button } from '@/app/components/ui/Button';
+import { Input } from '@/app/components/ui/Input';
 import { GuestFields } from './GuestFields';
 
 type Cleaner = {
@@ -38,100 +42,134 @@ export function CreateStayModal({ aptId, clientId, cleaners, createStayAction }:
 
     return (
         <>
-            <button
+            <Button
                 onClick={() => setIsOpen(true)}
-                className='w-full rounded-xl bg-cyan-500/30 hover:bg-cyan-500/40 border border-cyan-400/30 px-4 py-3 font-semibold text-sm transition-colors'
+                w="100%"
+                borderRadius="xl"
+                bg="rgba(6, 182, 212, 0.3)"
+                _hover={{ bg: "rgba(6, 182, 212, 0.4)" }}
+                border="1px solid"
+                borderColor="rgba(6, 182, 212, 0.3)"
+                px={4}
+                py={3}
+                fontWeight="semibold"
+                fontSize="sm"
+                transition="colors"
             >
                 + Crea nuovo soggiorno
-            </button>
+            </Button>
 
             <Modal isOpen={isOpen} onClose={handleClose} title="Crea nuovo soggiorno" size="lg">
-                <form ref={formRef} onSubmit={handleSubmit} className='space-y-4 min-w-0'>
-                    <input type='hidden' name='aptId' value={aptId} />
+                <Box as="form" ref={formRef} onSubmit={handleSubmit} minW={0}>
+                    <VStack spacing={4} align="stretch" minW={0}>
+                        <input type='hidden' name='aptId' value={aptId} />
 
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-3 min-w-0'>
-                        <div>
-                            <div className='text-[11px] opacity-60 mb-1'>Check-in (data + ora)</div>
-                            <input 
-                                type='datetime-local' 
-                                name='checkin' 
+                        <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={3} minW={0}>
+                            <Input
+                                type='datetime-local'
+                                name='checkin'
+                                label="Check-in (data + ora)"
                                 required
-                                className='w-full rounded-xl bg-[var(--bg-card)] border border-[var(--border-light)] p-2' 
                             />
-                        </div>
 
-                        <div>
-                            <div className='text-[11px] opacity-60 mb-1'>Check-out (data + ora)</div>
-                            <input 
-                                type='datetime-local' 
-                                name='checkout' 
+                            <Input
+                                type='datetime-local'
+                                name='checkout'
+                                label="Check-out (data + ora)"
                                 required
-                                className='w-full rounded-xl bg-[var(--bg-card)] border border-[var(--border-light)] p-2' 
                             />
-                        </div>
-                    </div>
+                        </Grid>
 
-                    <div>
-                        <div className='text-[11px] opacity-60 mb-1'>Numero ospiti</div>
-                        <select 
-                            name='guests' 
-                            id='guestsCount' 
-                            defaultValue='2' 
-                            className='w-full rounded-xl bg-[var(--bg-card)] border border-[var(--border-light)] p-2'
-                        >
-                            {Array.from({ length: 10 }).map((_, i) => (
-                                <option key={i + 1} value={String(i + 1)}>
-                                    {i + 1}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                        <Field.Root>
+                            <Field.Label fontSize="11px" opacity={0.6} mb={1}>
+                                Numero ospiti
+                            </Field.Label>
+                            <Select
+                                name='guests'
+                                id='guestsCount'
+                                defaultValue='2'
+                                borderRadius="xl"
+                                bg="var(--bg-card)"
+                                border="1px solid"
+                                borderColor="var(--border-light)"
+                                p={2}
+                            >
+                                {Array.from({ length: 10 }).map((_, i) => (
+                                    <option key={i + 1} value={String(i + 1)}>
+                                        {i + 1}
+                                    </option>
+                                ))}
+                            </Select>
+                        </Field.Root>
 
-                    <div>
-                        <div className='text-[11px] opacity-60 mb-2'>
-                            Dati ospiti <span className='text-red-400'>*</span>
-                        </div>
-                        <GuestFields maxGuests={10} />
-                        <div className='mt-2 text-[11px] opacity-50'>I PIN di accesso verranno creati automaticamente per tutti gli ospiti.</div>
-                    </div>
+                        <Box>
+                            <Text fontSize="11px" opacity={0.6} mb={2}>
+                                Dati ospiti <Text as="span" color="var(--accent-error)">*</Text>
+                            </Text>
+                            <GuestFields maxGuests={10} />
+                            <Text mt={2} fontSize="11px" opacity={0.5}>
+                                I PIN di accesso verranno creati automaticamente per tutti gli ospiti.
+                            </Text>
+                        </Box>
 
-                    <div>
-                        <div className='text-[11px] opacity-60 mb-1'>
-                            Cleaner <span className='text-red-400'>*</span>
-                        </div>
-                        <select 
-                            name='cleaner' 
-                            required 
-                            className='w-full rounded-xl bg-[var(--bg-card)] border border-[var(--border-light)] p-2'
-                        >
-                            <option value=''>— Seleziona cleaner —</option>
-                            {cleaners.map((cleaner) => (
-                                <option key={cleaner.name} value={cleaner.name}>
-                                    {cleaner.name} - {cleaner.phone}
-                                </option>
-                            ))}
-                        </select>
-                        <div className='mt-1 text-[11px] opacity-50'>Il PIN del cleaner viene creato automaticamente (check-out → check-out + durata pulizia).</div>
-                    </div>
+                        <Field.Root>
+                            <Field.Label fontSize="11px" opacity={0.6} mb={1}>
+                                Cleaner <Text as="span" color="var(--accent-error)">*</Text>
+                            </Field.Label>
+                            <Select
+                                name='cleaner'
+                                required
+                                borderRadius="xl"
+                                bg="var(--bg-card)"
+                                border="1px solid"
+                                borderColor="var(--border-light)"
+                                p={2}
+                            >
+                                <option value=''>— Seleziona cleaner —</option>
+                                {cleaners.map((cleaner) => (
+                                    <option key={cleaner.name} value={cleaner.name}>
+                                        {cleaner.name} - {cleaner.phone}
+                                    </option>
+                                ))}
+                            </Select>
+                            <Text mt={1} fontSize="11px" opacity={0.5}>
+                                Il PIN del cleaner viene creato automaticamente (check-out → check-out + durata pulizia).
+                            </Text>
+                        </Field.Root>
 
-                    <div className='flex gap-3 pt-2 border-t border-[var(--border-light)]'>
-                        <button
-                            type='button'
-                            onClick={handleClose}
-                            className='flex-1 rounded-xl bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-light)] px-4 py-2 text-sm font-semibold'
-                        >
-                            Annulla
-                        </button>
-                        <button 
-                            type='submit' 
-                            className='flex-1 rounded-xl bg-cyan-500/30 hover:bg-cyan-500/40 border border-cyan-400/30 px-4 py-2 text-sm font-semibold'
-                        >
-                            Crea soggiorno
-                        </button>
-                    </div>
-                </form>
+                        <HStack spacing={3} pt={2} borderTop="1px solid" borderColor="var(--border-light)">
+                            <Button
+                                type='button'
+                                onClick={handleClose}
+                                variant="secondary"
+                                flex={1}
+                                borderRadius="xl"
+                                px={4}
+                                py={2}
+                                fontSize="sm"
+                                fontWeight="semibold"
+                            >
+                                Annulla
+                            </Button>
+                            <Button
+                                type='submit'
+                                flex={1}
+                                borderRadius="xl"
+                                bg="rgba(6, 182, 212, 0.3)"
+                                _hover={{ bg: "rgba(6, 182, 212, 0.4)" }}
+                                border="1px solid"
+                                borderColor="rgba(6, 182, 212, 0.3)"
+                                px={4}
+                                py={2}
+                                fontSize="sm"
+                                fontWeight="semibold"
+                            >
+                                Crea soggiorno
+                            </Button>
+                        </HStack>
+                    </VStack>
+                </Box>
             </Modal>
         </>
     );
 }
-

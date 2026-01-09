@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "./lib/theme";
+import { ChakraProvider } from "./providers/ChakraProvider";
 import { A2HSWizard } from "./components/A2HSWizard";
 
 const geistSans = Geist({
@@ -117,10 +118,13 @@ export default function RootLayout({
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
       >
         <ThemeProvider>
-          {children}
-          <A2HSWizard />
+          <ChakraProvider>
+            {children}
+            <A2HSWizard />
+          </ChakraProvider>
         </ThemeProvider>
       </body>
     </html>
