@@ -26,7 +26,7 @@ export function ThemeToggle() {
         border="1px solid"
         borderColor="var(--border-light)"
       >
-        <Sun size={20} color="var(--text-primary)" style={{ opacity: 0.5 }} />
+        <Sun size={20} color="var(--text-secondary)" />
       </Box>
     );
   }
@@ -48,7 +48,8 @@ export function ThemeToggle() {
       borderColor="var(--border-light)"
       _hover={{ opacity: 0.8 }}
       transition="opacity"
-      icon={theme === "light" ? <Moon size={20} color="var(--text-primary)" /> : <Sun size={20} color="var(--text-primary)" />}
-    />
+    >
+      {theme === "light" ? <Moon size={20} color="var(--text-secondary)" /> : <Sun size={20} color="var(--text-secondary)" />}
+    </IconButton>
   );
 }

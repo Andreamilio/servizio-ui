@@ -471,34 +471,36 @@ export default async function HostPage({ searchParams }: { searchParams?: SP | P
                         </Card>
 
                         <Card>
-                            <HStack justify="space-between" gap={3} mb={3}>
-                                <Text fontSize="sm" opacity={0.7}>Attività recente (Access log)</Text>
-                                <Text fontSize="xs" opacity={0.5}>Ultimi 20 eventi</Text>
-                            </HStack>
+                            <Box p={4}>
+                                <HStack justify="space-between" gap={3} mb={3}>
+                                    <Text fontSize="sm" opacity={0.7}>Attività recente (Access log)</Text>
+                                    <Text fontSize="xs" opacity={0.5}>Ultimi 20 eventi</Text>
+                                </HStack>
 
-                            {accessEvents.length === 0 ? (
-                                <Text fontSize="sm" opacity={0.6}>Nessun evento registrato.</Text>
-                            ) : (
-                                <VStack spacing={2} align="stretch">
-                                    {accessEvents.map((e: any) => (
-                                        <Card key={String(e.id)} variant="outlined">
-                                            <CardBody p={3}>
-                                                <HStack justify="space-between">
-                                                    <Text fontSize="xs" opacity={0.6}>
-                                                        {fmtDT(e.ts)}
+                                {accessEvents.length === 0 ? (
+                                    <Text fontSize="sm" opacity={0.6}>Nessun evento registrato.</Text>
+                                ) : (
+                                    <VStack spacing={2} align="stretch">
+                                        {accessEvents.map((e: any) => (
+                                            <Card key={String(e.id)} variant="outlined">
+                                                <CardBody p={3}>
+                                                    <HStack justify="space-between">
+                                                        <Text fontSize="xs" opacity={0.6}>
+                                                            {fmtDT(e.ts)}
+                                                        </Text>
+                                                        <Text fontSize="11px" opacity={0.6} fontFamily="mono">
+                                                            {e.type}
+                                                        </Text>
+                                                    </HStack>
+                                                    <Text mt={1} fontSize="sm" fontWeight="semibold">
+                                                        {e.label}
                                                     </Text>
-                                                    <Text fontSize="11px" opacity={0.6} fontFamily="mono">
-                                                        {e.type}
-                                                    </Text>
-                                                </HStack>
-                                                <Text mt={1} fontSize="sm" fontWeight="semibold">
-                                                    {e.label}
-                                                </Text>
-                                            </CardBody>
-                                        </Card>
-                                    ))}
-                                </VStack>
-                            )}
+                                                </CardBody>
+                                            </Card>
+                                        ))}
+                                    </VStack>
+                                )}
+                            </Box>
                         </Card>
                     </VStack>
                 </Box>
