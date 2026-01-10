@@ -1,7 +1,8 @@
 # Documentazione Modelli Dati MongoDB - Servizio UI
 
-**Versione:** 1.1  
+**Versione:** 1.2  
 **Data:** 2026-01-04  
+**Aggiornamento:** Migrazione da Web Push API a Firebase Cloud Messaging (FCM)  
 **Database:** MongoDB
 
 ---
@@ -356,34 +357,57 @@ Log eventi di accesso e azioni (audit trail).
 
 **Collezione:** `pushsubscriptions`
 
-Sottoscrizioni push notifications (Web Push API).
+Sottoscrizioni push notifications (Firebase Cloud Messaging - FCM). Supporta tutti i tipi di utenti: Tech, Host, Guest, Cleaner. Compatibile con PWA web, app native Android e iOS.
 
 ```javascript
 {
   _id: ObjectId,                    // MongoDB auto-generated
-  endpoint: String,                  // Unique: URL endpoint subscription (indexed)
-  keys: {
-    p256dh: String,                 // Chiave pubblica
-    auth: String                    // Chiave autenticazione
-  },
-  userId: String,                   // Optional, FK a Users.userId (indexed)
+  fcmToken: String,                  // Unique: FCM registration token (indexed)
+  role: String,                     // Enum: "tech" | "host" | "guest" | "cleaner" (indexed)
+  userId: String,                   // Optional, FK a Users.userId (per tech/host) (indexed)
   aptId: String,                    // Optional, FK a Apartments.aptId (indexed)
+  stayId: String,                   // Optional, FK a Stays.stayId (per guest/cleaner) (indexed)
+  guestId: String,                  // Optional, FK a Stays.guests[].guestId (per guest)
+  cleanerName: String,              // Optional, nome cleaner (per cleaner)
+  deviceId: String,                  // Optional, identificatore device univoco
+  platform: String,                 // Enum: "ios" | "android" | "web" (indexed)
+  topics: [String],                  // Optional, array di topic FCM (es. ["apt-101", "cleaning"]) (indexed)
   createdAt: Number,                 // Unix timestamp (ms)
-  lastUsedAt: Number,               // Optional, ultimo utilizzo
-  expiresAt: Number                 // Optional, scadenza subscription
+  updatedAt: Number,                 // Unix timestamp (ms) - ultimo aggiornamento token
+  lastUsedAt: Number,               // Optional, ultimo utilizzo per invio notifica
+  isActive: Boolean                  // Default: true, false se token invalidato
 }
 ```
 
 **Indici:**
 
--   `{ endpoint: 1 }` (unique)
+-   `{ fcmToken: 1 }` (unique)
 -   `{ userId: 1 }` (sparse)
 -   `{ aptId: 1 }` (sparse)
+-   `{ stayId: 1 }` (sparse)
+-   `{ role: 1 }`
+-   `{ platform: 1 }`
+-   `{ userId: 1, isActive: 1 }` (compound, per query token attivi per utente)
+-   `{ stayId: 1, guestId: 1 }` (compound, sparse, per query guest)
+-   `{ stayId: 1, cleanerName: 1 }` (compound, sparse, per query cleaner)
+-   `{ aptId: 1, isActive: 1 }` (compound, per query token attivi per appartamento)
+-   `{ topics: 1 }` (per topic-based messaging)
+-   `{ updatedAt: 1 }` (per cleanup token inattivi)
 
 **Note:**
 
--   Endpoint è la chiave unica (una subscription per endpoint)
--   Subscription può essere associata a utente o appartamento
+-   `fcmToken` è la chiave unica (un token per device/app instance)
+-   **Per Users (tech/host)**: associare tramite `userId` e `role`
+-   **Per Guest**: associare tramite `stayId` + `guestId` e `role="guest"`
+-   **Per Cleaner**: associare tramite `stayId` + `cleanerName` e `role="cleaner"`
+-   `aptId` può essere usato per filtrare per appartamento (utile per tutti i ruoli)
+-   `platform` identifica la piattaforma: "web" per PWA, "ios" per app iOS nativa, "android" per app Android nativa
+-   `topics` permette di sottoscrivere a topic FCM per messaging di gruppo (es. `/topics/apt-101`)
+-   `isActive` permette di disabilitare token senza rimuoverli (utile per debug/analytics)
+-   Quando un token diventa invalido (es. errore FCM `NOT_FOUND`, `INVALID_ARGUMENT`), impostare `isActive: false` o rimuovere il documento
+-   `updatedAt` viene aggiornato quando il token viene rinnovato o modificato (es. cambio topic)
+-   FCM gestisce automaticamente il refresh dei token; quando un token viene rinnovato, aggiornare il documento esistente o creare uno nuovo (rimuovendo quello vecchio)
+-   **Compatibilità PWA**: FCM per web usa Web Push API sotto il cofano, quindi funziona su PWA con le stesse limitazioni di Web Push (iOS 16.4+ richiede PWA installata)
 
 ---
 
@@ -761,6 +785,20 @@ db.cleaningjobs.createIndex({ id: 1 }, { unique: true });
 db.cleaningjobs.createIndex({ aptId: 1, status: 1 });
 db.cleaningjobs.createIndex({ stayId: 1 }, { sparse: true });
 
+// PushSubscriptions
+db.pushsubscriptions.createIndex({ fcmToken: 1 }, { unique: true });
+db.pushsubscriptions.createIndex({ userId: 1 }, { sparse: true });
+db.pushsubscriptions.createIndex({ aptId: 1 }, { sparse: true });
+db.pushsubscriptions.createIndex({ stayId: 1 }, { sparse: true });
+db.pushsubscriptions.createIndex({ role: 1 });
+db.pushsubscriptions.createIndex({ platform: 1 });
+db.pushsubscriptions.createIndex({ userId: 1, isActive: 1 });
+db.pushsubscriptions.createIndex({ stayId: 1, guestId: 1 }, { sparse: true });
+db.pushsubscriptions.createIndex({ stayId: 1, cleanerName: 1 }, { sparse: true });
+db.pushsubscriptions.createIndex({ aptId: 1, isActive: 1 });
+db.pushsubscriptions.createIndex({ topics: 1 });
+db.pushsubscriptions.createIndex({ updatedAt: 1 });
+
 // Plans
 db.plans.createIndex({ planId: 1 }, { unique: true });
 
@@ -796,6 +834,7 @@ Apartments (1) ──< (1) TechnicalSettings
 Apartments (1) ──< (N) AccessEvents
 Users (1) ──< (N) PushSubscriptions (opzionale)
 Apartments (1) ──< (N) PushSubscriptions (opzionale)
+Stays (1) ──< (N) PushSubscriptions (opzionale, per guest/cleaner)
 Clients (1) ──< (N) BillingCustomers (opzionale)
 BillingCustomers (1) ──< (N) Subscriptions
 Apartments (1) ──< (N) Subscriptions
@@ -891,6 +930,28 @@ Subscriptions (1) ──< (N) Payments
 -   Usata per audit, report e fatturazione
 -   Per correzioni, creare nuovi record con status appropriato
 
+### 13. Firebase Cloud Messaging (FCM)
+
+-   **Token Management**: I token FCM possono cambiare per vari motivi (reinstall app, clear data, device restore). Gestire `onTokenRefresh` per aggiornare token scaduti nel database
+-   **Registrazione Token**:
+    -   Client genera token con Firebase SDK (`getToken()`)
+    -   Client invia token al BE tramite API
+    -   BE salva token associandolo all'utente/guest/cleaner
+-   **Aggiornamento Token**: Quando FCM genera un nuovo token (callback `onTokenRefresh`), aggiornare il documento esistente o creare uno nuovo (rimuovendo quello vecchio)
+-   **Cleanup Token Invalidi**: Quando FCM restituisce errori (`NOT_FOUND`, `INVALID_ARGUMENT`, `UNREGISTERED`), marcare `isActive: false` o rimuovere il documento
+-   **Invio Notifiche**:
+    -   Recuperare tutti i token attivi per l'utente/guest/cleaner
+    -   Inviare a ciascun token tramite Firebase Admin SDK
+    -   Gestire errori e rimuovere token invalidi
+-   **Topic-Based Messaging**: Usare `topics` per messaging di gruppo (es. tutti gli utenti di un appartamento). Sottoscrivere/rimuovere topic tramite FCM Admin SDK
+-   **Platform Detection**: Identificare `platform` al momento della registrazione (web/ios/android) per personalizzare le notifiche
+-   **Compatibilità PWA**: FCM per web usa Web Push API, quindi funziona su PWA con le stesse limitazioni:
+    -   iOS 16.4+ richiede PWA installata (Aggiungi alla Home)
+    -   Non funziona da Safari browser normale su iOS
+    -   Chrome, Firefox, Edge supportano completamente
+-   **Multi-Device**: Un utente può avere più token (uno per device/app). Tutti i token attivi ricevono le notifiche
+-   **Analytics**: FCM fornisce analytics integrate (delivery rate, open rate) tramite Firebase Console
+
 ---
 
 ## Esempi Query
@@ -955,6 +1016,70 @@ db.payments
         billingCustomerId: 'bill-xxx',
     })
     .sort({ createdAt: -1 });
+```
+
+### Query Token FCM Attivi per Utente
+
+```javascript
+db.pushsubscriptions.find({
+    userId: 'user-xxx',
+    isActive: true,
+});
+```
+
+### Query Token FCM per Guest
+
+```javascript
+db.pushsubscriptions.find({
+    stayId: 'stay-xxx',
+    guestId: 'g-xxx',
+    role: 'guest',
+    isActive: true,
+});
+```
+
+### Query Token FCM per Cleaner
+
+```javascript
+db.pushsubscriptions.find({
+    stayId: 'stay-xxx',
+    cleanerName: 'Mario Rossi',
+    role: 'cleaner',
+    isActive: true,
+});
+```
+
+### Query Token FCM per Appartamento
+
+```javascript
+db.pushsubscriptions.find({
+    aptId: '101',
+    isActive: true,
+});
+```
+
+### Query Token FCM per Topic
+
+```javascript
+db.pushsubscriptions.find({
+    topics: 'apt-101',
+    isActive: true,
+});
+```
+
+### Cleanup Token Inattivi (non aggiornati da 90 giorni)
+
+```javascript
+const ninetyDaysAgo = Date.now() - 90 * 24 * 60 * 60 * 1000;
+db.pushsubscriptions.updateMany(
+    {
+        updatedAt: { $lt: ninetyDaysAgo },
+        isActive: true,
+    },
+    {
+        $set: { isActive: false },
+    }
+);
 ```
 
 ---
